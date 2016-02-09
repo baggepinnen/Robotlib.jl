@@ -2,7 +2,7 @@ Install using
 `Pkg.clone("git@gitlab.control.lth.se:cont-frb/Robotlib.git")`
 
 =====Robotlib=====
-This is a library of functions to help out in the Robotlab at LTH
+This is a library of functions to help out in a robotics lab
 
 The module imports the following files
 
