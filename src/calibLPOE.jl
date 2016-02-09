@@ -1,3 +1,4 @@
+import Robotlib: ad, adi
 function calibLPOE(xin,Tn0in,Ta,q;maxiter=10, λ=1.0)
 
     xi      = deepcopy(xin)
@@ -95,7 +96,7 @@ function calibLPOEdual(xin,Tn0in,q;maxiter=10, λ=1.0)
 
             end
         end
-
+        x = zeros(3)
         for arm = 1:2
             x = (A[:,:,arm]'A[:,:,arm] + λ*I)\A[:,:,arm]'y
             # Update the candidate nominal parameters
@@ -104,6 +105,7 @@ function calibLPOEdual(xin,Tn0in,q;maxiter=10, λ=1.0)
                 ξ = 0.5*s*x[(j-1)*6+1:6j] # Only apply half the update to each arm, verified to be essential
                 Tn0cand[:,:,j,arm] = Tn0[:,:,j,arm]*expξ2(ξ,1)
             end
+
         end
         et[iter+1],er[iter+1] = evalErrorDual(xi,Tn0cand,q)
         println("Error: ",round(et[iter+1],5), " λ: ", λ, " Norm dx: ", round(norm(x),5))
@@ -181,7 +183,7 @@ end
 
 using Debug
 
-@debug function calibPOE_offsets_from_points(Xin,Q;maxiter=50, λ = 10000.0)
+function calibPOE_offsets_from_points(Xin,Q;maxiter=50, λ = 10000.0)
     xin     = copy(Xin)
     n       = size(xin,2)-2
     Ndatasets = size(Q,1)
@@ -253,7 +255,7 @@ function evalError(xin,Tn0,Ta,q)
 end
 
 function evalErrorDual(xin,Tn0,q)
-    N = size(Ta,3)
+    N = size(Tn0,3)
     et = 0.0
     er = 0.0
     for i = 1:N
