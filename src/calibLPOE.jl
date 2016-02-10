@@ -181,7 +181,6 @@ function calibPOE(Xin,Ta,q;maxiter=50, λ = 10000.0)
 
 end
 
-using Debug
 
 function calibPOE_offsets_from_points(Xin,Q;maxiter=50, λ = 10000.0)
     xin     = copy(Xin)
@@ -208,7 +207,7 @@ function calibPOE_offsets_from_points(Xin,Q;maxiter=50, λ = 10000.0)
             Tfull = cat(3,[fkinePOE(xin,q[i,:]'+[δq;0]) for i = 1:N]...)
             Tm = squeeze(mean(Tfull,3),3)
             toOrthoNormal!(Tm)
-            # @bp
+          
             for i = 1:N
                 # populate the matrices of the linear estimation problem
                 y[ii:ii+5] = twistcoords(logT(Tm*trinv(Tfull[:,:,i])))
