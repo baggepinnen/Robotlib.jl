@@ -1,5 +1,3 @@
-ENV["PYTHON"]=""
-Pkg.build("PyCall")
 import PyPlot
 using Plots
 import .Frames # The dot is due to the fact that Frames is a submodule
