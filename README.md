@@ -15,7 +15,74 @@ q = getData("robot_0.*posRawAbs", data, 1, removeNaN = false)
 For YuMi, joint angles `q` must be converted to logical order using e.g. abb2logical!(q)
 You must also consider the base transform of YuMi
 
-The module imports the following files
+### Case study, calibrate force sensor
+```julia
+using Robotlib
+using Robotlib.Calibration
+using DSP # For filtfilt
+
+# Define robot to use, in this case YuMi
+dh = DHYuMi()
+xi = DH2twistsPOE(dh)
+
+# Define paths to log file and where to store converted binary file for faster reading
+pathopen = "/work/fredrikb/extRosetta/frida_gravity_2.txt"
+pathsave = "/tmp/fredrikb/log.mat"
+
+# Get data from the logfile
+data    = orcalog2mat(pathopen, pathsave)
+data    = readmat(pathsave)
+ds      = 1 # Downsampling factor
+q       = getData("robot_1.*posRawAbs", data, ds) # Data vectors to retrieve are specified with regex style
+q̇       = getData("robot_1.*velFlt", data, ds)
+τ       = getData("robot_1.*trqRaw", data, ds)
+f       = getData("force", data, ds)
+
+# Convert joint data from ABB order to logical order
+abb2logical!(q)
+abb2logical!(q̇)
+abb2logical!(τ)
+
+# Apply gear ratio transformation
+q = q*dh.GR'
+q̇ = q̇*dh.GR'
+τ = τ*inv(dh.GR')
+
+# Filter velocities to get accelerations
+q̈ = filtfilt(ones(50),[50.],smartDiff(q̇))
+
+# plot(abs([q̇, q̈]))
+
+# Sort out data with low acceleration
+lowAcc  = all(abs(q̈) .< 3e-4,2)
+q       = q[lowAcc,:]
+q̇       = q̇[lowAcc,:]
+τ       = τ[lowAcc,:]
+f       = f[lowAcc,:]
+N   = size(q,1)
+
+# Setup YuMi base transformation, this is to be included in function get_kinematic_functions later
+baseAnglesLeft  = [-0.63 , 0.95 , -0.18]
+Rbase           = rpy2R(baseAnglesLeft,"xyz")
+Tbase           = eye(4)
+Tbase[1:3,1:3]  = Rbase
+
+fkine, ikine, jacobian = get_kinematic_functions("yumi")
+
+# Apply forward kinematics to get end-effector poses
+T  = cat(3,[Tbase*fkinePOE(xi,q[i,:]') for i = 1:N]...);
+
+plot_traj(T) # Plots a trajectory of R4x4 transformation matrices
+
+# Perform the force sensor calibration and plot the errors
+Rf,m,offset     = Robotlib.Calibration.calibForce(T,f,0.2205,offset=true)
+err = cat(2,[Rf*f[i,1:3]' + offset - T[1:3,1:3,i]'*[0, 0, m*-9.82] for i = 1:N]...)'
+plot(f[:,1:3],lab="Force")
+plot!(err,l=:dash,lab="Error")
+println("Error: ", round(rms(err),4))
+```
+
+## The module imports the following files
 
 ```julia
 include("POEutils.jl")
