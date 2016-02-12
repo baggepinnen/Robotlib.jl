@@ -5,6 +5,10 @@ Install using
 
 `Pkg.add("Robotlib")`
 
+For latest changes, install using
+
+`Pkg.clone("git@gitlab.control.lth.se:cont-frb/Robotlib.git")`
+
 ##Usage
 ```julia
 fkine, ikine, jacobian = get_kinematic_functions("yumi") # Replace yumi for your robot model, as long as it's supported
