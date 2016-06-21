@@ -1,66 +1,65 @@
 """
 Usage:
-
-path = \"/home/fredrikb/work/flexifab/frames/\"
+```julia
+path = Pkg.dir("Robotlib","src","applications","frames")
 
 
 add_frame_name!(\"SEAM\",\"Weld seam frame\")
 add_frame_name!(\"TAB\",\"Table frame\")
 
-T_RB_Tm = MAT.matread(path\*\"T_RB_T.mat\")[\"T_RB_T\"]
-T_TF_TCPm = MAT.matread(path\*\"T_TF_TCP.mat\")[\"T_TF_TCP\"]
-T_T_TABm = MAT.matread(path\*\"T_T_Table.mat\")[\"T_T_Table\"]
+T_RB_Tm = MAT.matread(path*\"T_RB_T.mat\")[\"T_RB_T\"]
+T_TF_TCPm = MAT.matread(path*\"T_TF_TCP.mat\")[\"T_TF_TCP\"]
+T_T_TABm = MAT.matread(path*\"T_T_Table.mat\")[\"T_T_Table\"]
 
 T_RB_T = Frame(T_RB_Tm,\"RB\",\"T\")
 T_S_D = Frame(T_TF_TCPm,\"S\",\"D\")
 T_T_TAB = Frame(T_T_TABm,\"T\",\"TAB\")
 
-cloud_seam = readcloud(path\*\"CloudSeam_edge.txt\")
-plane_seam = readplane(path\*\"PlaneSeam_edge.txt\")
+cloud_seam = readcloud(path*\"CloudSeam_edge.txt\")
+plane_seam = readplane(path*\"PlaneSeam_edge.txt\")
 cloud_seam_projected = project(plane_seam,cloud_seam)
 line_seam = fitline(cloud_seam_projected)
 
 T_T_SEAM = framefromfeatures((\"z+\",line_seam),(\"y-\",plane_seam),cloud_seam_projected[1],\"SEAM\")
-T_RB_SEAM = T_RB_T\*T_T_SEAM
-T_RB_TAB = T_RB_T\*T_T_TAB
-T_TAB_SEAM = inv(T_T_TAB)\*T_T_SEAM
+T_RB_SEAM = T_RB_T*T_T_SEAM
+T_RB_TAB = T_RB_T*T_T_TAB
+T_TAB_SEAM = inv(T_T_TAB)*T_T_SEAM
 
-MAT.matwrite(path\*\"T_TAB_SEAM.mat\",[\"T_TAB_SEAM\" => T_TAB_SEAM.T])
-MAT.matwrite(path\*\"T_T_SEAM.mat\",[\"T_T_SEAM\" => T_T_SEAM.T])
-MAT.matwrite(path\*\"T_RB_TAB.mat\",[\"T_RB_TAB\" => T_RB_TAB.T])
+MAT.matwrite(path*\"T_TAB_SEAM.mat\",[\"T_TAB_SEAM\" => T_TAB_SEAM.T])
+MAT.matwrite(path*\"T_T_SEAM.mat\",[\"T_T_SEAM\" => T_T_SEAM.T])
+MAT.matwrite(path*\"T_RB_TAB.mat\",[\"T_RB_TAB\" => T_RB_TAB.T])
 println(\"Wrote T_TAB_SEAM, T_T_SEAM, T_RB_TAB to files in \$path\")
 
-cloud_seam_RB = T_RB_T\*cloud_seam
-cloud_seam_projected_RB = T_RB_T\*cloud_seam_projected
-plane_seam_RB = T_RB_T\*plane_seam
-line_seam_RB = T_RB_T\*line_seam
+cloud_seam_RB = T_RB_T*cloud_seam
+cloud_seam_projected_RB = T_RB_T*cloud_seam_projected
+plane_seam_RB = T_RB_T*plane_seam
+line_seam_RB = T_RB_T*line_seam
 
 
 
 plotframe(Frame(eye(4),\"RB\",\"U\"),200, label=true)
 
-plotpoints(cloud_seam_RB,\"bx\")
-plotpoints(cloud_seam_projected_RB,\"rx\")
-plotline(line_seam_RB,\"r\",500,label=\"Line seam\")
-plotplane(plane_seam_RB,\"b\",200,label=\"Plane seam\")
-plotframe(T_RB_SEAM,200, label=true)
-plotframe(T_RB_TAB,200, label=true)
+plotpoints!(cloud_seam_RB)
+plotpoints!(cloud_seam_projected_RB)
+plotline!(line_seam_RB,500,label=\"Line seam\")
+plotplane!(plane_seam_RB,200,label=\"Plane seam\")
+plotframe!(T_RB_SEAM,200, label=true)
+plotframe!(T_RB_TAB,200, label=true)
 
-PyPlot.xlabel(\"x\")
-PyPlot.ylabel(\"y\")
-PyPlot.zlabel(\"z\")
-PyPlot.axis(\"scaled\")
+xlabel!(\"x\")
+ylabel!(\"y\")
+zlabel!(\"z\")
+```
 """
 module Frames
 
-
+using Plots
 export Frame, Point, Plane, Points, Line, GeometricObject, add_frame_name!
 export readcloud, readTmatrix, readplane, fitline, fitplane, framefromfeatures, project
 export plotline, plotplane, plotpoints, plot3Dsmart, plotframe
 export inv, *,+,-,/,\,transpose,ctranspose
 
-import Base: det, print, zeros, length, size, getindex, setindex!, convert, push!, show, start, next, done, +, *, ⋅, .*, /, ./, -, ×, transpose, ctranspose, \
-import PyPlot
+import Base: det, print, zeros, length, size, getindex, setindex!, convert, push!, show, start, next, done, +, *, ⋅, .*, /, ./, -, ×, transpose, ctranspose, \, inv
 # using LaTeXStrings
 
 
@@ -200,50 +199,58 @@ end
 # Plot functions ----------------------------------------------
 # -------------------------------------------------------------
 
-function plot3Dsmart(x::Array{Float64,2},linespec = "b")
-    PyPlot.plot3D(x[:,1],x[:,2],x[:,3],linespec)
-end
+plot3Dsmart!(x::Array{Float64,2};kw...) = plot!(x[:,1],x[:,2],x[:,3];kw...)
 
-function plotframe(f::Frame = Frame(), length=1.0; label=false)
+function plotframe!(f::Frame = Frame(), length=1.0; label=false)
     #Plots a frame using XYZ-RGB
     o = F2t(f)
     x = Rx(f)
     y = Ry(f)
     z = Rz(f)
-    plot3Dsmart([o o+x*length]',"r")
-    plot3Dsmart([o o+y*length]',"g")
-    plot3Dsmart([o o+z*length]',"b")
+    plot3Dsmart!([o o+x*length]',c=:red)
+    plot3Dsmart!([o o+y*length]',c=:green)
+    plot3Dsmart!([o o+z*length]',c=:blue)
     if label && f.A != ""
         po = o-length/4*(x+y+z)
-        PyPlot.text3D(po[1],po[2],po[3],print(f))
+        annotate!(po[1],po[2],po[3],print(f))
     end
 end
 
-plotframe(f::Matrix, length=1.0; label=false) = plotframe(Frame(f),length,label=label)
 
+plotframe!(f::Matrix, length=1.0; label=false) = plotframe!(Frame(f),length,label=label)
 
-function plotline(l::Line, linespec = "b", length=1.0; label="")
-    coords = [(l.r-length*l.v).p (l.r+length*l.v).p]'
-    PyPlot.scatter3D(l.r[1],l.r[2],l.r[3],linespec*"o")
-    plot3Dsmart(coords,linespec)
+function plotline!(l::Line, length=1.0; label="")
+    coords = [(l.r-length*l.v).p, (l.r+length*l.v).p]
+    scatter!(l.r[1],l.r[2],l.r[3])
+    plot3Dsmart!(coords)
     if label != ""
         po = l.r.p-length/4*normalized(l.r.p)
-        PyPlot.text3D(po[1],po[2],po[3],label)
+        annotate!(po[1],po[2],po[3],label)
     end
 end
 
-function plotplane(p::Plane, linespec = "b", length=1.0; label="")
+
+function plotplane!(p::Plane, length=1.0; label="")
     coords = [(p.r).p (p.r+length*p.n).p]'
-    PyPlot.scatter3D(p.r[1],p.r[2],p.r[3],linespec*"^")
-    plot3Dsmart(coords,linespec)
+    scatter!(p.r[1],p.r[2],p.r[3],m=:^)
+    plot3Dsmart!(coords,linespec)
     if label != ""
         po = p.r.p-length/4*p.n.p
-        PyPlot.text3D(po[1],po[2],po[3],label)
+        annotate!(po[1],po[2],po[3],label)
     end
 end
 
-function plotpoints(p::Points, linespec = "x")
-    plot3Dsmart(convert(Array{Float64,2},p),linespec)
+
+plotpoints!(p::Points;kw...) = plot3Dsmart!(convert(Array{Float64,2},p);kw...)
+
+for fun in ["plot3Dsmart","plotframe","plotline","plotplane"]
+    @eval begin
+        function $(Symbol(fun))(args...;kwargs...)
+            fig = plot()
+            $(Symbol(fun,!))(args...;kwargs...)
+            return fig
+        end
+    end
 end
 
 # Frame functions  --------------------------------------------
@@ -275,7 +282,7 @@ convert(::Type{Vector{Float64}}, p::Point) = p.p
 *(x::Frame, y::Frame) = Frame(x.T*y.T,x.A,y.B)
 function *(f::Frame, p::Point)
     f.B != p.A &&  error("Reference frames does not match between $f and $p ($(f.B) != $(p.A))")
-    pv = (f.T*[p.p,1])[1:3]
+    pv = (f.T*[p.p;1])[1:3]
     Point(pv,f.A)
 end
 function *(f::Frame, p::Plane)

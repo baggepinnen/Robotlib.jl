@@ -136,8 +136,7 @@ This module is aimed at assisting with the creation of frames for tracking using
 using Frames
 import MAT
 function setupframes(path)
-	#include("/home/fredrikb/robotlib/frames/Frames.jl")
-	# path = "/home/fredrikb/work/flexifab/frames/"
+	path = Pkg.dir("Robotlib","src","applications","frames")
 
 	# Add frame names to the dictionary
 	add_frame_name!("SEAM","Weld seam frame")
