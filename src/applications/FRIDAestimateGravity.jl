@@ -49,7 +49,7 @@ baseAnglesLeft  = [-0.63 , 0.95 , -0.18]
 Rbase           = rpy2R(baseAnglesLeft,"xyz")
 Tbase           = eye(4)
 Tbase[1:3,1:3]  = Rbase
-# T  = cat(3,[Tbase*fkinePOE(xi,q[i,:]') for i = 1:N]...);
+T  = cat(3,[Tbase*fkinePOE(xi,q[i,:]') for i = 1:N]...);
 
 # include("../dynamics.jl")
 
