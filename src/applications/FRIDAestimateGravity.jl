@@ -101,6 +101,6 @@ println("Error: ", rms(esty(err)))
 # Lcurve(errpdf, normk, λ)
 # τpdf = reshape(Apdf*kpdf[:,end-8],7,N)';
 
-subplot(τ,nr=7)
-subplot!(τhat,c=:red,nr=7)
+plot(τ,layout=7)
+plot!(τhat,c=:red,layout=7)
 # subplot!(τhat + τpdf,c=:green,nr=7)
