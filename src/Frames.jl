@@ -207,9 +207,9 @@ function plotframe!(f::Frame = Frame(), length=1.0; label=false)
     x = Rx(f)
     y = Ry(f)
     z = Rz(f)
-    plot3Dsmart!([o o+x*length]',c=:r)
-    plot3Dsmart!([o o+y*length]',c=:g)
-    plot3Dsmart!([o o+z*length]',c=:b)
+    plot3Dsmart!([o o+x*length]',c=:red)
+    plot3Dsmart!([o o+y*length]',c=:green)
+    plot3Dsmart!([o o+z*length]',c=:blue)
     if label && f.A != ""
         po = o-length/4*(x+y+z)
         annotate!(po[1],po[2],po[3],print(f))
@@ -232,7 +232,7 @@ end
 
 function plotplane!(p::Plane, length=1.0; label="")
     coords = [(p.r).p (p.r+length*p.n).p]'
-    scatter(p.r[1],p.r[2],p.r[3],m=:^)
+    scatter!(p.r[1],p.r[2],p.r[3],m=:^)
     plot3Dsmart!(coords,linespec)
     if label != ""
         po = p.r.p-length/4*p.n.p
