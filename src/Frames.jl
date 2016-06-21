@@ -1,7 +1,7 @@
 """
 Usage:
 ```julia
-path = \"/home/fredrikb/work/flexifab/frames/\"
+path = Pkg.dir("Robotlib","src","applications","frames")
 
 
 add_frame_name!(\"SEAM\",\"Weld seam frame\")
