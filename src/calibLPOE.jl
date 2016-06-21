@@ -181,8 +181,6 @@ function calibPOE(Xin,Ta,q;maxiter=50, λ = 10000.0)
 
 end
 
-using Debug
-
 function calibPOE_offsets_from_points(Xin,Q;maxiter=50, λ = 10000.0)
     xin     = copy(Xin)
     n       = size(xin,2)-2

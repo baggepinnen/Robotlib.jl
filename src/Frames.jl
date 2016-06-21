@@ -39,17 +39,16 @@ line_seam_RB = T_RB_T\*line_seam
 
 plotframe(Frame(eye(4),\"RB\",\"U\"),200, label=true)
 
-plotpoints(cloud_seam_RB,\"bx\")
-plotpoints(cloud_seam_projected_RB,\"rx\")
-plotline(line_seam_RB,\"r\",500,label=\"Line seam\")
-plotplane(plane_seam_RB,\"b\",200,label=\"Plane seam\")
+plotpoints(cloud_seam_RB)
+plotpoints(cloud_seam_projected_RB)
+plotline(line_seam_RB,500,label=\"Line seam\")
+plotplane(plane_seam_RB,200,label=\"Plane seam\")
 plotframe(T_RB_SEAM,200, label=true)
 plotframe(T_RB_TAB,200, label=true)
 
-PyPlot.xlabel(\"x\")
-PyPlot.ylabel(\"y\")
-PyPlot.zlabel(\"z\")
-PyPlot.axis(\"scaled\")
+xlabel!(\"x\")
+ylabel!(\"y\")
+zlabel!(\"z\")
 """
 module Frames
 
@@ -60,7 +59,6 @@ export plotline, plotplane, plotpoints, plot3Dsmart, plotframe
 export inv, *,+,-,/,\,transpose,ctranspose
 
 import Base: det, print, zeros, length, size, getindex, setindex!, convert, push!, show, start, next, done, +, *, ⋅, .*, /, ./, -, ×, transpose, ctranspose, \
-import PyPlot
 # using LaTeXStrings
 
 
@@ -200,8 +198,8 @@ end
 # Plot functions ----------------------------------------------
 # -------------------------------------------------------------
 
-function plot3Dsmart(x::Array{Float64,2},linespec = "b")
-    PyPlot.plot3D(x[:,1],x[:,2],x[:,3],linespec)
+function plot3Dsmart(x::Array{Float64,2};kw...)
+    plot(x[:,1],x[:,2],x[:,3];kw...)
 end
 
 function plotframe(f::Frame = Frame(), length=1.0; label=false)
@@ -210,35 +208,35 @@ function plotframe(f::Frame = Frame(), length=1.0; label=false)
     x = Rx(f)
     y = Ry(f)
     z = Rz(f)
-    plot3Dsmart([o o+x*length]',"r")
-    plot3Dsmart([o o+y*length]',"g")
-    plot3Dsmart([o o+z*length]',"b")
+    plot3Dsmart([o o+x*length]',c=:r)
+    plot3Dsmart([o o+y*length]',c=:g)
+    plot3Dsmart([o o+z*length]',c=:b)
     if label && f.A != ""
         po = o-length/4*(x+y+z)
-        PyPlot.text3D(po[1],po[2],po[3],print(f))
+        annotate!(po[1],po[2],po[3],print(f))
     end
 end
 
 plotframe(f::Matrix, length=1.0; label=false) = plotframe(Frame(f),length,label=label)
 
 
-function plotline(l::Line, linespec = "b", length=1.0; label="")
+function plotline(l::Line, length=1.0; label="")
     coords = [(l.r-length*l.v).p (l.r+length*l.v).p]'
-    PyPlot.scatter3D(l.r[1],l.r[2],l.r[3],linespec*"o")
-    plot3Dsmart(coords,linespec)
+    scatter(l.r[1],l.r[2],l.r[3])
+    plot3Dsmart(coords)
     if label != ""
         po = l.r.p-length/4*normalized(l.r.p)
-        PyPlot.text3D(po[1],po[2],po[3],label)
+        annotate!(po[1],po[2],po[3],label)
     end
 end
 
-function plotplane(p::Plane, linespec = "b", length=1.0; label="")
+function plotplane(p::Plane, length=1.0; label="")
     coords = [(p.r).p (p.r+length*p.n).p]'
-    PyPlot.scatter3D(p.r[1],p.r[2],p.r[3],linespec*"^")
+    scatter(p.r[1],p.r[2],p.r[3],m=:^)
     plot3Dsmart(coords,linespec)
     if label != ""
         po = p.r.p-length/4*p.n.p
-        PyPlot.text3D(po[1],po[2],po[3],label)
+        annotate!(po[1],po[2],po[3],label)
     end
 end
 
