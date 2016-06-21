@@ -8,7 +8,10 @@ julia:
   - nightly
 notifications:
   email: false
+env:
+  - PYTHON=""
+
 # uncomment the following lines to override the default test script
 #script:
-#  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-#  - julia -e 'Pkg.clone(pwd()); Pkg.build("Robotlib"); Pkg.test("Robotlib"; coverage=true)'
+  # - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  # - julia -e 'Pkg.clone(pwd()); Pkg.build("Robotlib"); Pkg.test("Robotlib"; coverage=true)'
