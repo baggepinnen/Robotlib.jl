@@ -39,12 +39,12 @@ line_seam_RB = T_RB_T*line_seam
 
 plotframe(Frame(eye(4),\"RB\",\"U\"),200, label=true)
 
-plotpoints(cloud_seam_RB)
-plotpoints(cloud_seam_projected_RB)
-plotline(line_seam_RB,500,label=\"Line seam\")
-plotplane(plane_seam_RB,200,label=\"Plane seam\")
-plotframe(T_RB_SEAM,200, label=true)
-plotframe(T_RB_TAB,200, label=true)
+plotpoints!(cloud_seam_RB)
+plotpoints!(cloud_seam_projected_RB)
+plotline!(line_seam_RB,500,label=\"Line seam\")
+plotplane!(plane_seam_RB,200,label=\"Plane seam\")
+plotframe!(T_RB_SEAM,200, label=true)
+plotframe!(T_RB_TAB,200, label=true)
 
 xlabel!(\"x\")
 ylabel!(\"y\")
@@ -53,7 +53,7 @@ zlabel!(\"z\")
 """
 module Frames
 
-
+using Plots
 export Frame, Point, Plane, Points, Line, GeometricObject, add_frame_name!
 export readcloud, readTmatrix, readplane, fitline, fitplane, framefromfeatures, project
 export plotline, plotplane, plotpoints, plot3Dsmart, plotframe
@@ -282,7 +282,7 @@ convert(::Type{Vector{Float64}}, p::Point) = p.p
 *(x::Frame, y::Frame) = Frame(x.T*y.T,x.A,y.B)
 function *(f::Frame, p::Point)
     f.B != p.A &&  error("Reference frames does not match between $f and $p ($(f.B) != $(p.A))")
-    pv = (f.T*[p.p,1])[1:3]
+    pv = (f.T*[p.p;1])[1:3]
     Point(pv,f.A)
 end
 function *(f::Frame, p::Plane)
