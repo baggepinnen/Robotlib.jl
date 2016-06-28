@@ -1,7 +1,7 @@
 """
 Usage:
 ```julia
-path = Pkg.dir("Robotlib","src","applications","frames")
+path = Pkg.dir("Robotlib","src","applications","frames/")
 
 
 add_frame_name!(\"SEAM\",\"Weld seam frame\")
@@ -25,11 +25,6 @@ T_RB_SEAM = T_RB_T*T_T_SEAM
 T_RB_TAB = T_RB_T*T_T_TAB
 T_TAB_SEAM = inv(T_T_TAB)*T_T_SEAM
 
-MAT.matwrite(path*\"T_TAB_SEAM.mat\",[\"T_TAB_SEAM\" => T_TAB_SEAM.T])
-MAT.matwrite(path*\"T_T_SEAM.mat\",[\"T_T_SEAM\" => T_T_SEAM.T])
-MAT.matwrite(path*\"T_RB_TAB.mat\",[\"T_RB_TAB\" => T_RB_TAB.T])
-println(\"Wrote T_TAB_SEAM, T_T_SEAM, T_RB_TAB to files in \$path\")
-
 cloud_seam_RB = T_RB_T*cloud_seam
 cloud_seam_projected_RB = T_RB_T*cloud_seam_projected
 plane_seam_RB = T_RB_T*plane_seam
@@ -49,6 +44,11 @@ plotframe!(T_RB_TAB,200, label=true)
 xlabel!(\"x\")
 ylabel!(\"y\")
 zlabel!(\"z\")
+
+MAT.matwrite(path*\"T_TAB_SEAM.mat\",[\"T_TAB_SEAM\" => T_TAB_SEAM.T])
+MAT.matwrite(path*\"T_T_SEAM.mat\",[\"T_T_SEAM\" => T_T_SEAM.T])
+MAT.matwrite(path*\"T_RB_TAB.mat\",[\"T_RB_TAB\" => T_RB_TAB.T])
+println(\"Wrote T_TAB_SEAM, T_T_SEAM, T_RB_TAB to files in \$path\")
 ```
 """
 module Frames
@@ -199,22 +199,45 @@ end
 # Plot functions ----------------------------------------------
 # -------------------------------------------------------------
 
-plot3Dsmart!(x::Array{Float64,2};kw...) = plot!(x[:,1],x[:,2],x[:,3];kw...)
-
-function plotframe!(f::Frame = Frame(), length=1.0; label=false)
+@recipe function f(f::Frame, length=1.0; label=false)
     #Plots a frame using XYZ-RGB
     o = F2t(f)
     x = Rx(f)
     y = Ry(f)
     z = Rz(f)
-    plot3Dsmart!([o o+x*length]',c=:red)
-    plot3Dsmart!([o o+y*length]',c=:green)
-    plot3Dsmart!([o o+z*length]',c=:blue)
-    if label && f.A != ""
-        po = o-length/4*(x+y+z)
-        annotate!(po[1],po[2],po[3],print(f))
+    seriestype := :path3d
+    @series begin
+        data = [o o+x*length]'
+        x := data[:,1]
+        y := data[:,2]
+        z := data[:,3]
+        color := :red
+        if label && f.A != ""
+            po = o-length/4*(x+y+z)
+            annotations := (po[1],po[2],po[3],print(f))
+        end
+        @show 1234
     end
+    # delete!(d,:label)
+    @series begin
+        data = [o o+y*length]'
+        x := data[:,1]
+        y := data[:,2]
+        z := data[:,3]
+        color := :green
+    end
+    @series begin
+        data = [o o+z*length]'
+        x := data[:,1]
+        y := data[:,2]
+        z := data[:,3]
+        color := :blue
+    end
+
+
 end
+
+
 
 
 plotframe!(f::Matrix, length=1.0; label=false) = plotframe!(Frame(f),length,label=label)
