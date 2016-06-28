@@ -43,21 +43,9 @@ end
 
 export skewcoords, twistcoords, skew, skew4, expω, expξ, expξ2, expξ!, logT, logR, trinv, isrot, isse3, Rangle, conformize, DH2twistsPOE, DH2twistsLPOE, dh2Tn, toOrthoNormal!, toOrthoNormal!, rpy2R, Quaternion, xyθ, smartDiff, R2rpy, traj2quat, centralDiff
 export fkinePOE, fkineLPOE, ikinePOE, dh2Tn, jacobianPOE, jacobianPOEikine, jacobian, get_kinematic_functions
-export plot_traj, plot_traj3, plot_traj_sub, plot3smart, plotsub
+export trajplot, trajplot3, plot3smart
 export DH, DH2400, DHYuMi, DH7600, DHtest, abb2logical!, logical2abb!, abb2logical, logical2abb
 export csv2mat, orcalog2mat, getData, readmat
 
 
 end
-
-# print_with_color(:blue,"Usage:\n")
-# println("data = orcalog2mat(pathopen, pathsave)")
-# println("q = getData(\"robot_0.*posRawAbs\", data, 1, removeNaN = false)")
-# println("fkine, ikine, jacobian = get_kinematic_functions(\"yumi\")")
-# print_with_color(:blue,"Exported functions:\n")
-# println("Rt2T, T2R, T2t, skewcoords, twistcoords, skew, skew4, expω, expξ, expξ2, expξ!, logT, logR, ad, adi, trinv, isrot, isse3, Rangle, conformize, DH2twistsPOE, DH2twistsLPOE, dh2Tn, toOrthoNormal!, toOrthoNormal, rpy2R, Quaternion, xyθ\n
-# fkinePOE, fkineLPOE, ikinePOE, dh2Tn, jacobianPOE, jacobianPOEikine, jacobian, get_kinematic_functions\n
-# plot_traj, plot_traj3, plot_traj_sub, plot3smart, plotsub\n
-# DH, DH2400, DHYuMi, DH7600, DHtest, abb2logical!, logical2abb!, abb2logical, logical2abb\n
-# csv2mat, orcalog2mat, getData, readmat")
-# print_with_color(:blue,"Type ?Robotlib for more help\n")

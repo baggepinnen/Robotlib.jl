@@ -1,16 +1,16 @@
 #module Csv2mat
 using MAT
 using DataArrays, DataFrames
+using Plots
 #export csv2mat
-import PyPlot
 a = 13
 
 
 """
 convert a csv table file to a .mat file for import to Matlab
-csv2mat(filename, destination="log.mat"; startline=0, writeNames = true, pyplot = false, subplots = 16, subsample = 1, separator = ',')
+csv2mat(filename, destination="log.mat"; startline=0, writeNames = true, doplot = false, subplots = 16, subsample = 1, separator = ',')
 """
-function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true, pyplot = false, subplots = 16, subsample = 1, separator = ',')
+function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true, doplot = false, subplots = 16, subsample = 1, separator = ',')
 
     # Read the csv file into a dataframe
     df = readtable(filename, separator = separator, header=true, skipstart=startline)
@@ -46,7 +46,7 @@ function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true
     print_with_color(:yellow, "Skipped $(text) columns with text\n")
 
     # Perform requested plotting
-    if pyplot
+    if doplot
         colsToPlot = cols
         constants = Dict{Int64,Float64}()
         for i = 1:cols
@@ -63,11 +63,8 @@ function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true
         for window = 0:(numberOfFigures-1)
             plotrows::Int64 = ceil(sqrt(minimum([colsToPlot,subplots])))
             plotcols::Int64 = ceil(minimum([colsToPlot,subplots])/plotrows)
-            #winston && (t = Winston.Table(plotrows,plotcols))
-            #winston && Winston.figure()
-            pyplot && PyPlot.figure()
+            doplot && plot(layout=(plotrows,plotcols))
             # Write the results to a .mat-file
-
             plotrow = plotcol = 0
             skip = 0;
 
@@ -77,21 +74,11 @@ function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true
                     skip += 1
                     i = ii+skip
                 end
-
                 try
-                    if false#winston
-                        p = Winston.plot(df[:,i])
-                        Winston.title(replace(string(n[i]),"_"," "))
-                        t[plotrow+1,plotcol+1] = p
-                    else
-                        PyPlot.subplot(plotrows,plotcols,plotrow*plotcols + plotcol+1)
-                        PyPlot.plot(df[:,i])
-                        PyPlot.title(replace(string(n[i]),"_"," "))
-                    end
+                    plot!(df[:,i], subplot=plotrow*plotcols + plotcol+1, title=replace(string(n[i]),"_"," "))
                 catch ex
                     print_with_color(:red,"Could not plot column: $(string(n[i]))\n")
                 end
-
                 plotcol = (plotcol + 1) % plotcols
                 if plotcol == 0
                     plotrow = (plotrow + 1) % plotrows
