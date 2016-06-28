@@ -76,7 +76,7 @@ fkine, ikine, jacobian = get_kinematic_functions("yumi")
 # Apply forward kinematics to get end-effector poses
 T  = cat(3,[Tbase*fkinePOE(xi,q[i,:]') for i = 1:N]...);
 
-plot_traj(T) # Plots a trajectory of R4x4 transformation matrices
+trajplot(T) # Plots a trajectory of R4x4 transformation matrices
 
 # Perform the force sensor calibration and plot the errors
 Rf,m,offset     = Robotlib.Calibration.calibForce(T,f,0.2205,offset=true)
