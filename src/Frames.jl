@@ -1,7 +1,7 @@
 """
 Usage:
 ```julia
-path = Pkg.dir("Robotlib","src","applications","frames")
+path = Pkg.dir("Robotlib","src","applications","frames/")
 
 
 add_frame_name!(\"SEAM\",\"Weld seam frame\")
@@ -25,11 +25,6 @@ T_RB_SEAM = T_RB_T*T_T_SEAM
 T_RB_TAB = T_RB_T*T_T_TAB
 T_TAB_SEAM = inv(T_T_TAB)*T_T_SEAM
 
-MAT.matwrite(path*\"T_TAB_SEAM.mat\",[\"T_TAB_SEAM\" => T_TAB_SEAM.T])
-MAT.matwrite(path*\"T_T_SEAM.mat\",[\"T_T_SEAM\" => T_T_SEAM.T])
-MAT.matwrite(path*\"T_RB_TAB.mat\",[\"T_RB_TAB\" => T_RB_TAB.T])
-println(\"Wrote T_TAB_SEAM, T_T_SEAM, T_RB_TAB to files in \$path\")
-
 cloud_seam_RB = T_RB_T*cloud_seam
 cloud_seam_projected_RB = T_RB_T*cloud_seam_projected
 plane_seam_RB = T_RB_T*plane_seam
@@ -37,26 +32,32 @@ line_seam_RB = T_RB_T*line_seam
 
 
 
-plotframe(Frame(eye(4),\"RB\",\"U\"),200, label=true)
+plot(Frame(eye(4),\"RB\",\"U\"),200, label=true)
 
-plotpoints!(cloud_seam_RB)
-plotpoints!(cloud_seam_projected_RB)
-plotline!(line_seam_RB,500,label=\"Line seam\")
-plotplane!(plane_seam_RB,200,label=\"Plane seam\")
-plotframe!(T_RB_SEAM,200, label=true)
-plotframe!(T_RB_TAB,200, label=true)
+plot!(cloud_seam_RB)
+plot!(cloud_seam_projected_RB)
+plot!(line_seam_RB,500,label=\"Line seam\")
+plot!(plane_seam_RB,200,label=\"Plane seam\")
+plot!(T_RB_SEAM,200, label=true)
+plot!(T_RB_TAB,200, label=true)
 
 xlabel!(\"x\")
 ylabel!(\"y\")
 zlabel!(\"z\")
+
+MAT.matwrite(path*\"T_TAB_SEAM.mat\",[\"T_TAB_SEAM\" => T_TAB_SEAM.T])
+MAT.matwrite(path*\"T_T_SEAM.mat\",[\"T_T_SEAM\" => T_T_SEAM.T])
+MAT.matwrite(path*\"T_RB_TAB.mat\",[\"T_RB_TAB\" => T_RB_TAB.T])
+println(\"Wrote T_TAB_SEAM, T_T_SEAM, T_RB_TAB to files in \$path\")
 ```
 """
 module Frames
 
 using Plots
+default(markersize=1)
 export Frame, Point, Plane, Points, Line, GeometricObject, add_frame_name!
 export readcloud, readTmatrix, readplane, fitline, fitplane, framefromfeatures, project
-export plotline, plotplane, plotpoints, plot3Dsmart, plotframe
+export plot3Dsmart
 export inv, *,+,-,/,\,transpose,ctranspose
 
 import Base: det, print, zeros, length, size, getindex, setindex!, convert, push!, show, start, next, done, +, *, ⋅, .*, /, ./, -, ×, transpose, ctranspose, \, inv
@@ -199,59 +200,82 @@ end
 # Plot functions ----------------------------------------------
 # -------------------------------------------------------------
 
-plot3Dsmart!(x::Array{Float64,2};kw...) = plot!(x[:,1],x[:,2],x[:,3];kw...)
+mat2tup(m) = m[:,1][:], m[:,2][:], m[:,3][:]
 
-function plotframe!(f::Frame = Frame(), length=1.0; label=false)
+@recipe function plotframe(f::Frame, length=1.0)#; annotation=false)
     #Plots a frame using XYZ-RGB
     o = F2t(f)
     x = Rx(f)
     y = Ry(f)
     z = Rz(f)
-    plot3Dsmart!([o o+x*length]',c=:red)
-    plot3Dsmart!([o o+y*length]',c=:green)
-    plot3Dsmart!([o o+z*length]',c=:blue)
-    if label && f.A != ""
-        po = o-length/4*(x+y+z)
-        annotate!(po[1],po[2],po[3],print(f))
+    seriestype := :path3d
+    @series begin
+        data = [o o+x*length]'
+        seriescolor := :red
+        data |> mat2tup
+    end
+    @series begin
+        data = [o o+y*length]'
+        seriescolor := :green
+        data |> mat2tup
+    end
+    # if annotation && f.A != ""
+    #     warn("Annotations not currently supported for 3d plots")
+    #     # po = o-length/4*(x+y+z)
+    #     # annotations := (po[1],po[2],po[3],print(f))
+    # end
+    # delete!(d,:annotation)
+    @series begin
+        data = [o o+z*length]'
+        seriescolor := :blue
+        data |> mat2tup
     end
 end
 
 
-plotframe!(f::Matrix, length=1.0; label=false) = plotframe!(Frame(f),length,label=label)
 
-function plotline!(l::Line, length=1.0; label="")
-    coords = [(l.r-length*l.v).p, (l.r+length*l.v).p]
-    scatter!(l.r[1],l.r[2],l.r[3])
-    plot3Dsmart!(coords)
-    if label != ""
-        po = l.r.p-length/4*normalized(l.r.p)
-        annotate!(po[1],po[2],po[3],label)
+@recipe function plotline(l::Line, length=1.0)#; annotation="")
+    coords = [(l.r-length*l.v).p  (l.r+length*l.v).p]'
+    @series begin
+        seriestype := :scatter3d
+        ([l.r[1]],[l.r[2]],[l.r[3]])
+    end
+    # if annotation != ""
+    #     warn("Annotations not currently supported for 3d plots")
+    #     # po = l.r.p-length/4*normalized(l.r.p)
+    #     # annotations := (po[1],po[2],po[3],d[:annotation])
+    # end
+    # delete!(d,:annotation)
+    @series begin
+        seriestype := :path3d
+        coords |> mat2tup
     end
 end
 
 
-function plotplane!(p::Plane, length=1.0; label="")
+@recipe function plotplane(p::Plane, length=1.0)
     coords = [(p.r).p (p.r+length*p.n).p]'
-    scatter!(p.r[1],p.r[2],p.r[3],m=:^)
-    plot3Dsmart!(coords,linespec)
-    if label != ""
-        po = p.r.p-length/4*p.n.p
-        annotate!(po[1],po[2],po[3],label)
+    @series begin
+        seriestype := :scatter3d
+        markershape --> :utriangle
+        ([p.r[1]],[p.r[2]],[p.r[3]])
     end
+    @series begin
+        seriestype := :path3d
+        coords |> mat2tup
+    end
+    # if label != ""
+    #     po = p.r.p-length/4*p.n.p
+    #     annotate!(po[1],po[2],po[3],label)
+    # end
+end
+
+@recipe function plotpoints(p::Points)
+    seriestype := :scatter3d
+    convert(Array{Float64,2},p) |> mat2tup
 end
 
 
-plotpoints!(p::Points;kw...) = plot3Dsmart!(convert(Array{Float64,2},p);kw...)
-
-for fun in ["plot3Dsmart","plotframe","plotline","plotplane"]
-    @eval begin
-        function $(Symbol(fun))(args...;kwargs...)
-            fig = plot()
-            $(Symbol(fun,!))(args...;kwargs...)
-            return fig
-        end
-    end
-end
 
 # Frame functions  --------------------------------------------
 # -------------------------------------------------------------
@@ -366,10 +390,10 @@ function fitplane(points::Points)
     n = V[:,3]
     r = n*(cog'*n)[1]
 
-    assert(abs(norm(n)-1) < 1e-8)
-    assert(abs(abs(normalized(r-cog)⋅n)) < 1e-14)
-    assert(abs(abs(n⋅normalized(r))-1) < 1e-14)
-    assert(norm(r) < norm(cog))
+    @assert abs(norm(n)-1) < 1e-8
+    @assert abs(abs(normalized(r-cog)⋅n)) < 1e-14
+    @assert abs(abs(n⋅normalized(r))-1) < 1e-14
+    @assert norm(r) < norm(cog)
 
     return Plane(n,r,points.A)
 end
@@ -380,10 +404,10 @@ function fitline(points::Points)
     v = V[:,1]
     r = cog-(v'*cog).*v
 
-    assert(abs(norm(v)-1) < 1e-8)
-    assert(abs(abs(normalized(r-cog)⋅v) - 1) < 1e-14)
-    assert(abs(v⋅normalized(r)) < 1e-14)
-    assert(norm(r) < norm(cog))
+    @assert abs(norm(v)-1) < 1e-8
+    @assert abs(abs(normalized(r-cog)⋅v) - 1) < 1e-14
+    @assert abs(v⋅normalized(r)) < 1e-14
+    @assert norm(r) < norm(cog)
 
     return Line(Point(v,points.A), Point(r,points.A),points.A)
 end
@@ -407,13 +431,13 @@ function project(plane::Plane, line::Line)
     n_projplane = normalized(n × line.v)
     P = n.p*n.p'
     vp = normalized(line.v - P*line.v)
-    assert(abs(vp⋅n_projplane) < 1e-14)
+    @assert abs(vp⋅n_projplane) < 1e-14
 
     A = [vp',n', n_projplane']
     b = [0, plane.r⋅n, line.r⋅n_projplane]
     rp = Point(A\b,line.A)
-    assert(abs(rp ⋅ vp) < 1e-14)
-    assert(abs(vp ⋅ n) < 1e-14)
+    @assert abs(rp ⋅ vp) < 1e-14
+    @assert abs(vp ⋅ n) < 1e-14
     return Line(vp, rp)
 end
 
@@ -451,7 +475,7 @@ function framefromfeatures(feature1, feature2, origin, B)
     R[:,r2] = R2
     R[:,r3] = R3
     (det(R) < 0) &&  (R[:,r3] *= -1)
-    assert(abs(det(R)-1) < 1e-14)
+    @assert abs(det(R)-1) < 1e-14
 
     Frame(R,origin.p,feature1[2].A, B)
 
