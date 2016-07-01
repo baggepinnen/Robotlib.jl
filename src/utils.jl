@@ -257,7 +257,6 @@ function DH2twistsLPOE(Tn)
     return xi
 end
 
-
 DH2twistsLPOE(dh::DH) = DH2twistsLPOE(dh2Tn(dh))
 DH2twistsPOE(dh::DH) = DH2twistsPOE(dh2Tn(dh))
 
@@ -283,9 +282,6 @@ function toOrthoNormal(Mi)
     M
 end
 
-
-
-
 """
 `rpy2R(r,p,y,conv="zyx")`
 For rpy from ABB robot, use zyx
@@ -308,18 +304,15 @@ function rpy2R(r,p,y,conv="zyx")
     elseif conv == "zyx"
         R = rotz(r)*roty(p)*rotx(y)
     end
-
 end
 
 rpy2R(r,conv="zyx") = rpy2R(r...,conv)
 
 
 function rotx(t, deg=false)
-
     if deg
         t = t *pi/180
     end
-
     ct = cos(t)
     st = sin(t)
     R = [
@@ -330,11 +323,9 @@ function rotx(t, deg=false)
 end
 
 function roty(t, deg=false)
-
     if deg
         t = t *pi/180
     end
-
     ct = cos(t)
     st = sin(t)
     R = [
@@ -345,11 +336,9 @@ function roty(t, deg=false)
 end
 
 function rotz(t, deg=false)
-
     if deg
         t = t *pi/180
     end
-
     ct = cos(t)
     st = sin(t)
     R = [
