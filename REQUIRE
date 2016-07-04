@@ -6,3 +6,4 @@ RecipesBase
 Plots
 StatsBase
 Quaternions
+FixedSizeArrays

@@ -1,5 +1,7 @@
 """
-This functions solves the problem `Prb = N'A(X*Ps)`
+This functions implements the algorithm from the paper
+"Six DOF eye-to-hand calibration from 2D measurements using planar constraints"
+which solves the problem `Prb = N'A(X*Ps)`
 If result is bad, check if you send data in correct form\n
 `POSES` is always the position of the tool frame from the robot FK\n
 `points_S` are measurements from a line laser scanner. Given
@@ -9,7 +11,14 @@ sensor XY plane with y-axis pointing outwards from the sensor.\n
 planes is a vector of indices corresponding to which plane a mesurement
 comes from. It must be same length as `points_S`.\n
 `N_calibs` determines the number of iterations\n
-Bagge
+@inproceedings{carlson2015six,
+  title={Six DOF eye-to-hand calibration from 2D measurements using planar constraints},
+  author={Carlson, Fredrik Bagge and Johansson, Rolf and Robertsson, Anders},
+  booktitle={Intelligent Robots and Systems (IROS), 2015 IEEE/RSJ International Conference on},
+  pages={3628--3632},
+  year={2015},
+  organization={IEEE}
+}
 """
 function calibNAXP(points_S, lines_S, POSES, T_TF_S, planes,  N_calibs; doplot=false)
     N_planes = maximum(planes)

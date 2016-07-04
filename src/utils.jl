@@ -1,7 +1,7 @@
 include("DH.jl")
 Rt2T(R,t) = [R t; 0 0 0 1]
-T2R(T) = T[1:3,1:3]
-T2t(T) = T[1:3,4]
+T2R(T::Matrix) = T[1:3,1:3]
+T2t(T::Matrix) = T[1:3,4]
 skewcoords(R) = [R[3,2];R[1,3];R[2,1]]
 twistcoords(xi) = [xi[1:3, 4]; skewcoords(xi[1:3, 1:3])]
 @inline skew(s) = [0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]

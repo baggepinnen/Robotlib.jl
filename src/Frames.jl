@@ -2,25 +2,23 @@
 Usage:
 ```julia
 path = Pkg.dir("Robotlib","src","applications","frames/")
+add_frame_name!("SEAM","Weld seam frame")
+add_frame_name!("TAB","Table frame")
 
+T_RB_Tm = MAT.matread(path*"T_RB_T.mat")["T_RB_T"]
+T_TF_TCPm = MAT.matread(path*"T_TF_TCP.mat")["T_TF_TCP"]
+T_T_TABm = MAT.matread(path*"T_T_Table.mat")["T_T_Table"]
 
-add_frame_name!(\"SEAM\",\"Weld seam frame\")
-add_frame_name!(\"TAB\",\"Table frame\")
+T_RB_T = Frame(T_RB_Tm,"RB","T")
+T_S_D = Frame(T_TF_TCPm,"S","D")
+T_T_TAB = Frame(T_T_TABm,"T","TAB")
 
-T_RB_Tm = MAT.matread(path*\"T_RB_T.mat\")[\"T_RB_T\"]
-T_TF_TCPm = MAT.matread(path*\"T_TF_TCP.mat\")[\"T_TF_TCP\"]
-T_T_TABm = MAT.matread(path*\"T_T_Table.mat\")[\"T_T_Table\"]
-
-T_RB_T = Frame(T_RB_Tm,\"RB\",\"T\")
-T_S_D = Frame(T_TF_TCPm,\"S\",\"D\")
-T_T_TAB = Frame(T_T_TABm,\"T\",\"TAB\")
-
-cloud_seam = readcloud(path*\"CloudSeam_edge.txt\")
-plane_seam = readplane(path*\"PlaneSeam_edge.txt\")
+cloud_seam = readcloud(path*"CloudSeam_edge.txt")
+plane_seam = readplane(path*"PlaneSeam_edge.txt")
 cloud_seam_projected = project(plane_seam,cloud_seam)
 line_seam = fitline(cloud_seam_projected)
 
-T_T_SEAM = framefromfeatures((\"z+\",line_seam),(\"y-\",plane_seam),cloud_seam_projected[1],\"SEAM\")
+T_T_SEAM = framefromfeatures(("z+",line_seam),("y-",plane_seam),cloud_seam_projected[1],"SEAM")
 T_RB_SEAM = T_RB_T*T_T_SEAM
 T_RB_TAB = T_RB_T*T_T_TAB
 T_TAB_SEAM = inv(T_T_TAB)*T_T_SEAM
@@ -32,35 +30,35 @@ line_seam_RB = T_RB_T*line_seam
 
 
 
-plot(Frame(eye(4),\"RB\",\"U\"),200, label=true)
+plot(Frame(eye(4),"RB","U"),200, label=true)
 
 plot!(cloud_seam_RB)
 plot!(cloud_seam_projected_RB)
-plot!(line_seam_RB,500,label=\"Line seam\")
-plot!(plane_seam_RB,200,label=\"Plane seam\")
+plot!(line_seam_RB,500,label="Line seam")
+plot!(plane_seam_RB,200,label="Plane seam")
 plot!(T_RB_SEAM,200, label=true)
 plot!(T_RB_TAB,200, label=true)
 
-xlabel!(\"x\")
-ylabel!(\"y\")
-zlabel!(\"z\")
+xlabel!("x")
+ylabel!("y")
+zlabel!("z")
 
-MAT.matwrite(path*\"T_TAB_SEAM.mat\",[\"T_TAB_SEAM\" => T_TAB_SEAM.T])
-MAT.matwrite(path*\"T_T_SEAM.mat\",[\"T_T_SEAM\" => T_T_SEAM.T])
-MAT.matwrite(path*\"T_RB_TAB.mat\",[\"T_RB_TAB\" => T_RB_TAB.T])
-println(\"Wrote T_TAB_SEAM, T_T_SEAM, T_RB_TAB to files in \$path\")
+MAT.matwrite(path*"T_TAB_SEAM.mat",["T_TAB_SEAM" => T_TAB_SEAM.T])
+MAT.matwrite(path*"T_T_SEAM.mat",["T_T_SEAM" => T_T_SEAM.T])
+MAT.matwrite(path*"T_RB_TAB.mat",["T_RB_TAB" => T_RB_TAB.T])
+println("Wrote T_TAB_SEAM, T_T_SEAM, T_RB_TAB to files in \$path")
 ```
 """
 module Frames
 
-using Plots
+using Plots, FixedSizeArrays
 default(markersize=1)
 export Frame, Point, Plane, Points, Line, GeometricObject, add_frame_name!
 export readcloud, readTmatrix, readplane, fitline, fitplane, framefromfeatures, project
 export plot3Dsmart
 export inv, *,+,-,/,\,transpose,ctranspose
 
-import Base: det, print, zeros, length, size, getindex, setindex!, convert, push!, show, start, next, done, +, *, ⋅, .*, /, ./, -, ×, transpose, ctranspose, \, inv
+import Base: det, print, zeros, length, size, getindex, setindex!, convert, push!, show, display, start, next, done, +, *, ⋅, .*, /, ./, -, ×, transpose, ctranspose, \, inv
 # using LaTeXStrings
 
 
@@ -70,10 +68,10 @@ import Base: det, print, zeros, length, size, getindex, setindex!, convert, push
 # -------------------------------------------------------------
 abstract GeometricObject
 
-type Point <: GeometricObject
-    p::Vector{Float64}
+type Point{T} <: GeometricObject
+    p::Vec{3,T}
     A::ASCIIString
-    function Point(p::Vector{Float64} = zeros(3), A::ASCIIString="U")
+    function Point(p::Vec{3,T} = zeros(3), A::ASCIIString="U")
         checkframe(A,"U")
         new(p,A)
     end
@@ -133,25 +131,24 @@ function zeros(points::Points)
     Points(newpoints,points.A)
 end
 
-type Frame <: GeometricObject
-
-    T::Matrix{Float64}
+type Frame{Ty} <: GeometricObject
+    R::Mat{3,3,Ty}
+    t::Vec{3,Ty}
     A::ASCIIString
     B::ASCIIString
-    function Frame(T::Matrix, A::ASCIIString="U",B::ASCIIString="U")
+    function Frame{Ty}(T::AbstractMatrix{Ty}, A::ASCIIString="U",B::ASCIIString="U")
         checkframe(A,B)
-        f = new(T,A,B)
+        f = new(T2R(T),T2t(T),A,B)
         add_frame!(f)
         f
     end
-    function Frame(R::Matrix, t::Array, A::ASCIIString="U", B::ASCIIString="U")
+    function Frame{Ty}(R::AbstractMatrix{Ty}, t::AbstractArray{Ty}, A::ASCIIString="U", B::ASCIIString="U")
         checkframe(A,B)
-        f = new([R t; 0 0 0 1],A,B)
+        f = new{Ty}(R,t,A,B)
         add_frame!(f)
         f
     end
-    function Frame(); f = new(eye(4),"U","U"); add_frame!(f);  f end
-
+    function Frame(); f = new{Float64}(eye(3),zeros(3),"U","U"); add_frame!(f);  f end
 end
 
 ref_frames = Set{Frame}()
@@ -174,8 +171,12 @@ end
 
 checkframes(x::GeometricObject, y::GeometricObject) = x.A != y.A &&  error("The two geometric objects do not have the same reference frame ($x -> $x.A, $y -> $y.A)")
 
-function show(f::Frame) showcompact(round(f.T[1:3,1:4],4)) ; show(string(frame_names[f.A])*"->"*string(frame_names[f.B])) end
-print(f::Frame) = show(f)
+function display(f::Frame)
+    println(round(F2T(f),4))
+    show(string(frame_names[f.A])*"->"*string(frame_names[f.B]))
+end
+print(f::Frame) = "\$T_{$(f.A)}^{$(f.B)}\$"
+show(f::Frame) = display(f)
 
 type Plane <: GeometricObject
     n::Point
@@ -292,10 +293,10 @@ end
 ./(c::Real,p::Point) = /(p,c)
 +(p1::Point, p2::Point) = Point(p1.p + p2.p, p1.A)
 -(p1::Point, p2::Point) = Point(p1.p - p2.p, p1.A)
-+(p1::Vector{Float64}, p2::Point) = p1 + p2.p
--(p1::Vector{Float64}, p2::Point) = p1 - p2.p
-+(p2::Point, p1::Vector{Float64}) = Point(p1 + p2.p, p2.A)
--(p2::Point, p1::Vector{Float64}) = Point(p1 - p2.p, p2.A)
++(p1::Vector{Number}, p2::Point) = p1 + p2.p
+-(p1::Vector{Number}, p2::Point) = p1 - p2.p
++(p2::Point, p1::Vector{Number}) = Point(p1 + p2.p, p2.A)
+-(p2::Point, p1::Vector{Number}) = Point(p1 - p2.p, p2.A)
 ⋅(p1::Point, p2::Point) = p1.p ⋅ p2.p
 ×(p1::Point, p2::Point) = Point(p1.p × p2.p, p1.A)
 
@@ -303,10 +304,10 @@ transpose(p::Point) = p.p'
 ctranspose(p::Point) = p.p'
 convert(::Type{Vector{Float64}}, p::Point) = p.p
 
-*(x::Frame, y::Frame) = Frame(x.T*y.T,x.A,y.B)
+*(x::Frame, y::Frame) = Frame(x.t + x.R*y.t, x.R*y.R , x.A, y.B)
 function *(f::Frame, p::Point)
     f.B != p.A &&  error("Reference frames does not match between $f and $p ($(f.B) != $(p.A))")
-    pv = (f.T*[p.p;1])[1:3]
+    pv = f.R*p.p + f.t
     Point(pv,f.A)
 end
 function *(f::Frame, p::Plane)
@@ -336,22 +337,25 @@ function *(f::Frame, points::Points)
 end
 *(p::Point, f::Frame) = error("Post multiplication of ::Point with ::Frame not supported")
 tinv(T)       = [T[1:3,1:3]' -T[1:3,1:3]'*T[1:3,4]; 0 0 0 1]
-inv(x::Frame) = Frame(tinv(x.T),x.B,x.A)
-\(x::Frame,y::Frame) = Frame(tinv(x.T)*y.T,x.B,y.B)
-/(x::Frame,y::Frame) = Frame(x.T*tinv(y.T),x.A,y.A)
-F2t(F::Frame) = F.T[1:3,4]
-F2R(F::Frame) = F.T[1:3,1:3]
-Rx(F::Frame)  = F.T[1:3,1]
-Ry(F::Frame)  = F.T[1:3,2]
-Rz(F::Frame)  = F.T[1:3,3]
-det(F::Frame) = det(F.T[1:3,1:3])
-print(f::Frame) = "\$T_{$(f.A)}^{$(f.B)}\$"
+function inv(x::Frame)
+    R = x.R'
+    Frame(-R*x.t, R,x.B,x.A)
+end
+\(x::Frame,y::Frame) = Frame(inv(x)*y,x.B,y.B)
+/(x::Frame,y::Frame) = Frame(x*inv(y),x.A,y.A)
+F2t(F::Frame) = F.t
+F2R(F::Frame) = F.R
+F2T(F::Frame) = [Array(F.R) Array(F.t); 0 0 0 1]
+Rx(F::Frame)  = F.R[1:3,1]
+Ry(F::Frame)  = F.R[1:3,2]
+Rz(F::Frame)  = F.R[1:3,3]
+det(F::Frame) = det(F.R)
 normalized(v::Vector{Float64}) = v/norm(v)
 function normalize!(v::Vector{Float64}) v/=norm(v); end
 normalized(p::Point) = Point(p.p/norm(p.p), p.A)
 function normalize!(p::Point) p.p/=norm(p.p); end
 
-function ⊥(R::Matrix)
+function ⊥(R::AbstractMatrix)
     (U,S,V) = svd(R)
     a = diagm([1, 1, sign(det(U*V'))])
     return U*a*V'
@@ -360,7 +364,7 @@ end
 function ⊥(F::Frame)
     F2  = deepcopy(F)
     R   = ⊥(F2R(F2))
-    F2.T[1:3,1:3] = R
+    F2.R = R
     return F2
 end
 
