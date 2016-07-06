@@ -1,4 +1,4 @@
-using Robotlib, MAT
+using Robotlib, MAT, Base.Test
 R = toOrthoNormal(randn(3,3))
 t = randn(3)
 f = Frame(R,t)
@@ -43,3 +43,9 @@ plot!(plane_seam_RB,200,label="Plane seam")
 plot!(T_RB_SEAM,200, label=true)
 plot!(T_RB_TAB,200, label=true)
 gui()
+
+
+T = Matrix(f)
+@test Array(f) == T
+@test promote(T,f) == (T,T)
+@test promote_type(Matrix{Float64}, Frame{Float64}) == Matrix{Float64}

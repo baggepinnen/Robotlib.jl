@@ -58,7 +58,7 @@ export readcloud, readTmatrix, readplane, fitline, fitplane, framefromfeatures, 
 export plot3Dsmart, display, show, print
 export inv, *,+,-,/,\,transpose,ctranspose, dot
 
-import Base: det, print, zeros, length, size, getindex, setindex!, convert, push!, show, display, start, next, done, +, *, ⋅, .*, /, ./, -, ×, transpose, ctranspose, \, inv, dot
+import Base: det, print, zeros, length, size, getindex, setindex!, convert, promote_rule, push!, show, display, start, next, done, +, *, ⋅, .*, /, ./, -, ×, transpose, ctranspose, \, inv, dot
 # using LaTeXStrings
 import Robotlib: T2R, T2t
 
@@ -310,7 +310,11 @@ dot{Ty}(a::AbstractVector{Ty}, b::Vec{3,Ty}) = a[1]*b[1]+a[2]*b[2]+a[3]*b[3]
 
 transpose(p::Point) = p.p'
 ctranspose(p::Point) = p.p'
-convert(::Type{Vector{Float64}}, p::Point) = p.p
+convert(::Type{Vector}, p::Point) = p.p
+convert{T1,T2,n}(::Type{Array{T1,n}}, f::Frame{T2}) = [Matrix{T1}(f.R) Vector{T1}(f.t); 0 0 0 1]
+convert{T2}(::Type{Matrix}, f::Frame{T2}) = convert(Matrix{T2},f)
+convert{T2}(::Type{Array}, f::Frame{T2}) = convert(Matrix{T2},f)
+promote_rule{T1,T2,n}(::Type{Array{T1,n}}, f::Type{Frame{T2}} ) = Array{promote_type(T1,T2),2}
 
 *(x::Frame, y::Frame) = Frame(x.R*y.R, x.t + x.R*y.t , x.A, y.B)
 function *(f::Frame, p::Point)
@@ -532,7 +536,6 @@ function readTmatrix(coordlines)
     T
 end
 
-
 function prepfile(file)
     f = open(file)
     text = readlines(f)
@@ -552,7 +555,6 @@ function prepfile(file)
     end
     coordlines
 end
-
 
 
 end
