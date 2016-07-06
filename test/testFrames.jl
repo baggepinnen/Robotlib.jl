@@ -1,4 +1,4 @@
-using Robotlib, MAT, Base.Test
+using Robotlib, Robotlib.Frames, MAT, Base.Test
 R = toOrthoNormal(randn(3,3))
 t = randn(3)
 f = Frame(R,t)
@@ -34,15 +34,14 @@ line_seam_RB = T_RB_T*line_seam
 
 
 
-plot(Frame(eye(4),"RB","U"),200, label=true)
-
-plot!(cloud_seam_RB,label="Cloud seam_RB")
-plot!(cloud_seam_projected_RB,label="Cloud seam_RB projected")
-plot!(line_seam_RB,500,label="Line seam")
-plot!(plane_seam_RB,200,label="Plane seam")
-plot!(T_RB_SEAM,200, label=true)
-plot!(T_RB_TAB,200, label=true)
-gui()
+# plot(Frame(eye(4),"RB","U"),200)
+# plot!(cloud_seam_RB,label="Cloud seam_RB")
+# plot!(cloud_seam_projected_RB,label="Cloud seam_RB projected")
+# plot!(line_seam_RB,500,label="Line seam")
+# plot!(plane_seam_RB,200,label="Plane seam")
+# plot!(T_RB_SEAM,200)
+# plot!(T_RB_TAB,200)
+# gui()
 
 
 T = Matrix(f)

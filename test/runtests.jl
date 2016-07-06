@@ -144,3 +144,6 @@ function run_tests()
 end
 
 run_tests()
+
+println("===== Testing frames =====")
+include("testFrames.jl")
