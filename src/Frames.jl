@@ -55,45 +55,46 @@ using Plots, FixedSizeArrays
 default(markersize=1)
 export Frame, Point, Plane, Points, Line, GeometricObject, add_frame_name!
 export readcloud, readTmatrix, readplane, fitline, fitplane, framefromfeatures, project
-export plot3Dsmart
-export inv, *,+,-,/,\,transpose,ctranspose
+export plot3Dsmart, display, show, print
+export inv, *,+,-,/,\,transpose,ctranspose, dot
 
-import Base: det, print, zeros, length, size, getindex, setindex!, convert, push!, show, display, start, next, done, +, *, ⋅, .*, /, ./, -, ×, transpose, ctranspose, \, inv
+import Base: det, print, zeros, length, size, getindex, setindex!, convert, push!, show, display, start, next, done, +, *, ⋅, .*, /, ./, -, ×, transpose, ctranspose, \, inv, dot
 # using LaTeXStrings
+import Robotlib: T2R, T2t
 
-
-
+typealias Vect{Ty} Union{AbstractVector{Ty}, Vec{3,Ty}}
+typealias Matr{Ty} Union{AbstractMatrix{Ty}, Mat{3,3,Ty}}
 
 # Type definitions --------------------------------------------
 # -------------------------------------------------------------
 abstract GeometricObject
 
-type Point{T} <: GeometricObject
-    p::Vec{3,T}
+type Point{Ty} <: GeometricObject
+    p::Vec{3,Ty}
     A::ASCIIString
-    function Point(p::Vec{3,T} = zeros(3), A::ASCIIString="U")
-        checkframe(A,"U")
-        new(p,A)
-    end
+end
+function Point{Ty}(p::Vect{Ty} = zeros(3), A::ASCIIString="U")
+    checkframe(A,"U")
+    Point{Ty}(p,A)
 end
 
-type Points <: GeometricObject
-    p::Vector{Point}
+type Points{Ty} <: GeometricObject
+    p::Vector{Point{Ty}}
     A::ASCIIString
-    function Points(p::Vector{Point}, A::ASCIIString="U")
-        checkframe(A,"U")
-        new(p,A)
-    end
+end
+function Points{Ty}(p::AbstractVector{Point{Ty}}, A::ASCIIString="U")
+    checkframe(A,"U")
+    Points{Ty}(p,A)
+end
 
-    function Points(p::Array{Float64,2}, A::ASCIIString="U")
-        checkframe(A,"U")
-        N = size(p,1)
-        points = [Point(squeeze(p[i,:]',2),A) for i in 1:N]
-        new(points,A)
-    end
-    function Points(A::ASCIIString="U")
-        new(Point[],A)
-    end
+function Points{Ty}(p::AbstractMatrix{Ty}, A::ASCIIString="U")
+    checkframe(A,"U")
+    N = size(p,1)
+    points = [Point{Ty}(squeeze(p[i,:]',2),A) for i in 1:N]
+    Points{Ty}(points,A)
+end
+function Points(A::ASCIIString="U")
+    Points{Float64}(Point{Float64}[],A)
 end
 
 push!(points::Points, p::Point) = push!(points.p,p)
@@ -115,11 +116,11 @@ Base.start(points::Points) = Base.start(points.p)
 Base.next(points::Points, state) = Base.next(points.p,state)
 Base.done(points::Points, state) = Base.done(points.p,state)
 
-function convert(::Type{Array{Float64,2}}, p::Points)
+function convert(::Type{Matrix{Float64}}, p::Points)
     N = length(p)
     points = zeros(N,3)
     for i = 1:N
-        points[i,:] = p[i]'
+        points[i,:] = Vector(p[i].p)
     end
     return points
 end
@@ -136,20 +137,23 @@ type Frame{Ty} <: GeometricObject
     t::Vec{3,Ty}
     A::ASCIIString
     B::ASCIIString
-    function Frame{Ty}(T::AbstractMatrix{Ty}, A::ASCIIString="U",B::ASCIIString="U")
-        checkframe(A,B)
-        f = new(T2R(T),T2t(T),A,B)
-        add_frame!(f)
-        f
-    end
-    function Frame{Ty}(R::AbstractMatrix{Ty}, t::AbstractArray{Ty}, A::ASCIIString="U", B::ASCIIString="U")
-        checkframe(A,B)
-        f = new{Ty}(R,t,A,B)
-        add_frame!(f)
-        f
-    end
-    function Frame(); f = new{Float64}(eye(3),zeros(3),"U","U"); add_frame!(f);  f end
 end
+function Frame{Ty}(T::Matr{Ty}, A::ASCIIString="U",B::ASCIIString="U")
+    checkframe(A,B)
+    f = Frame{Ty}(T2R(T),T2t(T),A,B)
+    add_frame!(f)
+    f
+end
+function Frame{Ty}(R::Matr{Ty}, t::AbstractArray{Ty}, A::ASCIIString="U", B::ASCIIString="U")
+    checkframe(A,B)
+    f = Frame{Ty}(R,t,A,B)
+    add_frame!(f)
+    f
+end
+Frame() = Frame{Float64}(eye(3),zeros(3),"U","U")
+
+# Frame(R::Matr, t::AbstractArray, A::ASCIIString="U", B::ASCIIString="U") = Frame{eltype(R)}(R, t, A, B)
+
 
 ref_frames = Set{Frame}()
 frame_map = Dict{ASCIIString,ASCIIString}()
@@ -178,22 +182,22 @@ end
 print(f::Frame) = "\$T_{$(f.A)}^{$(f.B)}\$"
 show(f::Frame) = display(f)
 
-type Plane <: GeometricObject
-    n::Point
-    r::Point
+type Plane{Ty} <: GeometricObject
+    n::Point{Ty}
+    r::Point{Ty}
     A::ASCIIString
-    Plane(n,r,A="U") = new(n,r,A)
-    Plane(n::Vector,r::Vector,A="U") = new(Point(n,A),Point(r,A),A)
-    Plane(points::Points) = fitplane(points)
 end
+Plane{Ty}(n::Vect{Ty},r::Vect{Ty},A="U") = Plane{Ty}(n,r,A)
+Plane{Ty}(n::Vect{Ty},r::Vect{Ty},A="U") = Plane{Ty}(Point{Ty}(n,A),Point{Ty}(r,A),A)
+Plane(points::Points) = fitplane(points)
 
-type Line <: GeometricObject
-    v::Point
-    r::Point
+type Line{Ty} <: GeometricObject
+    v::Point{Ty}
+    r::Point{Ty}
     A::ASCIIString
-    Line(v,r,A="U") = new(v,r,A)
-    Line(points::Points) = fitline(points)
 end
+Line{Ty}(v::Vect{Ty},r::Vect{Ty},A="U") = Line{Ty}(v,r,A)
+Line(points::Points) = fitline(points)
 
 
 
@@ -205,11 +209,12 @@ mat2tup(m) = m[:,1][:], m[:,2][:], m[:,3][:]
 
 @recipe function plotframe(f::Frame, length=1.0)#; annotation=false)
     #Plots a frame using XYZ-RGB
-    o = F2t(f)
-    x = Rx(f)
-    y = Ry(f)
-    z = Rz(f)
+    o = F2t(f) |> Vector
+    x = Rx(f) |> Vector
+    y = Ry(f) |> Vector
+    z = Rz(f) |> Vector
     seriestype := :path3d
+    legend     := ""
     @series begin
         data = [o o+x*length]'
         seriescolor := :red
@@ -236,7 +241,7 @@ end
 
 
 @recipe function plotline(l::Line, length=1.0)#; annotation="")
-    coords = [(l.r-length*l.v).p  (l.r+length*l.v).p]'
+    coords = [Vector((l.r-length*l.v).p)  Vector((l.r+length*l.v).p)]'
     @series begin
         seriestype := :scatter3d
         ([l.r[1]],[l.r[2]],[l.r[3]])
@@ -255,7 +260,7 @@ end
 
 
 @recipe function plotplane(p::Plane, length=1.0)
-    coords = [(p.r).p (p.r+length*p.n).p]'
+    coords = [Vector((p.r).p) Vector((p.r+length*p.n).p)]'
     @series begin
         seriestype := :scatter3d
         markershape --> :utriangle
@@ -273,7 +278,7 @@ end
 
 @recipe function plotpoints(p::Points)
     seriestype := :scatter3d
-    convert(Array{Float64,2},p) |> mat2tup
+    convert(Matrix{Float64},p) |> mat2tup
 end
 
 
@@ -285,26 +290,29 @@ end
 *(c::Real, p::Point) = *(p, c)
 .*(p::Point, c::Real) = *(p, c)
 .*(c::Real, p::Point) = *(p, c)
-*(p::Point, R::Matrix) = error("Post multiplication of ::Point with ::Matrix not supported")
-*(R::Matrix, p::Point) = Point(R*p.p, p.A)
+*(p::Point, R::Matr) = error("Post multiplication of ::Point with ::Matrix not supported")
+*(R::Matr, p::Point) = Point(R*p.p, p.A)
 /(p::Point, c::Real) = Point(p.p./c, p.A)
 /(c::Real,p::Point) = /(p,c)
 ./(p::Point, c::Real) = Point(p,c)
 ./(c::Real,p::Point) = /(p,c)
 +(p1::Point, p2::Point) = Point(p1.p + p2.p, p1.A)
 -(p1::Point, p2::Point) = Point(p1.p - p2.p, p1.A)
-+(p1::Vector{Number}, p2::Point) = p1 + p2.p
--(p1::Vector{Number}, p2::Point) = p1 - p2.p
-+(p2::Point, p1::Vector{Number}) = Point(p1 + p2.p, p2.A)
--(p2::Point, p1::Vector{Number}) = Point(p1 - p2.p, p2.A)
++(p1::Vect, p2::Point) = p1 + p2.p
+-(p1::Vect, p2::Point) = p1 - p2.p
++(p2::Point, p1::Vect) = Point(p1 + p2.p, p2.A)
+-(p2::Point, p1::Vect) = Point(p1 - p2.p, p2.A)
 ⋅(p1::Point, p2::Point) = p1.p ⋅ p2.p
 ×(p1::Point, p2::Point) = Point(p1.p × p2.p, p1.A)
+
+dot{Ty}(a::Vec{3,Ty}, b::AbstractVector{Ty}) = a[1]*b[1]+a[2]*b[2]+a[3]*b[3]
+dot{Ty}(a::AbstractVector{Ty}, b::Vec{3,Ty}) = a[1]*b[1]+a[2]*b[2]+a[3]*b[3]
 
 transpose(p::Point) = p.p'
 ctranspose(p::Point) = p.p'
 convert(::Type{Vector{Float64}}, p::Point) = p.p
 
-*(x::Frame, y::Frame) = Frame(x.t + x.R*y.t, x.R*y.R , x.A, y.B)
+*(x::Frame, y::Frame) = Frame(x.R*y.R, x.t + x.R*y.t , x.A, y.B)
 function *(f::Frame, p::Point)
     f.B != p.A &&  error("Reference frames does not match between $f and $p ($(f.B) != $(p.A))")
     pv = f.R*p.p + f.t
@@ -337,52 +345,47 @@ function *(f::Frame, points::Points)
 end
 *(p::Point, f::Frame) = error("Post multiplication of ::Point with ::Frame not supported")
 tinv(T)       = [T[1:3,1:3]' -T[1:3,1:3]'*T[1:3,4]; 0 0 0 1]
-function inv(x::Frame)
+function inv{T}(x::Frame{T}) # TODO: can this implementation be faster?
     R = x.R'
-    Frame(-R*x.t, R,x.B,x.A)
+    Frame{T}(R, -R*x.t, x.B,x.A)
 end
-\(x::Frame,y::Frame) = Frame(inv(x)*y,x.B,y.B)
-/(x::Frame,y::Frame) = Frame(x*inv(y),x.A,y.A)
+\{T}(x::Frame{T},y::Frame{T}) = Frame{T}(inv(x)*y,x.B,y.B)
+/{T}(x::Frame{T},y::Frame{T}) = Frame{T}(x*inv(y),x.A,y.A)
 F2t(F::Frame) = F.t
 F2R(F::Frame) = F.R
 F2T(F::Frame) = [Array(F.R) Array(F.t); 0 0 0 1]
-Rx(F::Frame)  = F.R[1:3,1]
-Ry(F::Frame)  = F.R[1:3,2]
-Rz(F::Frame)  = F.R[1:3,3]
+Rx(F::Frame)  = F.R[1:3,1] |> Vec
+Ry(F::Frame)  = F.R[1:3,2] |> Vec
+Rz(F::Frame)  = F.R[1:3,3] |> Vec
 det(F::Frame) = det(F.R)
-normalized(v::Vector{Float64}) = v/norm(v)
-function normalize!(v::Vector{Float64}) v/=norm(v); end
+normalized(v::Vect) = v/norm(v)
+function normalize!(v::Vect) v/=norm(v); end
 normalized(p::Point) = Point(p.p/norm(p.p), p.A)
 function normalize!(p::Point) p.p/=norm(p.p); end
 
-function ⊥(R::AbstractMatrix)
+function ⊥(R::Matr)
     (U,S,V) = svd(R)
     a = diagm([1, 1, sign(det(U*V'))])
     return U*a*V'
 end
 
-function ⊥(F::Frame)
-    F2  = deepcopy(F)
-    R   = ⊥(F2R(F2))
-    F2.R = R
-    return F2
-end
+⊥(F::Frame) = Frame(⊥(F2R(F2)),F.t,F.A,F.B)
 
 
 # Projections and fitting  ------------------------------------
 # -------------------------------------------------------------
 
-function center(points::Points)
+function center{Ty}(points::Points{Ty})
     N = size(points)
-    cog = zeros(3)
+    cog = zeros(Ty,3)
     for i = 1:N
         cog += points[i]
     end
     cog /= N
 
-    cpoints = zeros(length(points),3)
+    cpoints = zeros(Ty,length(points),3)
     for i in 1:N
-        cpoints[i,:] = (- cog + points[i])'
+        cpoints[i,:] = Vector(- cog + points[i])
     end
     return (cog,cpoints)
 end
@@ -392,7 +395,7 @@ function fitplane(points::Points)
     (U,S,V) = svd(cpoints)
 
     n = V[:,3]
-    r = n*(cog'*n)[1]
+    r = n*vecdot(cog,n)[1]
 
     @assert abs(norm(n)-1) < 1e-8
     @assert abs(abs(normalized(r-cog)⋅n)) < 1e-14
@@ -406,7 +409,7 @@ function fitline(points::Points)
     (cog,cpoints) = center(points)
     (U,S,V) = svd(cpoints)
     v = V[:,1]
-    r = cog-(v'*cog).*v
+    r = cog-vecdot(v,cog).*v
 
     @assert abs(norm(v)-1) < 1e-8
     @assert abs(abs(normalized(r-cog)⋅v) - 1) < 1e-14
@@ -461,7 +464,6 @@ end
 function framefromfeatures(feature1, feature2, origin, B)
     checkframes(feature1[2],feature2[2])
     x = y = z = false
-    R = zeros(3,3)
 
     r1 = findfirst(lowercase(feature1[1][1]) .== ['x','y','z'])
     r2 = findfirst(lowercase(feature2[1][1]) .== ['x','y','z'])
@@ -470,16 +472,19 @@ function framefromfeatures(feature1, feature2, origin, B)
     s1 = feature1[1][2] == '+' ? 1 : -1
     s2 = feature2[1][2] == '+' ? 1 : -1
 
-    R1 = normalized(getdir(feature1[2]).p * s1)
-    R2 = normalized(getdir(feature2[2]).p * s2)
-    R3 = normalized(R1×R2)
+    R1 = Frames.normalized(Frames.getdir(feature1[2]).p * s1) |> Vector
+    R2 = Frames.normalized(Frames.getdir(feature2[2]).p * s2) |> Vector
+    R3 = Frames.normalized(R1×R2) |> Vector
     R2 = R3×R1
 
-    R[:,r1] = R1
-    R[:,r2] = R2
-    R[:,r3] = R3
-    (det(R) < 0) &&  (R[:,r3] *= -1)
-    @assert abs(det(R)-1) < 1e-14
+    _R = zeros(3,3)
+    _R[:,r1] = R1
+    _R[:,r2] = R2
+    _R[:,r3] = R3
+
+    (det(_R) < 0) &&  (_R[:,r3] *= -1)
+    @assert abs(det(_R)-1) < 1e-14
+    R = Mat(_R)
 
     Frame(R,origin.p,feature1[2].A, B)
 
