@@ -1,6 +1,6 @@
 using Robotlib
 import Robotlib: Rt2T, T2R, T2t
-include(Pkg.dir("Robotlib","src","calibNAXP.jl"))
+include(joinpath(dirname(@__FILE__),"..","src","calibNAXP.jl"))
 
 type Plane
     N
