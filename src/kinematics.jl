@@ -16,7 +16,7 @@ function jacobian(q, DH::DH, tool=eye(4))
         d = [-U[1,1]*U[2,4]+U[2,1]*U[1,4];
         -U[1,2]*U[2,4]+U[2,2]*U[1,4];
         -U[1,3]*U[2,4]+U[2,3]*U[1,4]]
-        delta = U[3,1:3]'	# nz oz az
+        delta = U[3,1:3]	# nz oz az
 
         Jn[:,j] = [d; delta]
     end
@@ -113,7 +113,7 @@ function dh2Tn{P}(DH, q::VecOrMat{P}, tool=eye(4))
     dhpar    = DH.dhpar
     n_joints = size(dhpar,1)
     Tn       = zeros(P,4,4,n_joints+1)
-    q = q + DH.offset
+    q = q .+ DH.offset
     for j=1:n_joints
         Tn[:,:,j] = [    cos(q[j])   -sin(q[j])*cos(dhpar[j,1])    sin(q[j])*sin(dhpar[j,1])    dhpar[j,2]*cos(q[j]);
         sin(q[j])   cos(q[j])*cos(dhpar[j,1])     -cos(q[j])*sin(dhpar[j,1])   dhpar[j,2]*sin(q[j]);
@@ -129,7 +129,7 @@ function dh2Tn(DH, q=zeros(size(DH.dhpar,1)), tool=eye(4))
     dhpar    = DH.dhpar
     n_joints = size(dhpar,1)
     Tn       = zeros(4,4,n_joints+1)
-    q = q + DH.offset
+    q = q .+ DH.offset
     for j=1:n_joints
         Tn[:,:,j] = [    cos(q[j])   -sin(q[j])*cos(dhpar[j,1])    sin(q[j])*sin(dhpar[j,1])    dhpar[j,2]*cos(q[j]);
         sin(q[j])   cos(q[j])*cos(dhpar[j,1])     -cos(q[j])*sin(dhpar[j,1])   dhpar[j,2]*sin(q[j]);

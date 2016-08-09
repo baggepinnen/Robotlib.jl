@@ -37,7 +37,7 @@ function simulateCalibration1(N)
     end
     Ta  = zeros(4,4,N)
     for i = 1:N
-        Ta[:,:,i] = fkinePOE(xin,q[i,:]')
+        Ta[:,:,i] = fkinePOE(xin,q[i,:])
     end
     return q, xin, T0, xinmod, Ta
 end
@@ -55,7 +55,7 @@ function simulateCalibration2(N)
     end
     Ta  = zeros(4,4,N)
     for i = 1:N
-        Ta[:,:,i] = fkinePOE(xin,q[i,:]')
+        Ta[:,:,i] = fkinePOE(xin,q[i,:])
     end
     return q, xin, T0, xinmod, Ta
 end
@@ -73,8 +73,8 @@ function simulateCalibrationLPOE(N)
     end
     Ta  = zeros(4,4,N)
     for i = 1:N
-        Ta[:,:,i] = fkineLPOE(Tn0,xin,q[i,:]')
-        AAA,BBB,T = jacobian(q[i,:]',dh, eye(4));
+        Ta[:,:,i] = fkineLPOE(Tn0,xin,q[i,:])
+        AAA,BBB,T = jacobian(q[i,:],dh, eye(4));
         @assert T ≈ Ta[:,:,i]
     end
     return q, xin, Tn0, Tn0mod, Ta

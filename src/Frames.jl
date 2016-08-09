@@ -71,29 +71,29 @@ abstract GeometricObject
 
 type Point{Ty} <: GeometricObject
     p::Vec{3,Ty}
-    A::ASCIIString
+    A::String
 end
-function Point{Ty}(p::Vect{Ty} = zeros(3), A::ASCIIString="U")
+function Point{Ty}(p::Vect{Ty} = zeros(3), A::String="U")
     checkframe(A,"U")
     Point{Ty}(p,A)
 end
 
 type Points{Ty} <: GeometricObject
     p::Vector{Point{Ty}}
-    A::ASCIIString
+    A::String
 end
-function Points{Ty}(p::AbstractVector{Point{Ty}}, A::ASCIIString="U")
+function Points{Ty}(p::AbstractVector{Point{Ty}}, A::String="U")
     checkframe(A,"U")
     Points{Ty}(p,A)
 end
 
-function Points{Ty}(p::AbstractMatrix{Ty}, A::ASCIIString="U")
+function Points{Ty}(p::AbstractMatrix{Ty}, A::String="U")
     checkframe(A,"U")
     N = size(p,1)
     points = [Point{Ty}(squeeze(p[i,:]',2),A) for i in 1:N]
     Points{Ty}(points,A)
 end
-function Points(A::ASCIIString="U")
+function Points(A::String="U")
     Points{Float64}(Point{Float64}[],A)
 end
 
@@ -135,16 +135,16 @@ end
 type Frame{Ty} <: GeometricObject
     R::Mat{3,3,Ty}
     t::Vec{3,Ty}
-    A::ASCIIString
-    B::ASCIIString
+    A::String
+    B::String
 end
-function Frame{Ty}(T::Matr{Ty}, A::ASCIIString="U",B::ASCIIString="U")
+function Frame{Ty}(T::Matr{Ty}, A::String="U",B::String="U")
     checkframe(A,B)
     f = Frame{Ty}(T2R(T),T2t(T),A,B)
     add_frame!(f)
     f
 end
-function Frame{Ty}(R::Matr{Ty}, t::AbstractArray{Ty}, A::ASCIIString="U", B::ASCIIString="U")
+function Frame{Ty}(R::Matr{Ty}, t::AbstractArray{Ty}, A::String="U", B::String="U")
     checkframe(A,B)
     f = Frame{Ty}(R,t,A,B)
     add_frame!(f)
@@ -152,14 +152,14 @@ function Frame{Ty}(R::Matr{Ty}, t::AbstractArray{Ty}, A::ASCIIString="U", B::ASC
 end
 Frame() = Frame{Float64}(eye(3),zeros(3),"U","U")
 
-# Frame(R::Matr, t::AbstractArray, A::ASCIIString="U", B::ASCIIString="U") = Frame{eltype(R)}(R, t, A, B)
+# Frame(R::Matr, t::AbstractArray, A::String="U", B::String="U") = Frame{eltype(R)}(R, t, A, B)
 
 
 ref_frames = Set{Frame}()
-frame_map = Dict{ASCIIString,ASCIIString}()
+frame_map = Dict{String,String}()
 frame_names = Dict("U" => "Undefined", "RB"=>"Robot Base","TF"=>"Tool Flange","TCP"=>"Tool Center Point","T"=>"Tracker","D"=>"Dynamic diods","S"=>"Sensor")
-add_frame_name!(key::ASCIIString,value::ASCIIString) = setindex!(frame_names,value,key)
-frame_name_exists(ref::ASCIIString) = ref ∈ keys(frame_names)
+add_frame_name!(key::String,value::String) = setindex!(frame_names,value,key)
+frame_name_exists(ref::String) = ref ∈ keys(frame_names)
 function add_frame!(f::Frame)
     push!(ref_frames,f)
     setindex!(frame_map,f.B,f.A)
@@ -185,7 +185,7 @@ show(f::Frame) = display(f)
 type Plane{Ty} <: GeometricObject
     n::Point{Ty}
     r::Point{Ty}
-    A::ASCIIString
+    A::String
 end
 Plane{Ty}(n::Vect{Ty},r::Vect{Ty},A="U") = Plane{Ty}(n,r,A)
 Plane{Ty}(n::Vect{Ty},r::Vect{Ty},A="U") = Plane{Ty}(Point{Ty}(n,A),Point{Ty}(r,A),A)
@@ -194,7 +194,7 @@ Plane(points::Points) = fitplane(points)
 type Line{Ty} <: GeometricObject
     v::Point{Ty}
     r::Point{Ty}
-    A::ASCIIString
+    A::String
 end
 Line{Ty}(v::Vect{Ty},r::Vect{Ty},A="U") = Line{Ty}(v,r,A)
 Line(points::Points) = fitline(points)
