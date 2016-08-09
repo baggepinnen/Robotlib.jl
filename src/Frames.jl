@@ -173,7 +173,7 @@ function checkframe(A,B)
     end
 end
 
-checkframes(x::GeometricObject, y::GeometricObject) = x.A != y.A &&  error("The two geometric objects do not have the same reference frame ($x -> $x.A, $y -> $y.A)")
+checkframes(x::GeometricObject, y::GeometricObject) = x.A != y.A &&  error("The two geometric objects do not have the same reference frame ($x -> $(x.A), $y -> $(y.A))")
 
 function display(f::Frame)
     println(round(F2T(f),4))
