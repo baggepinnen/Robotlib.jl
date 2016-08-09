@@ -7,9 +7,7 @@ function jacobian(q, DH::DH, tool=eye(4))
     # q           = qin + DH.offset # Moved to dh2Tn
     trans       = dh2Tn(DH,q,tool)
 
-    # ##################################
     # ## jacobn (tool)
-    # ##################################
     Jn = zeros(6,n_joints)
     U = tool #Alternatively transformation to TCP <-------------- obs
     for j=n_joints:-1:1
@@ -23,10 +21,7 @@ function jacobian(q, DH::DH, tool=eye(4))
         Jn[:,j] = [d; delta]
     end
 
-
-    ##################################
     ## fkine
-    ##################################
     Ti          = zeros(4,4,n_joints+1)
     Ti[:,:,1]   = trans[:,:,1]
     T           = trans[:,:,1]
@@ -40,7 +35,6 @@ function jacobian(q, DH::DH, tool=eye(4))
     # jacob0 (base)
     R = T[1:3,1:3]
     J0 = [R zeros(3,3); zeros(3,3) R] * Jn
-
 
     return Jn, J0, T, Ti, trans
 end
