@@ -3,6 +3,7 @@ type DH
     offset::Vector{Float64}
     GR::Matrix{Float64}
 end
+
 DH(dhpar,offset) = DH(dhpar,offset,eye(length(offset)))
 
 function DH2400()
