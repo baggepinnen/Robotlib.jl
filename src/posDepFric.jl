@@ -26,15 +26,15 @@ end
 
 function mnorm_pdf(p,c,S)
     d  = p[:]-c
-    exp(-(d'S*d)[1])
+    exp(-vecdot(d.^2,S))
 end
 
 function basisParametersNd(p,centers, sigma, velocity::Int=0, normalize=true)
-    @assert size(p,2) == length(sigma) == length(n_basis)
+    @assert size(p,2) == length(sigma)
     N       = size(p,2)
     N_basis = size(centers,2)
     y       = zeros(N_basis)
-    iSIGMA  = diagm(sigma.^-2)
+    iSIGMA  = sigma.^-2
 
     if velocity > 0
         y = [sign(centers[velocity,i]) == sign(p[velocity]) ? mnorm_pdf(p,centers[:,i],iSIGMA) : 0 for i = 1:N_basis]
@@ -50,6 +50,8 @@ end
 
 
 function getCenters(n_basis, bounds)
+    # TODO: split centers on velocity dim
+    warn("Not yet split in velocity dimension!")
     N = length(n_basis);
     interval = [(bounds[n,2]-bounds[n,1])/(n_basis)[n] for n = 1:N];
     C = [linspace(bounds[n,1]+interval[n]/2,bounds[n,2]-interval[n]/2,(n_basis)[n]) for n = 1:N];
@@ -67,7 +69,6 @@ function getCenters(n_basis, bounds)
 end
 
 
-# TODO: split centers on velocity dim
 
 function getCenters(n_basis::Vector{Int64}, q::Matrix{Float64}, q̇::Matrix{Float64})
     n_joints = size(q,2)

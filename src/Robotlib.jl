@@ -8,6 +8,7 @@ include("robotplot.jl")\n
 include("Frames.jl")\n
 include("read_log.jl")\n
 include("csv2mat.jl")\n
+include("posDepFric.jl")\n
 
 The module includes a submodule, Frames, which is aimed at replacing the Nikon K600 software. It supports creation of frames, simple projections, fitting of planes, lines etc. and has a number of plotting options. It must be separately imported with `using Robotlib.Frames`
 
@@ -29,6 +30,7 @@ include("robotplot.jl")
 include("Frames.jl")
 include("read_log.jl")
 include("csv2mat.jl")
+include("posDepFric.jl")
 
 module Calibration
 using ..Robotlib
@@ -46,6 +48,7 @@ export fkinePOE, fkineLPOE, ikinePOE, dh2Tn, jacobianPOE, jacobianPOEikine, jaco
 export trajplot, trajplot3, plot3smart
 export DH, DH2400, DHYuMi, DH7600, DHtest, abb2logical!, logical2abb!, abb2logical, logical2abb
 export csv2mat, orcalog2mat, getData, readmat
+export frictionRBFN, getCenters
 
 
 end
