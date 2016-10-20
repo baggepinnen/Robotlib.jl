@@ -11,7 +11,7 @@ function gravity{P}(q::VecOrMat{P}, rm, m, dh::DH, Tworld2base = eye(4))
     Tnz = Bool[round(Float64(evalf(subs(Tn[i,j,k],(q[1],1),(q[2],1),(q[3],1),(q[4],1),(q[5],1),(q[6],1),(q[7],1)))),10) == 0 for i=1:4, j=1:4, k=1:n+1]
     Tn[Tnz] = 0
     # Replace the numerical value for π/2 by the SymPi constant PI, this allows for nice simplifications
-    Tn = Sym[subs(Tn[i,j,k],("1.5707963267948966",SymPy.PI))  for i=1:4, j=1:4, k=1:n+1]
+    Tn = Sym[subs(Tn[i,j,k],("1.5707963267948966",SymPy.PI/2))  for i=1:4, j=1:4, k=1:n+1]
 
 
     Ti = zeros(typeof(q[1]),4,4,n+1)
