@@ -99,10 +99,6 @@ function DHYuMi(left=true)
                 DH_alpha6      0                0       handLen             0  ];
 
     return DH(dhpar,offset,gearRatio)
-
-
-
-
 end
 
 

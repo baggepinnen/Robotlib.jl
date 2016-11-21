@@ -109,10 +109,9 @@ end
 
 
 """Computes a set of local transformation matrices given the DH-parameters of a robot. Can be sent an optional joint-angle vector and a tool"""
-function dh2Tn{P}(DH, q::VecOrMat{P}, tool=eye(4))
+function dh2Tn!{P}(Tn, DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=eye(4))
     dhpar    = DH.dhpar
     n_joints = size(dhpar,1)
-    Tn       = zeros(P,4,4,n_joints+1)
     q = q .+ DH.offset
     for j=1:n_joints
         Tn[:,:,j] = [    cos(q[j])   -sin(q[j])*cos(dhpar[j,1])    sin(q[j])*sin(dhpar[j,1])    dhpar[j,2]*cos(q[j]);
@@ -124,20 +123,10 @@ function dh2Tn{P}(DH, q::VecOrMat{P}, tool=eye(4))
     return Tn
 end
 
-"""Computes a set of local transformation matrices given the DH-parameters of a robot. Can be sent an optional joint-angle vector and a tool"""
-function dh2Tn(DH, q=zeros(size(DH.dhpar,1)), tool=eye(4))
-    dhpar    = DH.dhpar
-    n_joints = size(dhpar,1)
-    Tn       = zeros(4,4,n_joints+1)
-    q = q .+ DH.offset
-    for j=1:n_joints
-        Tn[:,:,j] = [    cos(q[j])   -sin(q[j])*cos(dhpar[j,1])    sin(q[j])*sin(dhpar[j,1])    dhpar[j,2]*cos(q[j]);
-        sin(q[j])   cos(q[j])*cos(dhpar[j,1])     -cos(q[j])*sin(dhpar[j,1])   dhpar[j,2]*sin(q[j]);
-        0                 sin(dhpar[j,1])                     cos(dhpar[j,1])            dhpar[j,4];
-        0                 0                                   0                                  1 ]
-    end
-    Tn[:,:,end] = tool
-    return Tn
+function dh2Tn{P}(DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=eye(4))
+    n_joints = size(DH.dhpar,1)
+    Tn       = zeros(P,4,4,n_joints+1)
+    return dh2Tn!(Tn, DH, q, tool)
 end
 
 """`fkinePOE(xi0,q)` Forward kinematics using POE"""
