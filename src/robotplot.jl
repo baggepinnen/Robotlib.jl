@@ -11,7 +11,7 @@ trajplot
     layout --> 1
     T = t.args[1]
     label --> ["x" "y" "z"]
-    squeeze(T[1:3,4,:],2)'
+    T[1:3,4,:]'
 end
 
 
@@ -25,7 +25,7 @@ trajplot3
     zguide := "z"
     @series begin
         seriestype := :scatter3d
-        (squeeze(T[1,4,:],(1,2)),squeeze(T[2,4,:],(1,2)),squeeze(T[3,4,:],(1,2)))
+        (T[1,4,:],T[2,4,:],T[3,4,:])
     end
     if plotFrame > 0
         for i = 1:size(T,3)
@@ -42,7 +42,7 @@ plot3smart
 @recipe function f(t::Plot3Smart)
     data = t.args[1]
     seriestype := :path3d
-    (data[:,1][:],data[:,2][:],data[:,3][:])
+    (data[:,1],data[:,2],data[:,3])
 end
 
 
