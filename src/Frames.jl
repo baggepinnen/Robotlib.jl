@@ -1,37 +1,40 @@
 """
+Frames is a module to work with coordinate systems. The central type is the `Frame` with fields `R` and `t` for the rotation matrix and translation vector respectively. Other inportnat important types include `Point, Points, Plane` and `Line`
+
+All geometric object types have a reference frame associated with them. When a geometric object is created, the reference frame is specified, e.g., `T_RB_T = Frame(T_RB_Tm,"RB","T")` is a transformation between frame `RB` and frame `T`.
+When transofrmations are made, the reference frames are updated automatically, e.g., `T_RB_SEAM = T_RB_T*T_T_SEAM`
+
 Usage:
 ```julia
+using Robotlib.Frames
 path = Pkg.dir("Robotlib","src","applications","frames/")
 add_frame_name!("SEAM","Weld seam frame")
 add_frame_name!("TAB","Table frame")
 
-T_RB_Tm = MAT.matread(path*"T_RB_T.mat")["T_RB_T"]
-T_TF_TCPm = MAT.matread(path*"T_TF_TCP.mat")["T_TF_TCP"]
-T_T_TABm = MAT.matread(path*"T_T_Table.mat")["T_T_Table"]
+T_RB_Tm    = MAT.matread(path*"T_RB_T.mat")["T_RB_T"]
+T_TF_TCPm  = MAT.matread(path*"T_TF_TCP.mat")["T_TF_TCP"]
+T_T_TABm   = MAT.matread(path*"T_T_Table.mat")["T_T_Table"]
 
-T_RB_T = Frame(T_RB_Tm,"RB","T")
-T_S_D = Frame(T_TF_TCPm,"S","D")
-T_T_TAB = Frame(T_T_TABm,"T","TAB")
+T_RB_T     = Frame(T_RB_Tm,"RB","T")
+T_S_D      = Frame(T_TF_TCPm,"S","D")
+T_T_TAB    = Frame(T_T_TABm,"T","TAB")
 
 cloud_seam = readcloud(path*"CloudSeam_edge.txt")
 plane_seam = readplane(path*"PlaneSeam_edge.txt")
 cloud_seam_projected = project(plane_seam,cloud_seam)
-line_seam = fitline(cloud_seam_projected)
+line_seam  = fitline(cloud_seam_projected)
 
-T_T_SEAM = framefromfeatures(("z+",line_seam),("y-",plane_seam),cloud_seam_projected[1],"SEAM")
-T_RB_SEAM = T_RB_T*T_T_SEAM
-T_RB_TAB = T_RB_T*T_T_TAB
-T_TAB_SEAM = inv(T_T_TAB)*T_T_SEAM
+T_T_SEAM      = framefromfeatures(("z+",line_seam),("y-",plane_seam),cloud_seam_projected[1],"SEAM")
+T_RB_SEAM     = T_RB_T*T_T_SEAM
+T_RB_TAB      = T_RB_T*T_T_TAB
+T_TAB_SEAM    = inv(T_T_TAB)*T_T_SEAM
 
 cloud_seam_RB = T_RB_T*cloud_seam
 cloud_seam_projected_RB = T_RB_T*cloud_seam_projected
 plane_seam_RB = T_RB_T*plane_seam
-line_seam_RB = T_RB_T*line_seam
-
-
+line_seam_RB  = T_RB_T*line_seam
 
 plot(Frame(eye(4),"RB","U"),200, label=true)
-
 plot!(cloud_seam_RB)
 plot!(cloud_seam_projected_RB)
 plot!(line_seam_RB,500,label="Line seam")
@@ -69,6 +72,34 @@ typealias Matr{Ty} Union{AbstractMatrix{Ty}, Mat{3,3,Ty}}
 # -------------------------------------------------------------
 abstract GeometricObject
 
+<<<<<<< HEAD
+type Point <: GeometricObject
+    p::Vector{Float64}
+    A::String
+    function Point(p::Vector{Float64} = zeros(3), A::String="U")
+        checkframe(A,"U")
+        new(p,A)
+    end
+end
+
+type Points <: GeometricObject
+    p::Vector{Point}
+    A::String
+    function Points(p::Vector{Point}, A::String="U")
+        checkframe(A,"U")
+        new(p,A)
+    end
+
+    function Points(p::Array{Float64,2}, A::String="U")
+        checkframe(A,"U")
+        N = size(p,1)
+        points = [Point(squeeze(p[i,:]',2),A) for i in 1:N]
+        new(points,A)
+    end
+    function Points(A::String="U")
+        new(Point[],A)
+    end
+=======
 type Point{Ty} <: GeometricObject
     p::Vec{3,Ty}
     A::String
@@ -95,6 +126,7 @@ function Points{Ty}(p::AbstractMatrix{Ty}, A::String="U")
 end
 function Points(A::String="U")
     Points{Float64}(Point{Float64}[],A)
+>>>>>>> 4e7648502043a3c813a37584688307a109a586bd
 end
 
 push!(points::Points, p::Point) = push!(points.p,p)
@@ -152,7 +184,26 @@ function Frame{Ty}(R::Matr{Ty}, t::AbstractArray{Ty}, A::String="U", B::String="
 end
 Frame() = Frame{Float64}(eye(3),zeros(3),"U","U")
 
+<<<<<<< HEAD
+    T::Matrix{Float64}
+    A::String
+    B::String
+    function Frame(T::Matrix, A::String="U",B::String="U")
+        checkframe(A,B)
+        f = new(T,A,B)
+        add_frame!(f)
+        f
+    end
+    function Frame(R::Matrix, t::Array, A::String="U", B::String="U")
+        checkframe(A,B)
+        f = new([R t; 0 0 0 1],A,B)
+        add_frame!(f)
+        f
+    end
+    function Frame(); f = new(eye(4),"U","U"); add_frame!(f);  f end
+=======
 # Frame(R::Matr, t::AbstractArray, A::String="U", B::String="U") = Frame{eltype(R)}(R, t, A, B)
+>>>>>>> 4e7648502043a3c813a37584688307a109a586bd
 
 
 ref_frames = Set{Frame}()
@@ -182,19 +233,38 @@ end
 print(f::Frame) = "\$T_{$(f.A)}^{$(f.B)}\$"
 show(f::Frame) = display(f)
 
+<<<<<<< HEAD
+type Plane <: GeometricObject
+    n::Point
+    r::Point
+    A::String
+    Plane(n,r,A="U") = new(n,r,A)
+    Plane(n::Vector,r::Vector,A="U") = new(Point(n,A),Point(r,A),A)
+    Plane(points::Points) = fitplane(points)
+=======
 type Plane{Ty} <: GeometricObject
     n::Point{Ty}
     r::Point{Ty}
     A::String
+>>>>>>> 4e7648502043a3c813a37584688307a109a586bd
 end
 Plane{Ty}(n::Vect{Ty},r::Vect{Ty},A="U") = Plane{Ty}(n,r,A)
 Plane{Ty}(n::Vect{Ty},r::Vect{Ty},A="U") = Plane{Ty}(Point{Ty}(n,A),Point{Ty}(r,A),A)
 Plane(points::Points) = fitplane(points)
 
+<<<<<<< HEAD
+type Line <: GeometricObject
+    v::Point
+    r::Point
+    A::String
+    Line(v,r,A="U") = new(v,r,A)
+    Line(points::Points) = fitline(points)
+=======
 type Line{Ty} <: GeometricObject
     v::Point{Ty}
     r::Point{Ty}
     A::String
+>>>>>>> 4e7648502043a3c813a37584688307a109a586bd
 end
 Line{Ty}(v::Vect{Ty},r::Vect{Ty},A="U") = Line{Ty}(v,r,A)
 Line(points::Points) = fitline(points)
@@ -349,6 +419,19 @@ function *(f::Frame, points::Points)
 end
 *(p::Point, f::Frame) = error("Post multiplication of ::Point with ::Frame not supported")
 tinv(T)       = [T[1:3,1:3]' -T[1:3,1:3]'*T[1:3,4]; 0 0 0 1]
+<<<<<<< HEAD
+inv(x::Frame) = Frame(tinv(x.T),x.B,x.A)
+\(x::Frame,y::Frame) = Frame(tinv(x.T)*y.T,x.B,y.B)
+/(x::Frame,y::Frame) = Frame(x.T*tinv(y.T),x.A,y.A)
+F2t(F::Frame) = F.T[1:3,4]
+F2R(F::Frame) = F.T[1:3,1:3]
+Rx(F::Frame)  = F.T[1:3,1]
+Ry(F::Frame)  = F.T[1:3,2]
+Rz(F::Frame)  = F.T[1:3,3]
+det(F::Frame) = det(F.T[1:3,1:3])
+normalized(v::Vector{Float64}) = v/norm(v)
+function normalize!(v::Vector{Float64}) v/=norm(v); end
+=======
 function inv{T}(x::Frame{T}) # TODO: can this implementation be faster?
     R = x.R'
     Frame{T}(R, -R*x.t, x.B,x.A)
@@ -364,6 +447,7 @@ Rz(F::Frame)  = F.R[1:3,3] |> Vec
 det(F::Frame) = det(F.R)
 normalized(v::Vect) = v/norm(v)
 function normalize!(v::Vect) v/=norm(v); end
+>>>>>>> 4e7648502043a3c813a37584688307a109a586bd
 normalized(p::Point) = Point(p.p/norm(p.p), p.A)
 function normalize!(p::Point) p.p/=norm(p.p); end
 

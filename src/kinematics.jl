@@ -109,10 +109,9 @@ end
 
 
 """Computes a set of local transformation matrices given the DH-parameters of a robot. Can be sent an optional joint-angle vector and a tool"""
-function dh2Tn{P}(DH, q::VecOrMat{P}, tool=eye(4))
+function dh2Tn!{P}(Tn, DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=eye(4))
     dhpar    = DH.dhpar
     n_joints = size(dhpar,1)
-    Tn       = zeros(P,4,4,n_joints+1)
     q = q .+ DH.offset
     for j=1:n_joints
         Tn[:,:,j] = [    cos(q[j])   -sin(q[j])*cos(dhpar[j,1])    sin(q[j])*sin(dhpar[j,1])    dhpar[j,2]*cos(q[j]);
@@ -124,20 +123,10 @@ function dh2Tn{P}(DH, q::VecOrMat{P}, tool=eye(4))
     return Tn
 end
 
-"""Computes a set of local transformation matrices given the DH-parameters of a robot. Can be sent an optional joint-angle vector and a tool"""
-function dh2Tn(DH, q=zeros(size(DH.dhpar,1)), tool=eye(4))
-    dhpar    = DH.dhpar
-    n_joints = size(dhpar,1)
-    Tn       = zeros(4,4,n_joints+1)
-    q = q .+ DH.offset
-    for j=1:n_joints
-        Tn[:,:,j] = [    cos(q[j])   -sin(q[j])*cos(dhpar[j,1])    sin(q[j])*sin(dhpar[j,1])    dhpar[j,2]*cos(q[j]);
-        sin(q[j])   cos(q[j])*cos(dhpar[j,1])     -cos(q[j])*sin(dhpar[j,1])   dhpar[j,2]*sin(q[j]);
-        0                 sin(dhpar[j,1])                     cos(dhpar[j,1])            dhpar[j,4];
-        0                 0                                   0                                  1 ]
-    end
-    Tn[:,:,end] = tool
-    return Tn
+function dh2Tn{P}(DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=eye(4))
+    n_joints = size(DH.dhpar,1)
+    Tn       = zeros(P,4,4,n_joints+1)
+    return dh2Tn!(Tn, DH, q, tool)
 end
 
 """`fkinePOE(xi0,q)` Forward kinematics using POE"""
@@ -226,14 +215,29 @@ function get_kinematic_functions(robot)
         Rbase           = rpy2R(baseAnglesLeft,"xyz")
         Tbase           = eye(4)
         Tbase[1:3,1:3]  = Rbase
+<<<<<<< HEAD
+        fkinef = q -> Tbase*fkinePOE(xi,q)
+        jacobianf = q -> [Rbase Z;Z Rbase]*jacobianPOE(q,xi)
+        ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
+=======
         fkine = (q) -> Tbase*fkinePOE(xi,q)
         jacobian = (q) -> [Rbase Z;Z Rbase]*jacobianPOE(q,xi)
         ikine = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
+>>>>>>> 4e7648502043a3c813a37584688307a109a586bd
     elseif robot == "yumiright"
         baseAnglesLeft  = [0.63 , 0.95 , 0.18]
         Rbase           = rpy2R(baseAnglesLeft,"xyz")
         Tbase           = eye(4)
         Tbase[1:3,1:3]  = Rbase
+<<<<<<< HEAD
+        fkinef = q -> Tbase*fkinePOE(xi,q)
+        jacobianf = q -> [Rbase Z;Z Rbase]*jacobianPOE(q,xi)
+        ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
+    else
+        fkinef = q -> fkinePOE(xi,q)
+        jacobianf = q -> jacobianPOE(q,xi)
+        ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
+=======
         fkine = (q) -> Tbase*fkinePOE(xi,q)
         jacobian = (q) -> [Rbase Z;Z Rbase]*jacobianPOE(q,xi)
         ikine = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
@@ -241,10 +245,11 @@ function get_kinematic_functions(robot)
         fkine = (q) -> fkinePOE(xi,q)
         jacobian = (q) -> jacobianPOE(q,xi)
         ikine = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
+>>>>>>> 4e7648502043a3c813a37584688307a109a586bd
     end
 
 
-    return fkine, ikine, jacobian
+    return fkinef, ikinef, jacobianf
 
 end
 
