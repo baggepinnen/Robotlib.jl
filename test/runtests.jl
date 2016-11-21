@@ -1,48 +1,6 @@
-module RobotlibTests
-export run_tests
 using Robotlib
+using Base.Test
 import Robotlib: ad, adi
-
-macro test(text,x)
-
-    return :(begin
-    global success = 0
-    global fail = 0
-    print("Testing ",$text, ": ")
-    try
-        $x
-        if fail == 0
-            print_with_color(:green, "Success: $success\n")
-        else
-            print_with_color(:green, "Success: $success, ")
-            print_with_color(:red, "Failed: $fail\n")
-        end
-    catch ex
-        print_with_color(:red, "Failed: ")
-        print(ex, "\n")
-        rethrow(ex)
-    end
-end)
-end
-
-macro tassert(x)
-    return :(begin
-    try
-        @assert $x
-        success += 1
-    catch ex
-        if isa(ex,AssertionError)
-            print_with_color(:red, "Error: ")
-            print(ex.msg, " ")
-            fail += 1
-        else
-            rethrow(ex)
-        end
-    end
-end)
-end
-
-
 
 
 function simulateCalibration1(N)
@@ -79,7 +37,7 @@ function simulateCalibration1(N)
     end
     Ta  = zeros(4,4,N)
     for i = 1:N
-        Ta[:,:,i] = fkinePOE(xin,q[i,:]')
+        Ta[:,:,i] = fkinePOE(xin,q[i,:])
     end
     return q, xin, T0, xinmod, Ta
 end
@@ -97,12 +55,12 @@ function simulateCalibration2(N)
     end
     Ta  = zeros(4,4,N)
     for i = 1:N
-        Ta[:,:,i] = fkinePOE(xin,q[i,:]')
+        Ta[:,:,i] = fkinePOE(xin,q[i,:])
     end
     return q, xin, T0, xinmod, Ta
 end
 
-function simulateCalibration3(N)
+function simulateCalibrationLPOE(N)
     srand(1)
     n       = 6
     q       = 2π*rand(N,n)
@@ -115,8 +73,8 @@ function simulateCalibration3(N)
     end
     Ta  = zeros(4,4,N)
     for i = 1:N
-        Ta[:,:,i] = fkineLPOE(Tn0,xin,q[i,:]')
-        AAA,BBB,T = jacobian(q[i,:]',dh, eye(4));
+        Ta[:,:,i] = fkineLPOE(Tn0,xin,q[i,:])
+        AAA,BBB,T = jacobian(q[i,:],dh, eye(4));
         @assert T ≈ Ta[:,:,i]
     end
     return q, xin, Tn0, Tn0mod, Ta
@@ -148,29 +106,27 @@ function simulateCalibration4(N)
 end
 
 function run_tests()
-    @test "Calib " begin
-
-
     # q, xin,T0, xinmod, Ta= simulateCalibration2(100)
     # xic,et,er = Robotlib.Calibration.calibPOE(xinmod,Ta,q,maxiter=150, λ = 10000.0)
     # display(norm(xin[:,1:7]-xinmod[:,1:7]))
     # display(norm(xin[:,1:7]-xic[:,1:7]))
-
-
-
-    q, xin,Tn0,Tn0mod, Ta = simulateCalibration3(100)
-    @time Tn0c,xic,et,er = Robotlib.Calibration.calibLPOE(xin,Tn0mod,Ta,q,maxiter=10, λ = 100.0)
-    display(sqrt(sum((Tn0-Tn0mod).^2)/100))
-    display(sqrt(sum((Tn0-Tn0c).^2)/100))
-    display(round(Tn0-Tn0c,5))
-
-
-
     N = 100
+    println("===== Testing calibLPOE =====")
+    q, xin,Tn0,Tn0mod, Ta = simulateCalibrationLPOE(N)
+    @time Tn0c,xic,et,er = Robotlib.Calibration.calibLPOE(xin,Tn0mod,Ta,q,maxiter=10, λ = 100.0)
+    @test et[et .!= 0][end] < 1e-12
+    @test er[er .!= 0][end] < 1e-12
+    println("Initial error: ", sqrt(sum((Tn0-Tn0mod).^2)))
+    println("Final error: ", sqrt(sum((Tn0-Tn0c).^2)))
+    @test sqrt(sum((Tn0-Tn0c).^2)) < 0.8sqrt(sum((Tn0-Tn0mod).^2))
+
+    println("===== Testing calibLPOEdual =====")
     q, xin,Tn0,Tn0mod, Ta = simulateCalibration4(N)
     @time Tn0c,xic,et,er = Robotlib.Calibration.calibLPOEdual(xin,Tn0mod,q,maxiter=6, λ = 0.01)
-    println("Error between Tn0 and Tn0mod: ",sqrt(sum((Tn0[1:3,4,:]-Tn0mod[1:3,4,:,1]).^2+(Tn0[1:3,4,:]-Tn0mod[1:3,4,:,2]).^2)/N))
-    println("Error between Tn0 and Tn0c  : ",sqrt(sum((Tn0[1:3,4,:]-Tn0c[1:3,4,:,1]).^2+(Tn0[1:3,4,:]-Tn0c[1:3,4,:,2]).^2)/N))
+    println("Error between Tn0 and Tn0mod: ",
+        sqrt(sum((Tn0[1:3,4,:]-Tn0mod[1:3,4,:,1]).^2+(Tn0[1:3,4,:]-Tn0mod[1:3,4,:,2]).^2)/N))
+    println("Error between Tn0 and Tn0c  : ",
+        sqrt(sum((Tn0[1:3,4,:]-Tn0c[1:3,4,:,1]).^2+(Tn0[1:3,4,:]-Tn0c[1:3,4,:,2]).^2)/N))
     ei = 0.0
     ec = 0.0
     for i = 1:N
@@ -184,18 +140,10 @@ function run_tests()
         ec += norm(twistcoords(logm(Ta[:,:,i]*trinv(T2))))
     end
     println("Initial error: ",round(ei/N,5), " Calibrated error: ", round(ec/N,5))
-
-
-
-
-
+    @test ec < ei
 end
 
+run_tests()
 
-
-
-end
-
-end
-import RobotlibTests
-RobotlibTests.run_tests()
+println("===== Testing frames =====")
+include("testFrames.jl")
