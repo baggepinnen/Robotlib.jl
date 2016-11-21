@@ -71,8 +71,8 @@ abstract GeometricObject
 
 type Point <: GeometricObject
     p::Vector{Float64}
-    A::ASCIIString
-    function Point(p::Vector{Float64} = zeros(3), A::ASCIIString="U")
+    A::String
+    function Point(p::Vector{Float64} = zeros(3), A::String="U")
         checkframe(A,"U")
         new(p,A)
     end
@@ -80,19 +80,19 @@ end
 
 type Points <: GeometricObject
     p::Vector{Point}
-    A::ASCIIString
-    function Points(p::Vector{Point}, A::ASCIIString="U")
+    A::String
+    function Points(p::Vector{Point}, A::String="U")
         checkframe(A,"U")
         new(p,A)
     end
 
-    function Points(p::Array{Float64,2}, A::ASCIIString="U")
+    function Points(p::Array{Float64,2}, A::String="U")
         checkframe(A,"U")
         N = size(p,1)
         points = [Point(squeeze(p[i,:]',2),A) for i in 1:N]
         new(points,A)
     end
-    function Points(A::ASCIIString="U")
+    function Points(A::String="U")
         new(Point[],A)
     end
 end
@@ -135,15 +135,15 @@ end
 type Frame <: GeometricObject
 
     T::Matrix{Float64}
-    A::ASCIIString
-    B::ASCIIString
-    function Frame(T::Matrix, A::ASCIIString="U",B::ASCIIString="U")
+    A::String
+    B::String
+    function Frame(T::Matrix, A::String="U",B::String="U")
         checkframe(A,B)
         f = new(T,A,B)
         add_frame!(f)
         f
     end
-    function Frame(R::Matrix, t::Array, A::ASCIIString="U", B::ASCIIString="U")
+    function Frame(R::Matrix, t::Array, A::String="U", B::String="U")
         checkframe(A,B)
         f = new([R t; 0 0 0 1],A,B)
         add_frame!(f)
@@ -154,10 +154,10 @@ type Frame <: GeometricObject
 end
 
 ref_frames = Set{Frame}()
-frame_map = Dict{ASCIIString,ASCIIString}()
+frame_map = Dict{String,String}()
 frame_names = Dict("U" => "Undefined", "RB"=>"Robot Base","TF"=>"Tool Flange","TCP"=>"Tool Center Point","T"=>"Tracker","D"=>"Dynamic diods","S"=>"Sensor")
-add_frame_name!(key::ASCIIString,value::ASCIIString) = setindex!(frame_names,value,key)
-frame_name_exists(ref::ASCIIString) = ref ∈ keys(frame_names)
+add_frame_name!(key::String,value::String) = setindex!(frame_names,value,key)
+frame_name_exists(ref::String) = ref ∈ keys(frame_names)
 function add_frame!(f::Frame)
     push!(ref_frames,f)
     setindex!(frame_map,f.B,f.A)
@@ -179,7 +179,7 @@ print(f::Frame) = show(f)
 type Plane <: GeometricObject
     n::Point
     r::Point
-    A::ASCIIString
+    A::String
     Plane(n,r,A="U") = new(n,r,A)
     Plane(n::Vector,r::Vector,A="U") = new(Point(n,A),Point(r,A),A)
     Plane(points::Points) = fitplane(points)
@@ -188,7 +188,7 @@ end
 type Line <: GeometricObject
     v::Point
     r::Point
-    A::ASCIIString
+    A::String
     Line(v,r,A="U") = new(v,r,A)
     Line(points::Points) = fitline(points)
 end
@@ -321,7 +321,6 @@ Rx(F::Frame)  = F.T[1:3,1]
 Ry(F::Frame)  = F.T[1:3,2]
 Rz(F::Frame)  = F.T[1:3,3]
 det(F::Frame) = det(F.T[1:3,1:3])
-print(f::Frame) = "\$T_{$(f.A)}^{$(f.B)}\$"
 normalized(v::Vector{Float64}) = v/norm(v)
 function normalize!(v::Vector{Float64}) v/=norm(v); end
 normalized(p::Point) = Point(p.p/norm(p.p), p.A)

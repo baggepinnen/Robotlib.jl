@@ -22,8 +22,8 @@ For YuMi, joint angles `q` must be converted to logical order using e.g. abb2log
 You must also consider the base transform of YuMi
 """
 module Robotlib
-include("utils.jl")
 include("DH.jl")
+include("utils.jl")
 include("kinematics.jl")
 include("robotplot.jl")
 include("Frames.jl")
