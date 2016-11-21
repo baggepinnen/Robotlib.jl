@@ -1,27 +1,19 @@
 using Robotlib
 using Robotlib.Calibration
 using DSP # For filtfilt
-using Convex
-using SCS
-import JuMP
-using Ipopt
-h = 0.004032;
 
-
-dh = DHYuMi()
-xi = DH2twistsPOE(dh)
-
-pathopen = "/work/fredrikb/extRosetta/frida_gravity_2.txt"
-# pathopen = "/work/fredrikb/extRosetta/base2rob2xyz.csv"
-pathsave = "/tmp/fredrikb/log.mat"
-
-data    = orcalog2mat(pathopen, pathsave)
-data    = readmat(pathsave)
-ds      = 1
-q       = getData("robot_1.*posRawAbs", data, ds)
-q̇       = getData("robot_1.*velFlt", data, ds)
-τ       = getData("robot_1.*trqRaw", data, ds)
-f       = getData("force", data, ds)
+h          = 0.004032;
+dh         = DHYuMi()
+xi         = DH2twistsPOE(dh)
+# pathopen   = "data/frida_gravity.txt"
+pathsave   = "log.mat"
+# data       = orcalog2mat(pathopen, pathsave)
+data       = readmat(pathsave)
+ds         = 1
+q          = getData("robot_1.*posRawAbs", data, ds)
+q̇          = getData("robot_1.*velFlt", data, ds)
+τ          = getData("robot_1.*trqRaw", data, ds)
+f          = getData("force", data, ds)
 # f[:,[2,5]] *= -1
 
 abb2logical!(q)
@@ -31,11 +23,11 @@ q = q*dh.GR'
 q̇ = q̇*dh.GR'
 τ = τ*inv(dh.GR')
 
-q̈ = filtfilt(ones(50),[50.],smartDiff(q̇))
+q̈ = filtfilt(ones(50),[50.],centralDiff(q̇))
 
 # plot(abs([q̇, q̈]))
 
-lowAcc  = all(abs(q̈) .< 3e-4,2)
+lowAcc  = all(abs(q̈) .< 3e-4,2)[:]
 q       = q[lowAcc,:]
 q̇       = q̇[lowAcc,:]
 τ       = τ[lowAcc,:]
@@ -48,8 +40,10 @@ Tbase           = eye(4)
 Tbase[1:3,1:3]  = Rbase
 
 fkine, ikine, jacobian = get_kinematic_functions("yumi")
-
-T  = cat(3,[Tbase*fkinePOE(xi,q[i,:]') for i = 1:N]...);
+T = Array(Float64,4,4,N)
+for i = 1:N
+    T[:,:,i]  = Tbase*fkinePOE(xi,q[i,:]')
+end
 
 
 # plot_traj(T)

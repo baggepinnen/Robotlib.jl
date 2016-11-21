@@ -44,7 +44,7 @@ function calibForce(POSES,F,m0=0.3; offset=true, useCVX = false)
             for i = 1:N
                 RA = POSES[1:3,1:3,i]'
                 At = [RA[:,3] I]
-                b =  -Rf*F[i,1:3]'
+                b =  -Rf*F[i,1:3]
                 A2[3(i-1)+1:3i,:] = At
                 B2[3(i-1)+1:3i] = b
             end
@@ -78,7 +78,7 @@ function calibForce(POSES,F,m0=0.3; offset=true, useCVX = false)
             for i = 1:N
                 RA = POSES[1:3,1:3,i]'
                 At = RA[:,3]
-                b =  -Rf*F[i,1:3]'
+                b =  -Rf*F[i,1:3]
                 A2[3(i-1)+1:3i,:] = At
                 B2[3(i-1)+1:3i] = b
             end
