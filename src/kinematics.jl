@@ -215,21 +215,14 @@ function get_kinematic_functions(robot)
         Rbase           = rpy2R(baseAnglesLeft,"xyz")
         Tbase           = eye(4)
         Tbase[1:3,1:3]  = Rbase
-<<<<<<< HEAD
         fkinef = q -> Tbase*fkinePOE(xi,q)
         jacobianf = q -> [Rbase Z;Z Rbase]*jacobianPOE(q,xi)
         ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
-=======
-        fkine = (q) -> Tbase*fkinePOE(xi,q)
-        jacobian = (q) -> [Rbase Z;Z Rbase]*jacobianPOE(q,xi)
-        ikine = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
->>>>>>> 4e7648502043a3c813a37584688307a109a586bd
     elseif robot == "yumiright"
         baseAnglesLeft  = [0.63 , 0.95 , 0.18]
         Rbase           = rpy2R(baseAnglesLeft,"xyz")
         Tbase           = eye(4)
         Tbase[1:3,1:3]  = Rbase
-<<<<<<< HEAD
         fkinef = q -> Tbase*fkinePOE(xi,q)
         jacobianf = q -> [Rbase Z;Z Rbase]*jacobianPOE(q,xi)
         ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
@@ -237,20 +230,8 @@ function get_kinematic_functions(robot)
         fkinef = q -> fkinePOE(xi,q)
         jacobianf = q -> jacobianPOE(q,xi)
         ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
-=======
-        fkine = (q) -> Tbase*fkinePOE(xi,q)
-        jacobian = (q) -> [Rbase Z;Z Rbase]*jacobianPOE(q,xi)
-        ikine = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
-    else
-        fkine = (q) -> fkinePOE(xi,q)
-        jacobian = (q) -> jacobianPOE(q,xi)
-        ikine = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
->>>>>>> 4e7648502043a3c813a37584688307a109a586bd
     end
-
-
     return fkinef, ikinef, jacobianf
-
 end
 
 
