@@ -1,14 +1,14 @@
 """`Jn, J0, T, Ti, Tn = jacobian(qin, DH::DH, tool=eye(4))`
 Calculates the jacobian in base (J0) and tool frame (Jn) as well as the forward kinematics (T),
 given the joint angles and the DH-parameters"""
-function jacobian(q, DH::DH, tool=eye(4))
+function jacobian{P}(q::AbstractVecOrMat{P}, DH::DH, tool=eye(4))
     n_joints    = size(q,1)
     dhpar       = DH.dhpar
     # q           = qin + DH.offset # Moved to dh2Tn
     trans       = dh2Tn(DH,q,tool)
 
     # ## jacobn (tool)
-    Jn = zeros(6,n_joints)
+    Jn = zeros(P,6,n_joints)
     U = tool #Alternatively transformation to TCP <-------------- obs
     for j=n_joints:-1:1
         U = trans[:,:,j] * U
@@ -42,10 +42,10 @@ end
 """
 `jacobianPOE(q, xi)` Returns The jacobian in 1) the base frame, 2) the tool frame. It can most likely be rewritten to be faster.
 """
-function jacobianPOE(q, xi)
+function jacobianPOE{P}(q::AbstractVecOrMat{P}, xi)
     #Page 117 in Murray 94
     n_joints  = size(q,1)
-    Jss       = zeros(6,n_joints)
+    Jss       = zeros(P,6,n_joints)
     adint     = eye(6)
     T         = eye(4)
     for i = 1:n_joints
@@ -63,10 +63,10 @@ function jacobianPOE(q, xi)
     return Jsb, Jbb, T
 end
 
-function jacobianPOEb(q, xi)
+function jacobianPOEb{P}(q::AbstractVecOrMat{P}, xi)
     #Page 117 in Murray 94
     n_joints  = size(q,1)
-    Jbb       = zeros(6,n_joints)
+    Jbb       = zeros(P,6,n_joints)
     T         = expξ2(xi[:,end-1],1)*expξ2(xi[:,end],1)
     adint     = adi(T)
     Ti        = eye(4)
@@ -213,17 +213,17 @@ function get_kinematic_functions(robot)
     if robot == "yumileft"
         baseAnglesLeft = Quaternion(0.82888, -0.31402, 0.40801, -0.2188)
         TbaseLeft = [rotationmatrix(baseAnglesLeft) [0.0476, 0.07, 0.4115]; 0 0 0 1]
-        fkinef = q -> TbaseLeft*fkinePOE(xi,q)
+        fkinef = q -> TbaseLeft*fkineLPOE(Tn0,xiL,q)
         jacobianf = q -> [TbaseLeft[1:3,1:3] Z;Z TbaseLeft[1:3,1:3]]*jacobianPOE(q,xi)
         ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
     elseif robot == "yumiright"
         baseAnglesRight = Quaternion(0.82888, 0.31402, 0.40801, 0.2188)
         TbaseRight = [rotationmatrix(baseAnglesRight) [0.0476, 0.07, -0.4115]; 0 0 0 1]
-        fkinef = q -> TbaseRight*fkinePOE(xi,q)
+        fkinef = q -> TbaseRight*fkineLPOE(Tn0,xiL,q)
         jacobianf = q -> [TbaseRight[1:3,1:3] Z;Z TbaseRight[1:3,1:3]]*jacobianPOE(q,xi)
         ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
     else
-        fkinef = q -> fkinePOE(xi,q)
+        fkinef = q -> fkineLPOE(Tn0,xiL,q)
         jacobianf = q -> jacobianPOE(q,xi)
         ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
     end
