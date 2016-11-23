@@ -211,20 +211,16 @@ function get_kinematic_functions(robot)
     xiL = DH2twistsLPOE(dh)
     Z = zeros(3,3)
     if robot == "yumileft"
-        baseAnglesLeft  = [-0.63 , 0.95 , -0.18]
-        Rbase           = rpy2R(baseAnglesLeft,"xyz")
-        Tbase           = eye(4)
-        Tbase[1:3,1:3]  = Rbase
-        fkinef = q -> Tbase*fkinePOE(xi,q)
-        jacobianf = q -> [Rbase Z;Z Rbase]*jacobianPOE(q,xi)
+        baseAnglesLeft = Quaternion(0.82888, -0.31402, 0.40801, -0.2188)
+        TbaseLeft = [rotationmatrix(baseAnglesLeft) [0.0476, 0.07, 0.4115]; 0 0 0 1]
+        fkinef = q -> TbaseLeft*fkinePOE(xi,q)
+        jacobianf = q -> [TbaseLeft[1:3,1:3] Z;Z TbaseLeft[1:3,1:3]]*jacobianPOE(q,xi)
         ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
     elseif robot == "yumiright"
-        baseAnglesLeft  = [0.63 , 0.95 , 0.18]
-        Rbase           = rpy2R(baseAnglesLeft,"xyz")
-        Tbase           = eye(4)
-        Tbase[1:3,1:3]  = Rbase
-        fkinef = q -> Tbase*fkinePOE(xi,q)
-        jacobianf = q -> [Rbase Z;Z Rbase]*jacobianPOE(q,xi)
+        baseAnglesRight = Quaternion(0.82888, 0.31402, 0.40801, 0.2188)
+        TbaseRight = [rotationmatrix(baseAnglesRight) [0.0476, 0.07, -0.4115]; 0 0 0 1]
+        fkinef = q -> TbaseRight*fkinePOE(xi,q)
+        jacobianf = q -> [TbaseRight[1:3,1:3] Z;Z TbaseRight[1:3,1:3]]*jacobianPOE(q,xi)
         ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
     else
         fkinef = q -> fkinePOE(xi,q)

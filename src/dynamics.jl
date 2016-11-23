@@ -9,6 +9,11 @@ function gravity{P}(q::VecOrMat{P}, rm, m, dh::DH, Tworld2base = eye(4))
     gravity(q, rm, m, Tn, Tworld2base)
 end
 
+"""
+    gravity{P}(q, rm, m, Tn, Tworld2base)
+
+`q` is the joint coordinates, `rm` are distances to center of masses times masses, `m` are the masses and `Tn` are the transformations between consecutive joints.
+"""
 function gravity{P}(q::VecOrMat{P}, rm, m, Tn::AbstractArray, Tworld2base = eye(4))
     n   = size(Tn,3)-1
     # Find elements that are ≈ 0 and make them zero, smiplifies a lot!
@@ -24,50 +29,40 @@ function gravity{P}(q::VecOrMat{P}, rm, m, Tn::AbstractArray, Tworld2base = eye(
     Ti[:,:,1] = Tn[:,:,1]
 
     for i = 2:n
-        Ti[:,:,i] = Ti[:,:,i-1]*Tn[:,:,i]
+        Ti[:,:,i] = Ti[:,:,i-1]*Tn[:,:,i] # Cumulative forward kinematics transformations
     end
 
     gv         = [0, 0, -9.82]
-    i          = n
-    gi         = Ti[1:3,1:3,i]'gv
-    τ          = Array(P,3,n)
+    τ          = Array(P,3,n+1) # Extend by one to run everything in loop
+    τ[:,end]   = 0
     τhat       = Array(P,n)
-    force      = Array(P,3,n)
+    force      = Array(P,3,n) # All forces are given in base frame
 
-    τ[:,i]     = skew(rm[:,i]) * gi
-    force[:,i] = gv*m[end]
-    τhat[i]    = τ[3,i]
-
-    for i = n-1:-1:1
-        Ri     = Tn[1:3,1:3,i+1]
-        gi     = Ti[1:3,1:3,i]'gv # Local frame
-        τ[:,i] = skew(rm[:,i]) * gi + Ri*τ[:,i+1]
+    for i = n:-1:1
+        Ri     = Tn[1:3,1:3,i+1] # Rotation from i to i+1
+        gi     = Ti[1:3,1:3,i]'gv # Gravity vector in i
+        τ[:,i] = skew(rm[:,i]) * gi + Ri*τ[:,i+1] # Torque in i is gravity torque + rotated torque from i+1
         τi     = τ[:,i]
         for k = (i+1):n # I can not get it to work with accumulated forces which would be much faster
-            rk = (trinv(Ti[:,:,i])*Ti[1:4,4,k])[1:3]
-            τi += skew(rk)*Ti[1:3,1:3,i]'force[:,k]
+            rik = (trinv(Ti[:,:,i])*Ti[1:4,4,k])[1:3] # Vector from i to k, given in i
+            τi += skew(rik)*Ti[1:3,1:3,i]'force[:,k] # Torque around i, given in i
         end
 
-        τhat[i]     = τi[3]
+        τhat[i]     = τi[3] # The motor torque is the local torque around z
         force[:,i]  = gv*m[i]
     end
-    return τhat
+    return -τhat # Minus sign to match sensor torque
 end
 
 
-function create_gravmatrix()
-    dh       = DHYuMi()
+function create_gravmatrix(dh::DH)
+
     n_joints = size(dh.dhpar,1)
 
     rm       = Sym[symbols("rm$i$j",real=true) for i = 1:3, j=1:n_joints]
     m        = Sym[symbols("m$j",real=true) for j=1:n_joints]
     q        = Sym[symbols("q$j",real=true) for j=1:n_joints]
     tau      = Sym[symbols("tau$j",real=true) for j=1:n_joints]
-
-    baseAnglesLeft = [-0.63 , 0.95 , -0.18]
-    Rbase          = rpy2R(baseAnglesLeft,"xyz")
-    Tbase          = eye(4)
-    Tbase[1:3,1:3] = Rbase
 
     tauhat = gravity(q, rm, m, dh, Tbase);
     w      = [rm[:];m[:]];
@@ -123,7 +118,11 @@ function create_gravmatrix()
     close(fid)
     println("Done")
 end
-
+# dh       = DHYuMi()
+# baseAnglesLeft = [-0.63 , 0.95 , -0.18]
+# Rbase          = rpy2R(baseAnglesLeft,"xyz")
+# Tbase          = eye(4)
+# Tbase[1:3,1:3] = Rbase
 
 """
     create_gravmodel(filename, r,m, dh, Tbase=eye(4))
@@ -145,7 +144,7 @@ function create_gravmodel(filename, r::AbstractMatrix,m, dh::DH, Tbase=eye(4))
     change,res  = cse(tauhat);
 
     println("Printing results to file")
-    fid = open("filename"*".jl","w");
+    fid = open(filename*".jl","w");
     println(fid,"@fastmath function gravity(q)")
     for i = 1:n_joints
         println(fid,"q$i = q[$i]")

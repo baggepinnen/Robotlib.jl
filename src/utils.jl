@@ -404,9 +404,7 @@ end
 using Quaternions
 import Quaternions.Quaternion
 function Quaternion{P}(t::Matrix{P})
-
-
-    qs = sqrt(trace(t)+1)/2.0
+    qs = sqrt(trace(t[1:3,1:3])+1)/2.0
     kx = t[3,2] - t[2,3]   # Oz - Ay
     ky = t[1,3] - t[3,1]   # Ax - Nz
     kz = t[2,1] - t[1,2]   # Ny - Ox
@@ -439,15 +437,12 @@ function Quaternion{P}(t::Matrix{P})
     end
     nm = norm([kx, ky, kz])
     if nm == 0
-        q = Quaternion([0, 0, 0, 1])
+        q = Quaternion(1, 0, 0, 0)
     else
-        s = sqrt(1 - qs^2) / nm
+        s  = sqrt(1 - qs^2) / nm
         qv = s*[kx, ky, kz]
-
-        q = Quaternion([qv;qs])
-
+        q  = Quaternion(qs,qv)
     end
-
 end
 
 function traj2quat(T)
