@@ -201,7 +201,7 @@ TODO: implement YuMi_left, Yumi_right Tbase*ikinePOE
 """
 function get_kinematic_functions(robot)
     robot = lowercase(robot)
-    if robot == "yumi" || robot == "frida"
+    if contains(robot,"yumi") || contains(robot,"frida")
         dh = DHYuMi()
     elseif robot == "7600" || robot == "irb7600"
         dh = DH7600()
