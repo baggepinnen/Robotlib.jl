@@ -218,7 +218,7 @@ function get_kinematic_functions(robot)
         ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
     elseif robot == "yumiright"
         baseAnglesRight = Quaternion(0.82888, 0.31402, 0.40801, 0.2188)
-        TbaseRight = [rotationmatrix(baseAnglesRight) [0.0476, 0.07, -0.4115]; 0 0 0 1]
+        TbaseRight = [rotationmatrix(baseAnglesRight) [0.0476, -0.07, 0.4115]; 0 0 0 1]
         fkinef = q -> TbaseRight*fkineLPOE(Tn0,xiL,q)
         jacobianf = q -> [TbaseRight[1:3,1:3] Z;Z TbaseRight[1:3,1:3]]*jacobianPOE(q,xi)
         ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
