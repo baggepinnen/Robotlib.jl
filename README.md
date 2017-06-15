@@ -1,4 +1,4 @@
-#Robotlib
+# Robotlib
 This is a library of functions to help out in a robotics lab. At present stage, it contains functions for forward kinematics, jacobians, iterative inverse kinematics and for a few robotics related calibration problems. The library also contains a number of functions to convert from various orientation representations and other robotics related helper functions.
 
 Install using
@@ -9,7 +9,7 @@ For latest changes, install using
 
 `Pkg.clone("git@gitlab.control.lth.se:cont-frb/Robotlib.git")`
 
-##Usage
+## Usage
 ```julia
 fkine, ikine, jacobian = get_kinematic_functions("yumi") # Replace yumi for your robot model, as long as it's supported
 data = orcalog2mat(pathopen, pathsave)
@@ -98,7 +98,7 @@ include("read_log.jl")
 include("csv2mat.jl")
 ```
 
-##Exported functions
+## Exported functions
 ```julia
 Rt2T, T2R, T2t, skewcoords, twistcoords, skew, skew4, expω, expξ, expξ2, expξ!, logT, logR
 ad, adi, trinv, isrot, isse3, Rangle, conformize, DH2twistsPOE, DH2twistsLPOE, dh2Tn
@@ -128,10 +128,10 @@ Jn, J0, T, Ti, trans = jacobian(q, dh)
 ```
 many other options exits, check the kinematics.jl
 
-#Frames
+# Frames
 This module is aimed at assisting with the creation of frames for tracking using optical tracking systems. It supports projection of points and lines onto planes, creating frames from features and has some plotting functionality.
 
-##Usage
+## Usage
 ```julia
 using Frames
 import MAT
