@@ -10,15 +10,13 @@ Install using
 
 `Pkg.add("Robotlib")`
 
-For latest changes, install using
-
-`Pkg.clone("git@gitlab.control.lth.se:cont-frb/Robotlib.git")`
+For latest changes, run `Pkg.checkout("Robotlib")`
 
 ## Usage
 ```julia
 fkine, ikine, jacobian = get_kinematic_functions("yumi") # Replace yumi for your robot model, as long as it's supported
-data = orcalog2mat(pathopen, pathsave)
-q = getData("robot_0.*posRawAbs", data, 1, removeNaN = false)
+data = orcalog2mat(pathopen, pathsave) # Read data from a csv-file and save as binary file
+q = getData("robot_0.*posRawAbs", data, 1, removeNaN = false) # Extract columns from data object using regex like syntax
 ```
 
 For ABB YuMi, joint angles `q` must be converted to logical order using e.g. `abb2logical!(q)`
@@ -33,13 +31,14 @@ using DSP # For filtfilt
 # Define robot to use, in this case YuMi
 dh = DHYuMi()
 xi = DH2twistsPOE(dh)
+fkine, ikine, jacobian = get_kinematic_functions("yumi")
 
 # Define paths to log file and where to store converted binary file for faster reading
 pathopen = "/work/fredrikb/extRosetta/frida_gravity_2.txt"
 pathsave = "/tmp/fredrikb/log.mat"
 
 # Get data from the logfile
-data    = orcalog2mat(pathopen, pathsave)
+data    = orcalog2mat(pathopen, pathsave) # This line is only needed during the first run
 data    = readmat(pathsave)
 ds      = 1 # Downsampling factor
 q       = getData("robot_1.*posRawAbs", data, ds) # Data vectors to retrieve are specified with regex style
@@ -58,7 +57,7 @@ q̇ = q̇*dh.GR'
 τ = τ*inv(dh.GR')
 
 # Filter velocities to get accelerations
-q̈ = filtfilt(ones(50),[50.],smartDiff(q̇))
+q̈ = filtfilt(ones(50),[50.],centralDiff(q̇)) 
 
 # plot(abs([q̇, q̈]))
 
@@ -79,7 +78,7 @@ Tbase[1:3,1:3]  = Rbase
 fkine, ikine, jacobian = get_kinematic_functions("yumi")
 
 # Apply forward kinematics to get end-effector poses
-T  = cat(3,[Tbase*fkinePOE(xi,q[i,:]') for i = 1:N]...);
+T  = cat(3,[fkine(q[i,:]) for i = 1:N]...)
 
 trajplot(T) # Plots a trajectory of R4x4 transformation matrices
 
@@ -122,7 +121,7 @@ The module includes a submodule, Calibration, which includes a number of calibra
 The library has functions for calculation of forward kinematics, inverse kinematics and jacobians. Several versions of all kinematics functions are provided; calculations can be made using either the DH-convention or the product of exponentials formulation. To support a new robot, create an object of the type `DH`, or provide a matrix with POE-style link twists, for use with the kinematic functions.
 ### Usage
 ```julia
-dh = DH7600()
+dh = DH7600() # ABB Irb 7600
 xi = DH2twistsPOE(dh)
 T  = fkinePOE(xi, q)
 ```
@@ -137,6 +136,7 @@ many other options exits, check the kinematics.jl
 This module is aimed at assisting with the creation of frames for tracking using optical tracking systems. It supports projection of points and lines onto planes, creating frames from features and has some plotting functionality.
 
 ## Usage
+This is an example of how data can be loaded from files and how different geometrical objects can be fitted to data, projected onto other objects etc.
 ```julia
 using Frames
 import MAT
