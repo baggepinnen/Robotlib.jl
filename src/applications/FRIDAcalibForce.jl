@@ -7,7 +7,7 @@ function demo_calibforce(filename = "")
     info("Running force calibration demo. This file uses the logfile gravitylog.mat and calculates the calibration parameters for a wrist mounted force sensor.")
     h          = 0.004032;
     dh         = DHYuMi()
-    xi         = DH2twistsPOE(dh)
+
     if if filename != "" # Use this option if you have a textbased logfile
         pathopen   = filename
         pathsave   = "log.mat"
@@ -44,19 +44,13 @@ function demo_calibforce(filename = "")
         q̇ = data["qd"]
         τ = data["tau"]
         f = data["f"]
-
     end
 
-    N               = size(q,1)
-    baseAnglesLeft  = [-0.63 , 0.95 , -0.18]
-    Rbase           = rpy2R(baseAnglesLeft,"xyz")
-    Tbase           = eye(4)
-    Tbase[1:3,1:3]  = Rbase
-
+    N = size(q,1)
     fkine, ikine, jacobian = get_kinematic_functions("yumi")
     T = Array(Float64,4,4,N)
     for i = 1:N
-        T[:,:,i]  = Tbase*fkinePOE(xi,q[i,:]')
+        T[:,:,i]  = fkine(q[i,:])
     end
 
     # plot_traj(T)

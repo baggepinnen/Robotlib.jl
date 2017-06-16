@@ -30,7 +30,6 @@ using DSP # For filtfilt
 
 # Define robot to use, in this case YuMi
 dh = DHYuMi()
-xi = DH2twistsPOE(dh)
 fkine, ikine, jacobian = get_kinematic_functions("yumi")
 
 # Define paths to log file and where to store converted binary file for faster reading
@@ -57,7 +56,7 @@ q̇ = q̇*dh.GR'
 τ = τ*inv(dh.GR')
 
 # Filter velocities to get accelerations
-q̈ = filtfilt(ones(50),[50.],centralDiff(q̇)) 
+q̈ = filtfilt(ones(50),[50.],centralDiff(q̇))
 
 # plot(abs([q̇, q̈]))
 
@@ -67,15 +66,8 @@ q       = q[lowAcc,:]
 q̇       = q̇[lowAcc,:]
 τ       = τ[lowAcc,:]
 f       = f[lowAcc,:]
-N   = size(q,1)
+N       = size(q,1)
 
-# Setup YuMi base transformation, this is to be included in function get_kinematic_functions later
-baseAnglesLeft  = [-0.63 , 0.95 , -0.18]
-Rbase           = rpy2R(baseAnglesLeft,"xyz")
-Tbase           = eye(4)
-Tbase[1:3,1:3]  = Rbase
-
-fkine, ikine, jacobian = get_kinematic_functions("yumi")
 
 # Apply forward kinematics to get end-effector poses
 T  = cat(3,[fkine(q[i,:]) for i = 1:N]...)

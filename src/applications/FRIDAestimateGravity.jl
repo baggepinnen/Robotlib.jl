@@ -45,11 +45,7 @@ q̇       = q̇[lowAcc,:];
 f       = f[lowAcc,:];
 N       = size(q,1)
 
-baseAnglesLeft  = [-0.63 , 0.95 , -0.18]
-Rbase           = rpy2R(baseAnglesLeft,"xyz")
-Tbase           = eye(4)
-Tbase[1:3,1:3]  = Rbase
-T  = cat(3,[Tbase*fkinePOE(xi,q[i,:]') for i = 1:N]...);
+T  = cat(3,[fkine(q[i,:]) for i = 1:N]...);
 
 # include("../dynamics.jl")
 
@@ -60,7 +56,7 @@ function getRegressor(q,q̇)
     A = Array(Float64,7N,np)
     ii = 1
     for i = 1:N
-        A[ii:ii+6,:] = [gravityFridaLS(q[i,:])  diagm(q̇[i,:][:] .> 0)   diagm(q̇[i,:][:] .< 0) diagm(q̇[i,:][:] .> 0)*diagm(q̇[i,:][:])  diagm(q̇[i,:][:] .< 0)*diagm(q̇[i,:][:])]
+        A[ii:ii+6,:] = [gravityFridaLS(q[i,:])  diagm(q̇[i,:] .> 0)   diagm(q̇[i,:] .< 0) diagm(q̇[i,:] .> 0)*diagm(q̇[i,:])  diagm(q̇[i,:] .< 0)*diagm(q̇[i,:])]
         ii+= 7
     end
     return A
@@ -68,7 +64,7 @@ end
 
 @time A = getRegressor(q,q̇);
 
-still = vec(abs(q̇)') .< 2e-4
+still = vec(abs.(q̇)') .< 2e-4
 still[1:3:end] = true
 still[2:3:end] = true
 
