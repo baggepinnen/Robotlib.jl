@@ -18,8 +18,8 @@ data = orcalog2mat(pathopen, pathsave)
 q = getData("robot_0.*posRawAbs", data, 1, removeNaN = false)
 ```
 
-For YuMi, joint angles `q` must be converted to logical order using e.g. abb2logical!(q)
-You must also consider the base transform of YuMi
+For ABB YuMi, joint angles `q` must be converted to logical order using e.g. `abb2logical!(q)`
+If you use the kinematic functions privided by `get_kinematic_functions`, the base transform is handled automatically. If you use the standard kinematic functions provided in Robotlib, you must also consider the base transform.
 
 ### Case study, calibrate force sensor
 ```julia
