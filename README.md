@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/baggepinnen/Robotlib.jl.svg?branch=master)](https://travis-ci.org/baggepinnen/Robotlib.jl)
+
 # Robotlib
 This is a library of functions to help out in a robotics lab. At present stage, it contains functions for forward kinematics, jacobians, iterative inverse kinematics and for a few robotics related calibration problems. The library also contains a number of functions to convert from various orientation representations and other robotics related helper functions.
 
