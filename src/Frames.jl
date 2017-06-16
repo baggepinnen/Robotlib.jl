@@ -224,7 +224,7 @@ function plotline!(l::Line, length=1.0; label="")
     scatter!(l.r[1],l.r[2],l.r[3])
     plot3Dsmart!(coords)
     if label != ""
-        po = l.r.p-length/4*normalized(l.r.p)
+        po = l.r.p-length/4*normalize!(l.r.p)
         annotate!(po[1],po[2],po[3],label)
     end
 end
@@ -322,8 +322,6 @@ Ry(F::Frame)  = F.T[1:3,2]
 Rz(F::Frame)  = F.T[1:3,3]
 det(F::Frame) = det(F.T[1:3,1:3])
 print(f::Frame) = "\$T_{$(f.A)}^{$(f.B)}\$"
-normalized(v::Vector{Float64}) = v/norm(v)
-function normalize!(v::Vector{Float64}) v/=norm(v); end
 normalized(p::Point) = Point(p.p/norm(p.p), p.A)
 function normalize!(p::Point) p.p/=norm(p.p); end
 
@@ -367,8 +365,8 @@ function fitplane(points::Points)
     r = n*(cog'*n)[1]
 
     assert(abs(norm(n)-1) < 1e-8)
-    assert(abs(abs(normalized(r-cog)⋅n)) < 1e-14)
-    assert(abs(abs(n⋅normalized(r))-1) < 1e-14)
+    assert(abs(abs(normalize(r-cog)⋅n)) < 1e-14)
+    assert(abs(abs(n⋅normalize(r))-1) < 1e-14)
     assert(norm(r) < norm(cog))
 
     return Plane(n,r,points.A)
@@ -381,8 +379,8 @@ function fitline(points::Points)
     r = cog-(v'*cog).*v
 
     assert(abs(norm(v)-1) < 1e-8)
-    assert(abs(abs(normalized(r-cog)⋅v) - 1) < 1e-14)
-    assert(abs(v⋅normalized(r)) < 1e-14)
+    assert(abs(abs(normalize(r-cog)⋅v) - 1) < 1e-14)
+    assert(abs(v⋅normalize(r)) < 1e-14)
     assert(norm(r) < norm(cog))
 
     return Line(Point(v,points.A), Point(r,points.A),points.A)
@@ -404,9 +402,9 @@ end
 function project(plane::Plane, line::Line)
     checkframes(plane,line)
     n = plane.n
-    n_projplane = normalized(n × line.v)
+    n_projplane = normalize(n × line.v)
     P = n.p*n.p'
-    vp = normalized(line.v - P*line.v)
+    vp = normalize(line.v - P*line.v)
     assert(abs(vp⋅n_projplane) < 1e-14)
 
     A = [vp',n', n_projplane']
@@ -428,7 +426,15 @@ function project(line::Line, points::Points)
     return ppoints
 end
 
-
+function getdir(f::GeometricObject)
+    if isa(f,Plane)
+        return f.n
+    elseif isa(f,Line)
+        return f.v
+    elseif isa(f,Frame)
+        return Point(Rx(f),f.A)
+    end
+end
 
 function framefromfeatures(feature1, feature2, origin, B)
     checkframes(feature1[2],feature2[2])
@@ -442,9 +448,9 @@ function framefromfeatures(feature1, feature2, origin, B)
     s1 = feature1[1][2] == '+' ? 1 : -1
     s2 = feature2[1][2] == '+' ? 1 : -1
 
-    R1 = normalized(getdir(feature1[2]).p * s1)
-    R2 = normalized(getdir(feature2[2]).p * s2)
-    R3 = normalized(R1×R2)
+    R1 = normalize(getdir(feature1[2]).p * s1)
+    R2 = normalize(getdir(feature2[2]).p * s2)
+    R3 = normalize(R1×R2)
     R2 = R3×R1
 
     R[:,r1] = R1
@@ -454,51 +460,7 @@ function framefromfeatures(feature1, feature2, origin, B)
     assert(abs(det(R)-1) < 1e-14)
 
     Frame(R,origin.p,feature1[2].A, B)
-
-
 end
-
-function getdir(f::GeometricObject)
-    if isa(f,Plane)
-        return f.n
-    elseif isa(f,Line)
-        return f.v
-    elseif isa(f,Frame)
-        return Point(Rx(f),f.A)
-    end
-end
-
-
-
-function readcloud(file)
-    coordlines = prepfile(file)
-    points = Points("T")
-    for line in coordlines
-        p = Point(line[2:4],"T")
-        push!(points,p)
-    end
-    println("Read $(length(points)) points into cloud with reference T")
-    points
-end
-
-function readplane(file)
-    coordlines = prepfile(file)
-    T = readTmatrix(coordlines)
-    n = T[1:3,3]
-    o = T[1:3,4]
-    r = (n⋅o)*n
-    Plane(n,r,"T")
-
-end
-
-function readTmatrix(coordlines)
-    T = eye(4,4)
-    for (i,line) in enumerate(coordlines)
-        T[i,:] = line
-    end
-    T
-end
-
 
 function prepfile(file)
     f = open(file)
@@ -513,13 +475,39 @@ function prepfile(file)
             fcoords = float(coords)
             isempty(fcoords) && continue
             push!(coordlines,fcoords)
-        catch e
+        catch 
             break
         end
     end
     coordlines
 end
 
+function readcloud(file)
+    coordlines = prepfile(file)
+    points = Points("T")
+    for line in coordlines
+        p = Point(line[2:4],"T")
+        push!(points,p)
+    end
+    println("Read $(length(points)) points into cloud with reference T")
+    points
+end
 
+function readTmatrix(coordlines)
+    T = eye(4,4)
+    for (i,line) in enumerate(coordlines)
+        T[i,:] = line
+    end
+    T
+end
+
+function readplane(file)
+    coordlines = prepfile(file)
+    T = readTmatrix(coordlines)
+    n = T[1:3,3]
+    o = T[1:3,4]
+    r = (n⋅o)*n
+    Plane(n,r,"T")
+end
 
 end

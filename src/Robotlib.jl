@@ -41,8 +41,8 @@ export calibLPOE, calibLPOEdual, calibForce, calibPOE_offsets_from_points
 end
 
 
-export skewcoords, twistcoords, skew, skew4, expω, expξ, expξ2, expξ!, logT, logR, trinv, isrot, isse3, Rangle, conformize, DH2twistsPOE, DH2twistsLPOE, dh2Tn, toOrthoNormal!, toOrthoNormal!, rpy2R, Quaternion, xyθ, smartDiff, R2rpy, traj2quat, centralDiff
-export fkinePOE, fkineLPOE, ikinePOE, dh2Tn, jacobianPOE, jacobianPOEikine, jacobian, get_kinematic_functions
+export skewcoords, twistcoords, skew, skew4, expω, expξ, expξ2, expξ!, logT, logR, trinv, isrot, isse3, Rangle, conformize, DH2twistsPOE, DH2twistsLPOE, dh2Tn, toOrthoNormal!, rpy2R, Quaternion, xyθ, smartDiff, R2rpy, traj2quat, centralDiff
+export fkinePOE, fkineLPOE, ikinePOE, jacobianPOE, jacobianPOEikine, jacobian, get_kinematic_functions
 export plot_traj, plot_traj3, plot_traj_sub, plot3smart, plotsub
 export DH, DH2400, DHYuMi, DH7600, DHtest, abb2logical!, logical2abb!, abb2logical, logical2abb
 export csv2mat, orcalog2mat, getData, readmat
