@@ -3,6 +3,7 @@ type DH
     offset::Vector{Float64}
     GR::Matrix{Float64}
 end
+
 DH(dhpar,offset) = DH(dhpar,offset,eye(length(offset)))
 
 function DH2400()
@@ -98,10 +99,6 @@ function DHYuMi(left=true)
                 DH_alpha6      0                0       handLen             0  ];
 
     return DH(dhpar,offset,gearRatio)
-
-
-
-
 end
 
 
@@ -133,17 +130,17 @@ function DH7600()
 end
 
 function DHtest()
-    DH_alpha= [1.0,2,3,4,5,6]
-    DH_a0= 0;
-    DH_a1= 0;
-    DH_a2= 0;
+    DH_alpha = [1.0,2,3,4,5,6]
+    DH_a0    = 0;
+    DH_a1    = 0;
+    DH_a2    = 0;
 
-    DH_d0 =780;
-    DH_d1 =10;
-    DH_d2 =20;
-    DH_d3 = 1056;
-    DH_d4 =30;
-    DH_d5 =250;
+    DH_d0    = 780;
+    DH_d1    = 10;
+    DH_d2    = 20;
+    DH_d3    = 1056;
+    DH_d4    = 30;
+    DH_d5    = 250;
 
     offset = zeros(6);
 

@@ -1,7 +1,6 @@
-include("DH.jl")
 Rt2T(R,t) = [R t; 0 0 0 1]
-T2R(T) = T[1:3,1:3]
-T2t(T) = T[1:3,4]
+T2R(T::Matrix) = T[1:3,1:3]
+T2t(T::Matrix) = T[1:3,4]
 skewcoords(R) = [R[3,2];R[1,3];R[2,1]]
 twistcoords(xi) = [xi[1:3, 4]; skewcoords(xi[1:3, 1:3])]
 @inline skew(s) = [0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
@@ -257,7 +256,6 @@ function DH2twistsLPOE(Tn)
     return xi
 end
 
-
 DH2twistsLPOE(dh::DH) = DH2twistsLPOE(dh2Tn(dh))
 DH2twistsPOE(dh::DH) = DH2twistsPOE(dh2Tn(dh))
 
@@ -283,9 +281,6 @@ function toOrthoNormal(Mi)
     M
 end
 
-
-
-
 """
 `rpy2R(r,p,y,conv="zyx")`
 For rpy from ABB robot, use zyx
@@ -308,18 +303,15 @@ function rpy2R(r,p,y,conv="zyx")
     elseif conv == "zyx"
         R = rotz(r)*roty(p)*rotx(y)
     end
-
 end
 
 rpy2R(r,conv="zyx") = rpy2R(r...,conv)
 
 
 function rotx(t, deg=false)
-
     if deg
         t = t *pi/180
     end
-
     ct = cos(t)
     st = sin(t)
     R = [
@@ -330,11 +322,9 @@ function rotx(t, deg=false)
 end
 
 function roty(t, deg=false)
-
     if deg
         t = t *pi/180
     end
-
     ct = cos(t)
     st = sin(t)
     R = [
@@ -345,11 +335,9 @@ function roty(t, deg=false)
 end
 
 function rotz(t, deg=false)
-
     if deg
         t = t *pi/180
     end
-
     ct = cos(t)
     st = sin(t)
     R = [
@@ -416,9 +404,7 @@ end
 using Quaternions
 import Quaternions.Quaternion
 function Quaternion{P}(t::Matrix{P})
-
-
-    qs = sqrt(trace(t)+1)/2.0
+    qs = sqrt(trace(t[1:3,1:3])+1)/2.0
     kx = t[3,2] - t[2,3]   # Oz - Ay
     ky = t[1,3] - t[3,1]   # Ax - Nz
     kz = t[2,1] - t[1,2]   # Ny - Ox
@@ -451,15 +437,12 @@ function Quaternion{P}(t::Matrix{P})
     end
     nm = norm([kx, ky, kz])
     if nm == 0
-        q = Quaternion([0, 0, 0, 1])
+        q = Quaternion(1, 0, 0, 0)
     else
-        s = sqrt(1 - qs^2) / nm
+        s  = sqrt(1 - qs^2) / nm
         qv = s*[kx, ky, kz]
-
-        q = Quaternion([qv;qs])
-
+        q  = Quaternion(qs,qv)
     end
-
 end
 
 function traj2quat(T)
