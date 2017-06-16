@@ -1,3 +1,6 @@
+[![Robotlib](http://pkg.julialang.org/badges/Robotlib_0.4.svg)](http://pkg.julialang.org/?pkg=Robotlib)
+[![Robotlib](http://pkg.julialang.org/badges/Robotlib_0.5.svg)](http://pkg.julialang.org/?pkg=Robotlib)
+[![Robotlib](http://pkg.julialang.org/badges/Robotlib_0.6.svg)](http://pkg.julialang.org/?pkg=Robotlib)
 [![Build Status](https://travis-ci.org/baggepinnen/Robotlib.jl.svg?branch=master)](https://travis-ci.org/baggepinnen/Robotlib.jl)
 
 # Robotlib
