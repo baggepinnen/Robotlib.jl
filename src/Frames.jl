@@ -54,7 +54,7 @@ println("Wrote T_TAB_SEAM, T_T_SEAM, T_RB_TAB to files in \$path")
 """
 module Frames
 
-using Plots, FixedSizeArrays
+using Plots, StaticArrays
 default(markersize=1)
 export Frame, Point, Plane, Points, Line, GeometricObject, add_frame_name!
 export readcloud, readTmatrix, readplane, fitline, fitplane, framefromfeatures, project
@@ -65,12 +65,14 @@ import Base: det, print, zeros, length, size, getindex, setindex!, convert, prom
 # using LaTeXStrings
 import Robotlib: T2R, T2t
 
-typealias Vect{Ty} Union{AbstractVector{Ty}, Vec{3,Ty}}
-typealias Matr{Ty} Union{AbstractMatrix{Ty}, Mat{3,3,Ty}}
+const Vect{Ty} = Union{AbstractVector{Ty}, MVector{3,Ty}}
+const Matr{Ty} = Union{AbstractMatrix{Ty}, MMatrix{3,3,Ty}}
+const Vec{N,Ty} = MVector{N,Ty} # Translate from FixedSizeArrays
+const Mat{N1,N2,Ty} = MMatrix{N1,N2,Ty} # Translate from FixedSizeArrays
 
 # Type definitions --------------------------------------------
 # -------------------------------------------------------------
-abstract GeometricObject
+abstract type GeometricObject end
 
 type Point{Ty} <: GeometricObject
     p::Vec{3,Ty}
@@ -187,7 +189,7 @@ type Plane{Ty} <: GeometricObject
     r::Point{Ty}
     A::String
 end
-Plane{Ty}(n::Vect{Ty},r::Vect{Ty},A="U") = Plane{Ty}(n,r,A)
+
 Plane{Ty}(n::Vect{Ty},r::Vect{Ty},A="U") = Plane{Ty}(Point{Ty}(n,A),Point{Ty}(r,A),A)
 Plane(points::Points) = fitplane(points)
 
@@ -288,14 +290,10 @@ end
 
 *(p::Point, c::Real) = Point(c.*p.p, p.A)
 *(c::Real, p::Point) = *(p, c)
-.*(p::Point, c::Real) = *(p, c)
-.*(c::Real, p::Point) = *(p, c)
 *(p::Point, R::Matr) = error("Post multiplication of ::Point with ::Matrix not supported")
 *(R::Matr, p::Point) = Point(R*p.p, p.A)
 /(p::Point, c::Real) = Point(p.p./c, p.A)
 /(c::Real,p::Point) = /(p,c)
-./(p::Point, c::Real) = Point(p,c)
-./(c::Real,p::Point) = /(p,c)
 +(p1::Point, p2::Point) = Point(p1.p + p2.p, p1.A)
 -(p1::Point, p2::Point) = Point(p1.p - p2.p, p1.A)
 +(p1::Vect, p2::Point) = p1 + p2.p
@@ -305,8 +303,6 @@ end
 ⋅(p1::Point, p2::Point) = p1.p ⋅ p2.p
 ×(p1::Point, p2::Point) = Point(p1.p × p2.p, p1.A)
 
-dot{Ty}(a::Vec{3,Ty}, b::AbstractVector{Ty}) = a[1]*b[1]+a[2]*b[2]+a[3]*b[3]
-dot{Ty}(a::AbstractVector{Ty}, b::Vec{3,Ty}) = a[1]*b[1]+a[2]*b[2]+a[3]*b[3]
 
 transpose(p::Point) = p.p'
 ctranspose(p::Point) = p.p'
@@ -488,11 +484,9 @@ function framefromfeatures(feature1, feature2, origin, B)
 
     (det(_R) < 0) &&  (_R[:,r3] *= -1)
     @assert abs(det(_R)-1) < 1e-14
-    R = Mat(_R)
+    R = Mat{3,3}(_R)
 
     Frame(R,origin.p,feature1[2].A, B)
-
-
 end
 
 function getdir(f::GeometricObject)

@@ -1,4 +1,4 @@
-julia 0.5
+julia 0.6.0-pre
 MAT
 DataFrames
 DataArrays
@@ -6,4 +6,4 @@ RecipesBase
 Plots
 StatsBase
 Quaternions
-FixedSizeArrays
+StaticArrays
