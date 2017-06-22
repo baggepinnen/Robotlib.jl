@@ -1,3 +1,4 @@
+__precompile__()
 """
 This is a library of functions to help out in the Robotlab at LTH
 The module imports the following files\n
@@ -50,6 +51,7 @@ export DH, DH2400, DHYuMi, DH7600, DHtest, abb2logical!, logical2abb!, abb2logic
 export csv2mat, orcalog2mat, getData, readmat
 export frictionRBFN, getCenters
 
-
+precompile(get_kinematic_functions, (String,))
+precompile(fkineLPOE, (Array{Float64,3},Array{Float64,2},Array{Float64,1}))
+precompile(jacobianPOE, (Array{Float64,1},Array{Float64,2}))
 end
-
