@@ -34,6 +34,8 @@ cloud_seam_projected_RB = T_RB_T*cloud_seam_projected
 plane_seam_RB = T_RB_T*plane_seam
 line_seam_RB  = T_RB_T*line_seam
 
+using Plots
+default(markersize=1)
 plot(Frame(eye(4),"RB","U"),200, label=true)
 plot!(cloud_seam_RB)
 plot!(cloud_seam_projected_RB)
@@ -54,8 +56,8 @@ println("Wrote T_TAB_SEAM, T_T_SEAM, T_RB_TAB to files in \$path")
 """
 module Frames
 
-using Plots, StaticArrays
-default(markersize=1)
+using StaticArrays, RecipesBase
+
 export Frame, Point, Plane, Points, Line, GeometricObject, add_frame_name!
 export readcloud, readTmatrix, readplane, fitline, fitplane, framefromfeatures, project
 export plot3Dsmart, display, show, print
@@ -178,7 +180,7 @@ end
 checkframes(x::GeometricObject, y::GeometricObject) = x.A != y.A &&  error("The two geometric objects do not have the same reference frame ($x -> $(x.A), $y -> $(y.A))")
 
 function display(f::Frame)
-    println(round(F2T(f),4))
+    println(round.(F2T(f),4))
     show(string(frame_names[f.A])*"->"*string(frame_names[f.B]))
 end
 print(f::Frame) = "\$T_{$(f.A)}^{$(f.B)}\$"
@@ -211,10 +213,10 @@ mat2tup(m) = m[:,1][:], m[:,2][:], m[:,3][:]
 
 @recipe function plotframe(f::Frame, length=1.0)#; annotation=false)
     #Plots a frame using XYZ-RGB
-    o = F2t(f) |> Vector
-    x = Rx(f) |> Vector
-    y = Ry(f) |> Vector
-    z = Rz(f) |> Vector
+    o = F2t(f)
+    x = Rx(f)
+    y = Ry(f)
+    z = Rz(f)
     seriestype := :path3d
     label     := ""
     @series begin
@@ -354,9 +356,9 @@ end
 F2t(F::Frame) = F.t
 F2R(F::Frame) = F.R
 F2T(F::Frame) = [Array(F.R) Array(F.t); 0 0 0 1]
-Rx(F::Frame)  = F.R[1:3,1] |> Vec
-Ry(F::Frame)  = F.R[1:3,2] |> Vec
-Rz(F::Frame)  = F.R[1:3,3] |> Vec
+Rx(F::Frame)  = F.R[1:3,1]
+Ry(F::Frame)  = F.R[1:3,2]
+Rz(F::Frame)  = F.R[1:3,3]
 det(F::Frame) = det(F.R)
 normalized(v::Vect) = v/norm(v)
 function normalize!(v::Vect) v/=norm(v); end
