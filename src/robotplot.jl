@@ -1,7 +1,6 @@
-using Plots
 import .Frames # The dot is due to the fact that Frames is a submodule
-
-default(markersize=1)
+using RecipesBase
+# default(markersize=1)
 
 @userplot TrajPlot
 """`trajplot(T,args...)` Plots a trajectory of T-matrices in a single plot"""
@@ -44,16 +43,3 @@ plot3smart
     seriestype := :path3d
     (data[:,1],data[:,2],data[:,3])
 end
-
-
-# @recipe function f(::Type{Val{:mat3d}}, data)
-#     @show typeof(data)
-#     @show typeof(d[:x])
-#     @show typeof(d[:y])
-#     @show typeof(d[:z])
-#     x := d[:y][:,1][:]
-#     y := d[:y][:,2][:]
-#     z := d[:y][:,3][:]
-#     seriestype := :path3d
-#     ()
-# end
