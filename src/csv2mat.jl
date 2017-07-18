@@ -1,16 +1,15 @@
 #module Csv2mat
 using MAT
 using DataArrays, DataFrames
-using Plots
 #export csv2mat
 a = 13
 
 
 """
 convert a csv table file to a .mat file for import to Matlab
-csv2mat(filename, destination="log.mat"; startline=0, writeNames = true, doplot = false, subplots = 16, subsample = 1, separator = ',')
+csv2mat(filename, destination="log.mat"; startline=0, writeNames = true, subsample = 1, separator = ',')
 """
-function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true, doplot = false, subplots = 16, subsample = 1, separator = ',')
+function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true, subsample = 1, separator = ',')
 
     # Read the csv file into a dataframe
     df = readtable(filename, separator = separator, header=true, skipstart=startline)
@@ -46,52 +45,52 @@ function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true
     print_with_color(:yellow, "Skipped $(text) columns with text\n")
 
     # Perform requested plotting
-    if doplot
-        colsToPlot = cols
-        constants = Dict{Int64,Float64}()
-        for i = 1:cols
-            if all(df[:,i] .== df[1,i])
-                typeof(df[1,i]) <: Number && push!(constants,i,df[1,i])
-                colsToPlot-= 1
-            end
-            if !(typeof(df[1,i])<:Number)
-                colsToPlot-= 1
-            end
-        end
-        numberOfFigures = round(Int64,ceil(colsToPlot/subplots))
-        print("Plotting all data in $(numberOfFigures) windows ... ")
-        for window = 0:(numberOfFigures-1)
-            plotrows::Int64 = ceil(sqrt(minimum([colsToPlot,subplots])))
-            plotcols::Int64 = ceil(minimum([colsToPlot,subplots])/plotrows)
-            doplot && plot(layout=(plotrows,plotcols))
-            # Write the results to a .mat-file
-            plotrow = plotcol = 0
-            skip = 0;
-
-            for ii in (window*subplots).+collect(1:minimum([colsToPlot,subplots]))
-                i = ii+skip
-                while haskey(constants,i) || !(typeof(df[1,i])<:Number)
-                    skip += 1
-                    i = ii+skip
-                end
-                try
-                    plot!(df[:,i], subplot=plotrow*plotcols + plotcol+1, title=replace(string(n[i]),"_"," "))
-                catch ex
-                    print_with_color(:red,"Could not plot column: $(string(n[i]))\n")
-                end
-                plotcol = (plotcol + 1) % plotcols
-                if plotcol == 0
-                    plotrow = (plotrow + 1) % plotrows
-                end
-            end
-            #winston && display(t)
-            colsToPlot -= plotrows*plotcols
-        end
-        println("done")
-        print_with_color(:yellow,"Constants (not plotted):\n")
-        for i in keys(constants)
-            println(string(n[i], ":\t", round(constants[i],4)))
-        end
-    end
+    # if doplot
+    #     colsToPlot = cols
+    #     constants = Dict{Int64,Float64}()
+    #     for i = 1:cols
+    #         if all(df[:,i] .== df[1,i])
+    #             typeof(df[1,i]) <: Number && push!(constants,i,df[1,i])
+    #             colsToPlot-= 1
+    #         end
+    #         if !(typeof(df[1,i])<:Number)
+    #             colsToPlot-= 1
+    #         end
+    #     end
+    #     numberOfFigures = round(Int64,ceil(colsToPlot/subplots))
+    #     print("Plotting all data in $(numberOfFigures) windows ... ")
+    #     for window = 0:(numberOfFigures-1)
+    #         plotrows::Int64 = ceil(sqrt(minimum([colsToPlot,subplots])))
+    #         plotcols::Int64 = ceil(minimum([colsToPlot,subplots])/plotrows)
+    #         doplot && plot(layout=(plotrows,plotcols))
+    #         # Write the results to a .mat-file
+    #         plotrow = plotcol = 0
+    #         skip = 0;
+    #
+    #         for ii in (window*subplots).+collect(1:minimum([colsToPlot,subplots]))
+    #             i = ii+skip
+    #             while haskey(constants,i) || !(typeof(df[1,i])<:Number)
+    #                 skip += 1
+    #                 i = ii+skip
+    #             end
+    #             try
+    #                 plot!(df[:,i], subplot=plotrow*plotcols + plotcol+1, title=replace(string(n[i]),"_"," "))
+    #             catch ex
+    #                 print_with_color(:red,"Could not plot column: $(string(n[i]))\n")
+    #             end
+    #             plotcol = (plotcol + 1) % plotcols
+    #             if plotcol == 0
+    #                 plotrow = (plotrow + 1) % plotrows
+    #             end
+    #         end
+    #         #winston && display(t)
+    #         colsToPlot -= plotrows*plotcols
+    #     end
+    #     println("done")
+    #     print_with_color(:yellow,"Constants (not plotted):\n")
+    #     for i in keys(constants)
+    #         println(string(n[i], ":\t", round(constants[i],4)))
+    #     end
+    # end
 
 end
