@@ -1,8 +1,14 @@
 Rt2T(R,t) = [R t; 0 0 0 1]
-T2R(T::Matrix) = T[1:3,1:3]
-T2t(T::Matrix) = T[1:3,4]
+T2R(T::AbstractMatrix) = T[1:3,1:3]
+T2t(T::AbstractMatrix) = T[1:3,4]
 skewcoords(R) = [R[3,2];R[1,3];R[2,1]]
 twistcoords(xi) = [xi[1:3, 4]; skewcoords(xi[1:3, 1:3])]
+
+"""
+    skew(s)
+
+Form a skew symmetric matrix from vector `s` ∈ ℜ³
+"""
 @inline skew(s) = [0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
 @inline function skew!(R,s)
     R[1,1] = 0
@@ -123,7 +129,11 @@ trinv(T) = [T[1:3,1:3]' -T[1:3,1:3]'*T[1:3,4];0 0 0 1]
 isrot(R) = det(R[1:3,1:3]) ≈ 1 && norm(R[1:3,1:3]'R[1:3,1:3]-I) < 1e-10
 isse3(T) = isrot(T) && T[4,1:4] == [0 0 0 1]
 
-"""`Rangle(R1,R2 = eye(3),deg = false)` calculates the angle between two rotation matrices"""
+"""
+    Rangle(R1, R2 = eye(3), deg = false)
+
+Returns the angle between two rotation matrices
+"""
 function Rangle(R1,R2 = eye(3),deg = false)
     N = size(R1,3)
     if N == 1
@@ -153,7 +163,6 @@ function Rangle(R1,R2 = eye(3),deg = false)
             end
         end
         return θ
-
     end
 end
 
@@ -261,12 +270,10 @@ DH2twistsPOE(dh::DH) = DH2twistsPOE(dh2Tn(dh))
 
 """Takes a matrix R ∈ SO(3) or T ∈ SE(3) and makes the rotational part orthonormal"""
 function toOrthoNormal!(M)
-    R = M[1:3,1:3]
-    U,S,V = svd(R)
+    U,S,V = svd(M[1:3,1:3])
     a = sign(det(U*V'))
     S = diagm([1,1,a])
-    R = U*S*V'
-    M[1:3,1:3] = R
+    M[1:3,1:3] .= U*S*V'
     M
 end
 
@@ -348,9 +355,10 @@ function rotz(t, deg=false)
 end
 
 """
-`R2rpy(R; conv="xyz", deg = false)`\n
-If `conv` is not `xyz`, it will be `zyx`\n
-returns a vector ∈ R3 or a matrix ∈ R3×N depending on the dimension of the input
+    R2rpy(R; conv="xyz", deg = false)
+
+Returns a vector ∈ ℜ³ or a matrix ∈ ℜ(3×N) depending on the dimension of the input.
+If `conv` is not `xyz`, it will be `zyx`
 """
 function R2rpy{T}(m::AbstractArray{T,3}; conv="xyz", deg = false)
     N = size(m,3)
@@ -361,7 +369,12 @@ function R2rpy{T}(m::AbstractArray{T,3}; conv="xyz", deg = false)
     return rpy
 end
 
-function R2rpy(m::Matrix; conv="xyz", deg = false)
+"""
+    R2rpy(R::AbstractMatrix; conv="xyz", deg = false)
+
+Returns a vector of roll, pitch and yaw angles. `conv` determines the rotation convention.
+"""
+function R2rpy(m::AbstractMatrix; conv="xyz", deg = false)
 
     rpy = zeros(3)
 
@@ -403,7 +416,7 @@ end
 
 using Quaternions
 import Quaternions.Quaternion
-function Quaternion{P}(t::Matrix{P})
+function Quaternion{P}(t::AbstractMatrix{P})
     qs = sqrt(trace(t[1:3,1:3])+1)/2.0
     kx = t[3,2] - t[2,3]   # Oz - Ay
     ky = t[1,3] - t[3,1]   # Ax - Nz
@@ -445,9 +458,15 @@ function Quaternion{P}(t::Matrix{P})
     end
 end
 
+"""
+    Q = traj2quat(T)
+
+Return a matrix ∈ R(4,N) of quaternions representing the rotations of the frames in `T` ∈
+ℜ(4,4,N) or ℜ(3,3,N)
+"""
 function traj2quat(T)
     N = size(T,3)
-    Q = Array(Float64,4,N)
+    Q = Array{eltype(T)}(4,N)
     for i = 1:N
         q = Quaternion(T[:,:,i])
         Q[1,i] = q.s
@@ -458,11 +477,24 @@ function traj2quat(T)
     return Q
 end
 
-@deprecate smartDiff centralDiff
+@deprecate smartDiff centraldiff
+@deprecate centralDiff centraldiff
 
-function centralDiff(v)
-    c = size(v,2)
-    a1 = [zeros(1,c);diff(v)]
-    a2 = [diff(v);zeros(1,c)]
-    a = (a1+a2)/2
+"""
+    dv = centraldiff(v)
+
+Returns the central difference of `v` along the first dimension. `dv` has the same dimensions as `v`
+"""
+function centraldiff(v::AbstractMatrix)
+    dv = diff(v)/2
+    a1 = [dv[[1],:];dv]
+    a2 = [dv;dv[[end],:]]
+    a = a1+a2
+end
+
+function centraldiff(v::AbstractVector)
+    dv = diff(v)/2
+    a1 = [dv[1];dv]
+    a2 = [dv;dv[end]]
+    a = a1+a2
 end
