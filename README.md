@@ -77,7 +77,7 @@ trajplot(T) # Plots a trajectory of R4x4 transformation matrices
 
 # Perform the force sensor calibration and plot the errors
 Rf,m,offset     = Robotlib.Calibration.calibForce(T,f,0.2205,offset=true)
-err = cat(2,[Rf*f[i,1:3]' + offset - T[1:3,1:3,i]'*[0, 0, m*-9.82] for i = 1:N]...)'
+err = cat(2,[Rf*f[i,1:3] + offset - T[1:3,1:3,i]'*[0, 0, m*-9.82] for i = 1:N]...)'
 plot(f[:,1:3],lab="Force")
 plot!(err,l=:dash,lab="Error")
 println("Error: ", round(rms(err),4))

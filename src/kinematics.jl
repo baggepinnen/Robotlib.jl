@@ -156,8 +156,8 @@ Iterative inverse kinematics
 `λ`sets the start value of the regularizing parameter (kind of like inverse step size). Bigger value means slower but more robust convergence, if adaptive is set to true, λ is adapted to speed up convergence.
 """
 function ikinePOE(xi,T,q0; maxiter=100, λ = 1e0, tol = 1e-12, verbose = false, adaptive = true)
-    q = q0
-    err = Array(Float64,maxiter)
+    q = copy(q0)
+    err = Array{eltype(q0)}(maxiter)
     Tend = expξ2(xi[:,end-1],1)*expξ2(xi[:,end],1)
     J,V,Tc = jacobianPOEikine(q,xi,Tend)
     err[1] = norm(twistcoords(logT(T*trinv(Tc))))
