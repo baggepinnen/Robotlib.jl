@@ -16,10 +16,10 @@ function calibForce(POSES,F,m0=0.3; offset=true, useCVX = false)
     mg = m0*g # Initial guess is m0, the method accepts 5 orders of magnitude error at least
 
     I = eye(3)
-    B = Array(Float64,3N)
-    B2 = Array(Float64,3N)
+    B = Array{Float64}(3N)
+    B2 = Array{Float64}(3N)
     if offset # Include offset
-        A = Array(Float64,3N,12)
+        A = Array{Float64}(3N,12)
         for i = 1:N
             RA = POSES[1:3,1:3,i]'
             At = [F[i,1]*I   F[i,2]*I    F[i,3]*I   I]
@@ -40,7 +40,7 @@ function calibForce(POSES,F,m0=0.3; offset=true, useCVX = false)
         toOrthoNormal!(Rf)
         for ii = 1:2
             #        forceoffs = w(10:12)
-            A2 = Array(Float64,3N,4)
+            A2 = Array{Float64}(3N,4)
             for i = 1:N
                 RA = POSES[1:3,1:3,i]'
                 At = [RA[:,3] I]
@@ -58,10 +58,10 @@ function calibForce(POSES,F,m0=0.3; offset=true, useCVX = false)
             forceoffs = w[2:4]
         end
     else # Do not include offset
-        A = Array(Float64,3N,9)
+        A = Array{Float64}(3N,9)
         for i = 1:N
             RA = POSES[1:3,1:3,i]'
-            At = [F[i,1]*I, F[i,2]*I, F[i,3]*I]
+            At = [F[i,1]*I F[i,2]*I F[i,3]*I]
             b =  -RA[1:3,3]
             A[3(i-1)+1:3i,:] = At
             B[3(i-1)+1:3i] = b
@@ -73,8 +73,8 @@ function calibForce(POSES,F,m0=0.3; offset=true, useCVX = false)
             info("Determinant of Rf before orthonormalization: ", det(Rf))
             det(Rf) < 0 && warn("det(Rf) < 0, left handed coordinate system?")
             toOrthoNormal!(Rf)
-            A2 = Array(Float64,3N,1)
-            B2 = Array(Float64,3N)
+            A2 = Array{Float64}(3N,1)
+            B2 = Array{Float64}(3N)
             for i = 1:N
                 RA = POSES[1:3,1:3,i]'
                 At = RA[:,3]
@@ -82,7 +82,7 @@ function calibForce(POSES,F,m0=0.3; offset=true, useCVX = false)
                 A2[3(i-1)+1:3i,:] = At
                 B2[3(i-1)+1:3i] = b
             end
-            mg = A2\B2
+            mg = (A2\B2)[]
 
         end
     end

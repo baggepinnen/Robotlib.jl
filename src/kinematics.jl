@@ -140,7 +140,7 @@ function fkinePOE(xi0,q)
 end
 
 """`fkineLPOE(Tn0,xi,q)` Forward kinematics using LPOE"""
-function fkineLPOE(Tn0,xi,q)
+function fkineLPOE{Ty}(Tn0::AbstractArray{Ty},xi::AbstractMatrix{Ty},q::AbstractVector{Ty})::Matrix{Ty}
     T = eye(4)
     n = size(xi,2)-1
     for j = 1:n
