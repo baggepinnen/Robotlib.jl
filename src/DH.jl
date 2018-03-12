@@ -155,23 +155,23 @@ function DHtest()
 end
 
 
-function abb2logical!(q::Matrix)
+function abb2logical!(q::AbstractMatrix)
     q[:,:] = q[:,[1, 2, 7, 3, 4, 5, 6]]
 end
 
-function logical2abb!(q::Matrix)
+function logical2abb!(q::AbstractMatrix)
     q[:,:] = q[:,[1, 2, 4, 5, 6, 7, 3]]
 end
 
-function abb2logical!(q::Vector)
+function abb2logical!(q::AbstractVector)
     q[:,:] = q[[1, 2, 7, 3, 4, 5, 6]]
 end
 
-function logical2abb!(q::Vector)
+function logical2abb!(q::AbstractVector)
     q[:,:] = q[[1, 2, 4, 5, 6, 7, 3]]
 end
 
-abb2logical(q::Matrix) = q[:,[1, 2, 7, 3, 4, 5, 6]]
-logical2abb(q::Matrix) = q[:,[1, 2, 4, 5, 6, 7, 3]]
-abb2logical(q::Vector) = q[[1, 2, 7, 3, 4, 5, 6]]
-logical2abb(q::Vector) = q[[1, 2, 4, 5, 6, 7, 3]]
+abb2logical(q::AbstractMatrix) = q[:,[1, 2, 7, 3, 4, 5, 6]]
+logical2abb(q::AbstractMatrix) = q[:,[1, 2, 4, 5, 6, 7, 3]]
+abb2logical(q::AbstractVector) = q[[1, 2, 7, 3, 4, 5, 6]]
+logical2abb(q::AbstractVector) = q[[1, 2, 4, 5, 6, 7, 3]]
