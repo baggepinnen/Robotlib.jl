@@ -3,8 +3,8 @@ T2R(T::Matrix) = T[1:3,1:3]
 T2t(T::Matrix) = T[1:3,4]
 skewcoords(R) = [R[3,2];R[1,3];R[2,1]]
 twistcoords(xi) = [xi[1:3, 4]; skewcoords(xi[1:3, 1:3])]
-@inline skew(s) = [0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
-@inline function skew!(R,s)
+@inline skew(s)::Matrix{eltype(s)} = [0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
+@inline function skew!{T}(R::T,s)::T
     R[1,1] = 0
     R[2,1] = s[3]
     R[3,1] = -s[2]
@@ -16,7 +16,7 @@ twistcoords(xi) = [xi[1:3, 4]; skewcoords(xi[1:3, 1:3])]
     R[3,3] = 0
     return R
 end
-skew4(s)= [skew(s[4:6]) s[1:3]; 0 0 0 0]
+skew4(s)::Matrix{eltype(s)} = [skew(s[4:6]) s[1:3]; 0 0 0 0]
 
 # expω(w,q=1) = I + sin(norm(w)*q)/norm(w)*skew(w) + (1-cos(norm(w)*q))/norm(w)^2*skew(w)^2 # verified to work
 
@@ -403,8 +403,8 @@ end
 
 using Quaternions
 import Quaternions.Quaternion
-function Quaternion{P}(t::Matrix{P})
-    qs = sqrt(trace(t[1:3,1:3])+1)/2.0
+function Quaternion{P}(t::AbstractMatrix{P})
+    qs = sqrt(t[1,1]+t[2,2]+t[3,3]+1)/2.0
     kx = t[3,2] - t[2,3]   # Oz - Ay
     ky = t[1,3] - t[3,1]   # Ax - Nz
     kz = t[2,1] - t[1,2]   # Ny - Ox
@@ -437,7 +437,7 @@ function Quaternion{P}(t::Matrix{P})
     end
     nm = norm([kx, ky, kz])
     if nm == 0
-        q = Quaternion(1, 0, 0, 0)
+        q = Quaternion(one(P), 0, 0, 0)
     else
         s  = sqrt(1 - qs^2) / nm
         qv = s*[kx, ky, kz]
