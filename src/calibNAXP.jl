@@ -94,7 +94,7 @@ function calibNAXP(points_S, lines_S, POSES, T_TF_S, planes,  N_calibs; doplot=f
         RMSi = zeros(N_planes)
         for j = 1:N_planes
             ind = planes .== j
-            ind = find(ind)
+            ind = findall(ind)
             RMSi[j] = sqrt(pointDiff(T_TF_S,POSES[:,:,ind],points_S[1:3,ind])[1])
         end
         RMScalibs[c] = mean(RMSi)

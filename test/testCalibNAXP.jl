@@ -2,7 +2,7 @@ using Robotlib
 import Robotlib: Rt2T, T2R, T2t
 include(joinpath(dirname(@__FILE__),"..","src","calibNAXP.jl"))
 
-type Plane
+mutable struct Plane
     N
     N1
     d
@@ -64,7 +64,7 @@ function generateRandomPoses(N_poses, sigma_n,T_TF_S, plane)
     C = cov(lines_RB');    D,V = eig(C)
     nhat_lines = V[:,1]
     if 1-abs(vecdot(nhat_points,nhat_lines)) > 0.001 || D[1,1] > 1e-5
-        warn("Something is wrong")
+        @warn("Something is wrong")
         @show 1-abs(vecdot(nhat_points,nhat_lines)), D[1,1]
     end
 
@@ -76,13 +76,13 @@ function generateRandomPoses(N_poses, sigma_n,T_TF_S, plane)
         #         points(:,end+1) = inv(T_RB_S)*[(points_S[:,i] - 0.01*lines_S[:,i]);1];
     end
     if any(abs(points[1:3,:] - points_RB) .> 1e-2)
-        warn("Something is wrong 2")
+        @warn("Something is wrong 2")
     end
     points_S,lines_S, T_RB_TF
 end
 
 
-srand(1)
+Random.seed!(1)
 MC = 100
 N_planes = 3
 N_points = 2
@@ -128,7 +128,7 @@ for mc = 1:MC
 
     for j = 1:N_planes
         ind = planes .== j
-        ind = find(ind)
+        ind = findall(ind)
         SSE[j] = sqrt(pointDiff(T_TF_S0,T_RB_TF[:,:,ind],points_S[1:3,ind])[1])
     end
 

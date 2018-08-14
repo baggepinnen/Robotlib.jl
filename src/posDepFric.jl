@@ -51,10 +51,10 @@ end
 
 function getCenters(n_basis, bounds)
     # TODO: split centers on velocity dim
-    warn("Not yet split in velocity dimension!")
+    @warn("Not yet split in velocity dimension!")
     N = length(n_basis);
     interval = [(bounds[n,2]-bounds[n,1])/(n_basis)[n] for n = 1:N];
-    C = [linspace(bounds[n,1]+interval[n]/2,bounds[n,2]-interval[n]/2,(n_basis)[n]) for n = 1:N];
+    C = [range(bounds[n,1]+interval[n]/2, stop=bounds[n,2]-interval[n]/2, length=(n_basis)[n]) for n = 1:N];
 
     Nbasis = prod(n_basis)
     centers = zeros(N, Nbasis)

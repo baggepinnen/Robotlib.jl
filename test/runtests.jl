@@ -1,5 +1,5 @@
 using Robotlib
-using Base.Test
+using Test
 import Robotlib: ad, adi
 
 
@@ -61,7 +61,7 @@ function simulateCalibration2(N)
 end
 
 function simulateCalibrationLPOE(N)
-    srand(1)
+    Random.seed!(1)
     n       = 6
     q       = 2π*rand(N,n)
     dh      = DH7600()
@@ -132,14 +132,14 @@ function run_tests()
     for i = 1:N
         T1 = fkineLPOE(Tn0mod,xin,q[i,:,1]')
         T2 = fkineLPOE(Tn0mod,xin,q[i,:,2]')
-        ei += norm(twistcoords(logm(Ta[:,:,i]*trinv(T1))))
-        ei += norm(twistcoords(logm(Ta[:,:,i]*trinv(T2))))
+        ei += norm(twistcoords(log(Ta[:,:,i]*trinv(T1))))
+        ei += norm(twistcoords(log(Ta[:,:,i]*trinv(T2))))
         T1 = fkineLPOE(Tn0c,xin,q[i,:,1]')
         T2 = fkineLPOE(Tn0c,xin,q[i,:,2]')
-        ec += norm(twistcoords(logm(Ta[:,:,i]*trinv(T1))))
-        ec += norm(twistcoords(logm(Ta[:,:,i]*trinv(T2))))
+        ec += norm(twistcoords(log(Ta[:,:,i]*trinv(T1))))
+        ec += norm(twistcoords(log(Ta[:,:,i]*trinv(T2))))
     end
-    println("Initial error: ",round(ei/N,5), " Calibrated error: ", round(ec/N,5))
+    println("Initial error: ",round(ei/N, digits=5), " Calibrated error: ", round(ec/N, digits=5))
     @test ec < ei
 end
 

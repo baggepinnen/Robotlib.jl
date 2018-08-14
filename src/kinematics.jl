@@ -1,7 +1,7 @@
 """`Jn, J0, T, Ti, Tn = jacobian(qin, DH::DH, tool=eye(4))`
 Calculates the jacobian in base (J0) and tool frame (Jn) as well as the forward kinematics (T),
 given the joint angles and the DH-parameters"""
-function jacobian{P}(q::AbstractVecOrMat{P}, DH::DH, tool=eye(4))
+function jacobian(q::AbstractVecOrMat{P}, DH::DH, tool=eye(4)) where P
     n_joints    = size(q,1)
     dhpar       = DH.dhpar
     # q           = qin + DH.offset # Moved to dh2Tn
@@ -42,7 +42,7 @@ end
 """
 `jacobianPOE(q, xi)` Returns The jacobian in 1) the base frame, 2) the tool frame. It can most likely be rewritten to be faster.
 """
-function jacobianPOE{P}(q::AbstractVecOrMat{P}, xi)
+function jacobianPOE(q::AbstractVecOrMat{P}, xi) where P
     #Page 117 in Murray 94
     n_joints  = size(q,1)
     Jss       = zeros(P,6,n_joints)
@@ -63,7 +63,7 @@ function jacobianPOE{P}(q::AbstractVecOrMat{P}, xi)
     return Jsb, Jbb, T
 end
 
-function jacobianPOEb{P}(q::AbstractVecOrMat{P}, xi)
+function jacobianPOEb(q::AbstractVecOrMat{P}, xi) where P
     #Page 117 in Murray 94
     n_joints  = size(q,1)
     Jbb       = zeros(P,6,n_joints)
@@ -109,7 +109,7 @@ end
 
 
 """Computes a set of local transformation matrices given the DH-parameters of a robot. Can be sent an optional joint-angle vector and a tool"""
-function dh2Tn!{P}(Tn, DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=eye(4))
+function dh2Tn!(Tn, DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=eye(4)) where P
     dhpar    = DH.dhpar
     n_joints = size(dhpar,1)
     q = q .+ DH.offset
@@ -123,7 +123,7 @@ function dh2Tn!{P}(Tn, DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=eye(4))
     return Tn
 end
 
-function dh2Tn{P}(DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=eye(4))
+function dh2Tn(DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=eye(4)) where P
     n_joints = size(DH.dhpar,1)
     Tn       = zeros(P,4,4,n_joints+1)
     return dh2Tn!(Tn, DH, q, tool)
@@ -140,7 +140,7 @@ function fkinePOE(xi0,q)
 end
 
 """`fkineLPOE(Tn0,xi,q)` Forward kinematics using LPOE"""
-function fkineLPOE{Ty}(Tn0::AbstractArray{Ty},xi::AbstractMatrix{Ty},q::AbstractVector{Ty})::Matrix{Ty}
+function fkineLPOE(Tn0::AbstractArray{Ty},xi::AbstractMatrix{Ty},q::AbstractVector{Ty})::Matrix{Ty} where Ty
     T = eye(4)
     n = size(xi,2)-1
     for j = 1:n
@@ -182,7 +182,7 @@ function ikinePOE(xi,T,q0; maxiter=100, λ = 1e0, tol = 1e-12, verbose = false, 
             end
             newjac = true
         end
-        verbose && println("Error: ",round(err[iter],7), " λ: ", round(λ,10), " Norm dq: ", round(norm(dq),7))
+        verbose && println("Error: ",round(err[iter], digits=7), " λ: ", round(λ, digits=10), " Norm dq: ", round(norm(dq), digits=7))
         if err[iter] < tol || norm(dq) < tol
             err = err[1:iter]
             break
@@ -260,6 +260,6 @@ function testJacobian()
     xi = DH2twistsPOE(Tn0)
     Jsb, Jbb = jacobianPOE(q,xi)
 
-    display(round(J0,3))
-    display(round(Jsb,3))
+    display(round(J0, digits=3))
+    display(round(Jsb, digits=3))
 end

@@ -1,4 +1,3 @@
-__precompile__() # This currently doesn't work due to plots.jl
 """
 This is a library of functions to help out in the Robotlab at LTH
 The module imports the following files\n

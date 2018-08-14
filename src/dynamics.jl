@@ -4,7 +4,7 @@ Tworld2base = eye(4)
 # `τ = gravity{P}(q::VecOrMat{P}, rm, m, dh::DH, Tworld2base = eye(4))`
 # calculates the gravity torques given a joint angles `q`, (distances to center of mass × mass) `rm` and masses `m`. The DH-parameters for the robot must also be provided
 # """
-function gravity{P}(q::VecOrMat{P}, rm, m, dh::DH, Tworld2base = eye(4))
+function gravity(q::VecOrMat{P}, rm, m, dh::DH, Tworld2base = eye(4)) where P
     Tn  = dh2Tn(dh,q)
     gravity(q, rm, m, Tn, Tworld2base)
 end
@@ -14,11 +14,11 @@ end
 
 `q` is the joint coordinates, `rm` are distances to center of masses times masses, `m` are the masses and `Tn` are the transformations between consecutive joints.
 """
-function gravity{P}(q::VecOrMat{P}, rm, m, Tn::AbstractArray, Tworld2base = eye(4))
+function gravity(q::VecOrMat{P}, rm, m, Tn::AbstractArray, Tworld2base = eye(4)) where P
     n   = size(Tn,3)-1
     # Find elements that are ≈ 0 and make them zero, smiplifies a lot!
     if P == SymPy.Sym
-        Tnz = Bool[round(Float64(evalf(subs(Tn[i,j,k],(q[1],1),(q[2],1),(q[3],1),(q[4],1),(q[5],1),(q[6],1),(q[7],1)))),10) == 0 for i=1:4, j=1:4, k=1:n+1]
+        Tnz = Bool[round(Float64(evalf(subs(Tn[i,j,k],(q[1],1),(q[2],1),(q[3],1),(q[4],1),(q[5],1),(q[6],1),(q[7],1)))), digits=10) == 0 for i=1:4, j=1:4, k=1:n+1]
         Tn[Tnz] = 0
         # Replace the numerical value for π/2 by the SymPi constant PI, this allows for nice simplifications
         Tn = Sym[subs(Tn[i,j,k],("1.5707963267948966",SymPy.PI/2))  for i=1:4, j=1:4, k=1:n+1]

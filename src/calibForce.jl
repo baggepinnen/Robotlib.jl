@@ -36,7 +36,7 @@ function calibForce(POSES,F,m0=0.3; offset=true, useCVX = false)
         end
         Rf = reshape(w[1:9],3,3)
         info("Determinant of Rf before orthonormalization: ", det(Rf)," (Should be close to 1, but don't be afraid if it's not, should however be positive!)")
-        det(Rf) < 0 && warn("det(Rf) < 0, left handed coordinate system?")
+        det(Rf) < 0 && @warn("det(Rf) < 0, left handed coordinate system?")
         toOrthoNormal!(Rf)
         for ii = 1:2
             #        forceoffs = w(10:12)
@@ -71,7 +71,7 @@ function calibForce(POSES,F,m0=0.3; offset=true, useCVX = false)
         for ii = 1:4
             Rf = reshape(w[1:9],3,3)
             info("Determinant of Rf before orthonormalization: ", det(Rf))
-            det(Rf) < 0 && warn("det(Rf) < 0, left handed coordinate system?")
+            det(Rf) < 0 && @warn("det(Rf) < 0, left handed coordinate system?")
             toOrthoNormal!(Rf)
             A2 = Array{Float64}(3N,1)
             B2 = Array{Float64}(3N)
@@ -88,7 +88,7 @@ function calibForce(POSES,F,m0=0.3; offset=true, useCVX = false)
     end
     m = mg/g
     if m < 0
-        warn("Estimated mass is negative, left handed coordinate system for sensor?")
+        @warn("Estimated mass is negative, left handed coordinate system for sensor?")
     end
     if offset
         return Rf,m,forceoffs

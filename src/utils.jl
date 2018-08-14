@@ -4,7 +4,7 @@ T2t(T::Matrix) = T[1:3,4]
 skewcoords(R) = [R[3,2];R[1,3];R[2,1]]
 twistcoords(xi) = [xi[1:3, 4]; skewcoords(xi[1:3, 1:3])]
 @inline skew(s)::Matrix{eltype(s)} = [0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
-@inline function skew!{T}(R::T,s)::T
+@inline function skew!(R::T,s)::T where T
     R[1,1] = 0
     R[2,1] = s[3]
     R[3,1] = -s[2]
@@ -64,7 +64,7 @@ end
 If no angle is given, q=1 is assumed
 """
 function expξ(xi,q=1.0)
-    expm(skew4(xi)*q)
+    exp(skew4(xi)*q)
 end
 
 """
@@ -141,7 +141,7 @@ function Rangle(R1,R2 = eye(3),deg = false)
     else
         θ = zeros(N)
         for i = 1:N
-            cosθ = (trace(R1[1:3,1:3,i]' * R2[1:3,1:3,(size(R2,3)==1?1:i)])-1)/2
+            cosθ = (trace(R1[1:3,1:3,i]' * R2[1:3,1:3,(size(R2,3)==1 ? 1 : i)])-1)/2
             if cosθ > 1
                 cosθ = 1
             elseif cosθ < -1
@@ -352,7 +352,7 @@ end
 If `conv` is not `xyz`, it will be `zyx`\n
 returns a vector ∈ R3 or a matrix ∈ R3×N depending on the dimension of the input
 """
-function R2rpy{T}(m::AbstractArray{T,3}; conv="xyz", deg = false)
+function R2rpy(m::AbstractArray{T,3}; conv="xyz", deg = false) where T
     N = size(m,3)
     rpy = Array(Float64,3,N)
     for i = 1:N
@@ -370,29 +370,29 @@ function R2rpy(m::Matrix; conv="xyz", deg = false)
         if abs(m[3,3]) < eps() && abs(m[2,3]) < eps()
             # singularity
             rpy[1] = 0;  # roll is zero
-            rpy[2] = atan2(m[1,3], m[3,3])  # pitch
-            rpy[3] = atan2(m[2,1], m[2,2])  # yaw is sum of roll+yaw
+            rpy[2] = atan(m[1,3], m[3,3])  # pitch
+            rpy[3] = atan(m[2,1], m[2,2])  # yaw is sum of roll+yaw
         else
-            rpy[1] = atan2(-m[2,3], m[3,3])        # roll
+            rpy[1] = atan(-m[2,3], m[3,3])        # roll
             # compute sin/cos of roll angle
             sr = sin(rpy[1])
             cr = cos(rpy[1])
-            rpy[2] = atan2(m[1,3], cr * m[3,3] - sr * m[2,3])  # pitch
-            rpy[3] = atan2(-m[1,2], m[1,1])        # yaw
+            rpy[2] = atan(m[1,3], cr * m[3,3] - sr * m[2,3])  # pitch
+            rpy[3] = atan(-m[1,2], m[1,1])        # yaw
         end
     else
         # old ZYX order (as per Paul book)
         if abs(m[1,1]) < eps() && abs(m[2,1]) < eps()
             # singularity
             rpy[1] = 0     # roll is zero
-            rpy[2] = atan2(-m[3,1], m[1,1])  # pitch
-            rpy[3] = atan2(-m[2,3], m[2,2])  # yaw is difference yaw-roll
+            rpy[2] = atan(-m[3,1], m[1,1])  # pitch
+            rpy[3] = atan(-m[2,3], m[2,2])  # yaw is difference yaw-roll
         else
-            rpy[1] = atan2(m[2,1], m[1,1])
+            rpy[1] = atan(m[2,1], m[1,1])
             sp = sin(rpy[1])
             cp = cos(rpy[1])
-            rpy[2] = atan2(-m[3,1], cp * m[1,1] + sp * m[2,1])
-            rpy[3] = atan2(sp * m[1,3] - cp * m[2,3], cp*m[2,2] - sp*m[1,2])
+            rpy[2] = atan(-m[3,1], cp * m[1,1] + sp * m[2,1])
+            rpy[3] = atan(sp * m[1,3] - cp * m[2,3], cp*m[2,2] - sp*m[1,2])
         end
     end
     if deg
@@ -403,7 +403,7 @@ end
 
 using Quaternions
 import Quaternions.Quaternion
-function Quaternion{P}(t::AbstractMatrix{P})
+function Quaternion(t::AbstractMatrix{P}) where P
     qs = sqrt(t[1,1]+t[2,2]+t[3,3]+1)/2.0
     kx = t[3,2] - t[2,3]   # Oz - Ay
     ky = t[1,3] - t[3,1]   # Ax - Nz

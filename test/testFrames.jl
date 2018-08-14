@@ -1,4 +1,4 @@
-using Robotlib, Robotlib.Frames, MAT, Base.Test
+using Robotlib, Robotlib.Frames, MAT, Test
 R = toOrthoNormal(randn(3,3))
 t = randn(3)
 f = Frame(R,t)

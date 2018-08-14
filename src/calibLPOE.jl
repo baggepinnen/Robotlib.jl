@@ -38,7 +38,7 @@ function calibLPOE(xin,Tn0in,Ta,q;maxiter=10, λ=1.0)
         end
 
         et[iter+1],er[iter+1] = evalError(xi,Tn0cand,Ta,q)
-        println("Error: ",round(et[iter+1],5), " λ: ", λ, " Norm dx: ", round(norm(x),5))
+        println("Error: ",round(et[iter+1], digits=5), " λ: ", λ, " Norm dx: ", round(norm(x), digits=5))
 
         if norm(x) < 1e-16
             return Tn0,xi, et, er
@@ -108,7 +108,7 @@ function calibLPOEdual(xin,Tn0in,q;maxiter=10, λ=1.0)
 
         end
         et[iter+1],er[iter+1] = evalErrorDual(xi,Tn0cand,q)
-        println("Error: ",round(et[iter+1],5), " λ: ", λ, " Norm dx: ", round(norm(x),5))
+        println("Error: ",round(et[iter+1], digits=5), " λ: ", λ, " Norm dx: ", round(norm(x), digits=5))
 
         if norm(x) < 1e-14
             return Tn0,xi, et, er
@@ -162,7 +162,7 @@ function calibPOE(Xin,Ta,q;maxiter=50, λ = 10000.0)
         end
 
         et[iter+1],er[iter+1] = evalErrorPOE(xini, Ta,q)
-        println("Error: ",round(et[iter+1],5), " λ: ", λ, " Norm dx: ", round(norm(x),5))
+        println("Error: ",round(et[iter+1], digits=5), " λ: ", λ, " Norm dx: ", round(norm(x), digits=5))
 
         if norm(x) < 1e-10
             return xin, et, er
@@ -220,7 +220,7 @@ function calibPOE_offsets_from_points(Xin,Q;maxiter=50, λ = 10000.0)
 
 
         et[iter+1] = evalErrorPOE_offsets_from_points(xin, Q, δqi)
-        println("$iter Error: ",round(et[iter+1],5), " λ: ", λ, " Norm dx: ", round(norm(x),5))
+        println("$iter Error: ",round(et[iter+1], digits=5), " λ: ", λ, " Norm dx: ", round(norm(x), digits=5))
 
         if norm(x) < 1e-10
             return δq, et
@@ -364,7 +364,7 @@ function simulateCalibration2(N)
 end
 
 function simulateCalibration3(N)
-    srand(1)
+    Random.seed!(1)
     n       = 6
     q       = 2π*rand(N,n)
     dh      = DH7600()
@@ -446,7 +446,7 @@ if false
     @time Tn0c,xic,et,er = calibLPOE(xin,Tn0mod,Ta,q,maxiter=10, λ = 100.0)
     display(sqrt(sum((Tn0-Tn0mod).^2)/100))
     display(sqrt(sum((Tn0-Tn0c).^2)/100))
-    display(round(Tn0-Tn0c,5))
+    display(round(Tn0-Tn0c, digits=5))
 end
 
 if false
@@ -460,14 +460,14 @@ if false
     for i = 1:N
         T1 = fkineLPOE(Tn0mod,xin,q[i,:,1]')
         T2 = fkineLPOE(Tn0mod,xin,q[i,:,2]')
-        ei += norm(twistcoords(logm(Ta[:,:,i]*trinv(T1))))
-        ei += norm(twistcoords(logm(Ta[:,:,i]*trinv(T2))))
+        ei += norm(twistcoords(log(Ta[:,:,i]*trinv(T1))))
+        ei += norm(twistcoords(log(Ta[:,:,i]*trinv(T2))))
         T1 = fkineLPOE(Tn0c,xin,q[i,:,1]')
         T2 = fkineLPOE(Tn0c,xin,q[i,:,2]')
-        ec += norm(twistcoords(logm(Ta[:,:,i]*trinv(T1))))
-        ec += norm(twistcoords(logm(Ta[:,:,i]*trinv(T2))))
+        ec += norm(twistcoords(log(Ta[:,:,i]*trinv(T1))))
+        ec += norm(twistcoords(log(Ta[:,:,i]*trinv(T2))))
     end
-    println("Initial error: ",round(ei/N,5), " Calibrated error: ", round(ec/N,5))
+    println("Initial error: ",round(ei/N, digits=5), " Calibrated error: ", round(ec/N, digits=5))
 end
 
 

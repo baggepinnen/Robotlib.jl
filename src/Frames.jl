@@ -76,25 +76,25 @@ const Mat{N1,N2,Ty} = MMatrix{N1,N2,Ty} # Translate from FixedSizeArrays
 # -------------------------------------------------------------
 abstract type GeometricObject end
 
-type Point{Ty} <: GeometricObject
+mutable struct Point{Ty} <: GeometricObject
     p::Vec{3,Ty}
     A::String
 end
-function Point{Ty}(p::Vect{Ty} = zeros(3), A::String="U")
+function Point(p::Vect{Ty} = zeros(3), A::String="U") where Ty
     checkframe(A,"U")
     Point{Ty}(p,A)
 end
 
-type Points{Ty} <: GeometricObject
+mutable struct Points{Ty} <: GeometricObject
     p::Vector{Point{Ty}}
     A::String
 end
-function Points{Ty}(p::AbstractVector{Point{Ty}}, A::String="U")
+function Points(p::AbstractVector{Point{Ty}}, A::String="U") where Ty
     checkframe(A,"U")
     Points{Ty}(p,A)
 end
 
-function Points{Ty}(p::AbstractMatrix{Ty}, A::String="U")
+function Points(p::AbstractMatrix{Ty}, A::String="U") where Ty
     checkframe(A,"U")
     N = size(p,1)
     points = [Point{Ty}(squeeze(p[i,:]',2),A) for i in 1:N]
@@ -139,19 +139,19 @@ function zeros(points::Points)
     Points(newpoints,points.A)
 end
 
-type Frame{Ty} <: GeometricObject
+mutable struct Frame{Ty} <: GeometricObject
     R::Mat{3,3,Ty}
     t::Vec{3,Ty}
     A::String
     B::String
 end
-function Frame{Ty}(T::Matr{Ty}, A::String="U",B::String="U")
+function Frame(T::Matr{Ty}, A::String="U",B::String="U") where Ty
     checkframe(A,B)
     f = Frame{Ty}(T2R(T),T2t(T),A,B)
     add_frame!(f)
     f
 end
-function Frame{Ty}(R::Matr{Ty}, t::AbstractArray{Ty}, A::String="U", B::String="U")
+function Frame(R::Matr{Ty}, t::AbstractArray{Ty}, A::String="U", B::String="U") where Ty
     checkframe(A,B)
     f = Frame{Ty}(R,t,A,B)
     add_frame!(f)
@@ -186,21 +186,21 @@ end
 print(f::Frame) = "\$T_{$(f.A)}^{$(f.B)}\$"
 show(f::Frame) = display(f)
 
-type Plane{Ty} <: GeometricObject
+mutable struct Plane{Ty} <: GeometricObject
     n::Point{Ty}
     r::Point{Ty}
     A::String
 end
 
-Plane{Ty}(n::Vect{Ty},r::Vect{Ty},A="U") = Plane{Ty}(Point{Ty}(n,A),Point{Ty}(r,A),A)
+Plane(n::Vect{Ty},r::Vect{Ty},A="U") where {Ty} = Plane{Ty}(Point{Ty}(n,A),Point{Ty}(r,A),A)
 Plane(points::Points) = fitplane(points)
 
-type Line{Ty} <: GeometricObject
+mutable struct Line{Ty} <: GeometricObject
     v::Point{Ty}
     r::Point{Ty}
     A::String
 end
-Line{Ty}(v::Vect{Ty},r::Vect{Ty},A="U") = Line{Ty}(v,r,A)
+Line(v::Vect{Ty},r::Vect{Ty},A="U") where {Ty} = Line{Ty}(v,r,A)
 Line(points::Points) = fitline(points)
 
 
@@ -309,10 +309,10 @@ end
 transpose(p::Point) = p.p'
 ctranspose(p::Point) = p.p'
 convert(::Type{Vector}, p::Point) = p.p
-convert{T1,T2,n}(::Type{Array{T1,n}}, f::Frame{T2}) = [Matrix{T1}(f.R) Vector{T1}(f.t); 0 0 0 1]
-convert{T2}(::Type{Matrix}, f::Frame{T2}) = convert(Matrix{T2},f)
-convert{T2}(::Type{Array}, f::Frame{T2}) = convert(Matrix{T2},f)
-promote_rule{T1,T2,n}(::Type{Array{T1,n}}, f::Type{Frame{T2}} ) = Array{promote_type(T1,T2),2}
+convert(::Type{Array{T1,n}}, f::Frame{T2}) where {T1,T2,n} = [Matrix{T1}(f.R) Vector{T1}(f.t); 0 0 0 1]
+convert(::Type{Matrix}, f::Frame{T2}) where {T2} = convert(Matrix{T2},f)
+convert(::Type{Array}, f::Frame{T2}) where {T2} = convert(Matrix{T2},f)
+promote_rule(::Type{Array{T1,n}}, f::Type{Frame{T2}} ) where {T1,T2,n} = Array{promote_type(T1,T2),2}
 
 *(x::Frame, y::Frame) = Frame(x.R*y.R, x.t + x.R*y.t , x.A, y.B)
 function *(f::Frame, p::Point)
@@ -347,12 +347,12 @@ function *(f::Frame, points::Points)
 end
 *(p::Point, f::Frame) = error("Post multiplication of ::Point with ::Frame not supported")
 tinv(T)       = [T[1:3,1:3]' -T[1:3,1:3]'*T[1:3,4]; 0 0 0 1]
-function inv{T}(x::Frame{T}) # TODO: can this implementation be faster?
+function inv(x::Frame{T}) where T # TODO: can this implementation be faster?
     R = x.R'
     Frame{T}(R, -R*x.t, x.B,x.A)
 end
-\{T}(x::Frame{T},y::Frame{T}) = Frame{T}(inv(x)*y,x.B,y.B)
-/{T}(x::Frame{T},y::Frame{T}) = Frame{T}(x*inv(y),x.A,y.A)
+\(x::Frame{T},y::Frame{T}) where {T} = Frame{T}(inv(x)*y,x.B,y.B)
+/(x::Frame{T},y::Frame{T}) where {T} = Frame{T}(x*inv(y),x.A,y.A)
 F2t(F::Frame) = F.t
 F2R(F::Frame) = F.R
 F2T(F::Frame) = [Array(F.R) Array(F.t); 0 0 0 1]
@@ -377,7 +377,7 @@ end
 # Projections and fitting  ------------------------------------
 # -------------------------------------------------------------
 
-function center{Ty}(points::Points{Ty})
+function center(points::Points{Ty}) where Ty
     N = size(points)
     cog = zeros(Ty,3)
     for i = 1:N
