@@ -1,4 +1,4 @@
-type DH
+mutable struct DH
     dhpar::Matrix{Float64}
     offset::Vector{Float64}
     GR::Matrix{Float64}

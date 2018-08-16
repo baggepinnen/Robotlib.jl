@@ -41,8 +41,8 @@ function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true
         written += 1
     end
     close(mf)
-    print_with_color(:green, "Wrote $((round(Int,ceil(size(df,1)/subsample)),written)) entries to log.mat\n")
-    print_with_color(:yellow, "Skipped $(text) columns with text\n")
+    printstyled("Wrote $((round(Int,ceil(size(df,1)/subsample)),written)) entries to log.mat\n", color=:green)
+    printstyled("Skipped $(text) columns with text\n", color=:yellow)
 
     # Perform requested plotting
     # if doplot
