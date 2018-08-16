@@ -461,7 +461,7 @@ end
 @deprecate smartDiff centraldiff
 @deprecate centralDiff centraldiff
 
-function centralDiff(v)
+function centraldiff(v)
     c = size(v,2)
     a1 = [zeros(1,c);diff(v)]
     a2 = [diff(v);zeros(1,c)]

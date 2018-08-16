@@ -17,12 +17,13 @@ The module includes a submodule, Calibration, which includes a number of calibra
 Usage:
 fkine, ikine, jacobian = get_kinematic_functions("yumi")
 data = orcalog2mat(pathopen, pathsave)
-q = getData(\"robot_0.\*posRawAbs\", data, 1, removeNaN = false)
+q = getData(\"robot_0.*posRawAbs\", data, 1, removeNaN = false)
 
 For YuMi, joint angles `q` must be converted to logical order using e.g. abb2logical!(q)
 You must also consider the base transform of YuMi
 """
 module Robotlib
+using LinearAlgebra, Statistics
 include("DH.jl")
 include("utils.jl")
 include("kinematics.jl")
@@ -43,12 +44,14 @@ export calibLPOE, calibLPOEdual, calibForce, calibPOE_offsets_from_points
 end
 
 
-export skewcoords, twistcoords, skew, skew4, expω, expξ, expξ2, expξ!, logT, logR, trinv, isrot, isse3, Rangle, conformize, DH2twistsPOE, DH2twistsLPOE, dh2Tn, toOrthoNormal, toOrthoNormal!, rpy2R, Quaternion, xyθ, smartDiff, R2rpy, traj2quat, centralDiff
+export skewcoords, twistcoords, skew, skew4, expω, expξ, expξ2, expξ!, logT, logR, trinv, isrot, isse3, Rangle, conformize, DH2twistsPOE, DH2twistsLPOE, dh2Tn, toOrthoNormal, toOrthoNormal!, rpy2R, Quaternion, xyθ, smartDiff, R2rpy, traj2quat, centraldiff
 export fkinePOE, fkineLPOE, ikinePOE, dh2Tn, jacobianPOE, jacobianPOEikine, jacobian, get_kinematic_functions
 export trajplot, trajplot3, plot3smart
 export DH, DH2400, DHYuMi, DH7600, DHtest, abb2logical!, logical2abb!, abb2logical, logical2abb
 export csv2mat, orcalog2mat, getData, readmat
 export frictionRBFN, getCenters
+
+dir(x...) = joinpath(dirname(pathof(Robotlib)),x...)
 
 precompile(get_kinematic_functions, (String,))
 precompile(fkineLPOE, (Array{Float64,3},Array{Float64,2},Array{Float64,1}))

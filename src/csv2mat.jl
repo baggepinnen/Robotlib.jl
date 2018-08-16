@@ -1,8 +1,9 @@
 #module Csv2mat
 using MAT
-using DataArrays, DataFrames
+using DataFrames
 #export csv2mat
 a = 13
+
 
 
 """
@@ -12,11 +13,13 @@ csv2mat(filename, destination="log.mat"; startline=0, writeNames = true, subsamp
 function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true, subsample = 1, separator = ',')
 
     # Read the csv file into a dataframe
+    println("Reading file $filename of size $(filesize(filename)/1_000_000) MB")
     df = readtable(filename, separator = separator, header=true, skipstart=startline)
+    println("Preprocessing")
     (rows, cols) = size(df)
     # replace NA values with 0
     for  j = 1:cols, i = 1:rows
-        isna(df[i,j]) && (df[i,j] = 0)
+        ismissing(df[i,j]) && (df[i,j] = 0)
     end
 
     # Remove strange characters from variable names
@@ -30,17 +33,20 @@ function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true
 
 
     # Write the results to a .mat-file
-    mf = matopen(destination,"w")
     written = text = 0
+    println("Creating save dict")
+    d = Dict{String, Vector{<:Real}}()
     for i in 1:cols
         if !isa(df[1,i],Number)
             text += 1
             continue
         end
-        write(mf, string(n[i]), convert(Array,df[1:subsample:end,i]))
         written += 1
+        a = replace(convert(Array,df[1:subsample:end,i]), missing=>0)
+        d[string(n[i])] = a
     end
-    close(mf)
+    println("Write the results to $destination")
+    @time matwrite(destination, d)
     printstyled("Wrote $((round(Int,ceil(size(df,1)/subsample)),written)) entries to log.mat\n", color=:green)
     printstyled("Skipped $(text) columns with text\n", color=:yellow)
 
