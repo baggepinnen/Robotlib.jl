@@ -4,6 +4,9 @@
 [![Build Status](https://travis-ci.org/baggepinnen/Robotlib.jl.svg?branch=master)](https://travis-ci.org/baggepinnen/Robotlib.jl)
 [![codecov](https://codecov.io/gh/baggepinnen/Robotlib.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/baggepinnen/Robotlib.jl)
 
+
+Update to support julia v0.7 / v1.0 is ongoing
+
 # Robotlib
 This is a library of functions to help out in a robotics lab. At present stage, it contains functions for forward kinematics, jacobians, iterative inverse kinematics and for a few robotics related calibration problems. The library also contains a number of functions to convert from various orientation representations and other robotics related helper functions.
 
@@ -11,7 +14,6 @@ Install using
 
 `Pkg.add("Robotlib")`
 
-For latest changes, run `Pkg.checkout("Robotlib")`
 
 ## Usage
 ```julia

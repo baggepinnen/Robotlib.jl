@@ -158,7 +158,7 @@ end
 #         for j = 1:3
 #             if i == j
 #                 JuMP.@addConstraint(model, Rf2[1:3,i]'*Rf2[1:3,i] .== 1)
-#                 # JuMP.@addNLConstraint(model, Rf2'Rf2 == eye(3))
+#                 # JuMP.@addNLConstraint(model, Rf2'Rf2 == I)
 #                 # JuMP.@addNLConstraint(model, sum{Rf2[i,k]*Rf2[k,j], k=1:3} == 1)
 #             else
 #                 JuMP.@addConstraint(model, Rf2[1:3,i]'*Rf2[1:3,j] .== 0)

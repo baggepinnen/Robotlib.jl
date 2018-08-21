@@ -1,7 +1,8 @@
-using Robotlib
+using Robotlib, LinearAlgebra, Random
 using Test
 import Robotlib: ad, adi
 
+const I4 = Matrix{Float64}(I, 4, 4)
 
 function simulateCalibration1(N)
     n       = 6
@@ -46,7 +47,7 @@ function simulateCalibration2(N)
     n       = 6
     q       = 2π*rand(N,n)
     dh      = DH7600()
-    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, eye(4));
+    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, I4);
     xin     = DH2twistsPOE(dh)
     xinmod   = deepcopy(xin)
     for i = 1:n+1
@@ -65,7 +66,7 @@ function simulateCalibrationLPOE(N)
     n       = 6
     q       = 2π*rand(N,n)
     dh      = DH7600()
-    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, eye(4));
+    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, I4);
     xin = DH2twistsLPOE(Tn0)
     Tn0mod = deepcopy(Tn0)
     for i = 1:n+1
@@ -74,7 +75,7 @@ function simulateCalibrationLPOE(N)
     Ta  = zeros(4,4,N)
     for i = 1:N
         Ta[:,:,i] = fkineLPOE(Tn0,xin,q[i,:])
-        AAA,BBB,T = jacobian(q[i,:],dh, eye(4));
+        AAA,BBB,T = jacobian(q[i,:],dh, I4);
         @assert T ≈ Ta[:,:,i]
     end
     return q, xin, Tn0, Tn0mod, Ta
@@ -89,7 +90,7 @@ function simulateCalibration4(N)
     q2      = qt + 0.01*π/180*randn(N,n)
     q       = cat(3,q1,q2)
     dh      = DH7600()
-    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, eye(4));
+    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, I4);
     xin = DH2twistsLPOE(Tn0)
     xin = cat(3,xin,xin)
     Tn0mod = cat(4,deepcopy(Tn0),deepcopy(Tn0))
@@ -99,7 +100,7 @@ function simulateCalibration4(N)
     end
     Ta  = zeros(4,4,N)
     for i = 1:N
-        Ta[:,:,i] = fkineLPOE(Tn0,xin,qt[i,:]')
+        Ta[:,:,i] = fkineLPOE(Tn0,xin[:,:,1],qt[i,:])
     end
 
     return q, xin, Tn0, Tn0mod, Ta
@@ -130,12 +131,12 @@ function run_tests()
     ei = 0.0
     ec = 0.0
     for i = 1:N
-        T1 = fkineLPOE(Tn0mod,xin,q[i,:,1]')
-        T2 = fkineLPOE(Tn0mod,xin,q[i,:,2]')
+        T1 = fkineLPOE(Tn0mod,xin[:,:,1],q[i,:,1])
+        T2 = fkineLPOE(Tn0mod,xin[:,:,2],q[i,:,2])
         ei += norm(twistcoords(log(Ta[:,:,i]*trinv(T1))))
         ei += norm(twistcoords(log(Ta[:,:,i]*trinv(T2))))
-        T1 = fkineLPOE(Tn0c,xin,q[i,:,1]')
-        T2 = fkineLPOE(Tn0c,xin,q[i,:,2]')
+        T1 = fkineLPOE(Tn0c,xin[:,:,1],q[i,:,1])
+        T2 = fkineLPOE(Tn0c,xin[:,:,2],q[i,:,2])
         ec += norm(twistcoords(log(Ta[:,:,i]*trinv(T1))))
         ec += norm(twistcoords(log(Ta[:,:,i]*trinv(T2))))
     end

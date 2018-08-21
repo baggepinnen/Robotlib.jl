@@ -44,7 +44,7 @@ line_seam_RB = T_RB_T*line_seam
 # gui()
 
 
-T = Matrix(f)
-@test Array(f) == T
+T = convert(Matrix, f)
+@test convert(Array,f) == T
 @test promote(T,f) == (T,T)
 @test promote_type(Matrix{Float64}, Frame{Float64}) == Matrix{Float64}

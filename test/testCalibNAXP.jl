@@ -22,7 +22,7 @@ function generateRandomPlane(no)
     end
     d_RB = 1 #abs(0.001*randn);
     Pn = N_RB*N_RB' # Projection matrix onto normal
-    Qn = eye(3)-Pn # Projection matrix onto plane
+    Qn = I-Pn # Projection matrix onto plane
 
     Plane(N_RB, [N_RB;1], d_RB, Pn, Qn)
 end

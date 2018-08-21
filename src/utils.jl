@@ -37,7 +37,7 @@ function expξ2(xi,q=1.0) # works well for jacobian-ikine
     what = skew(w)
     if nw < 1e-12
         eR = I + q*what
-        A = q*eye(3)
+        A = q*I
     else
         eR = I + sin(nw*q)/nw*what + (1-cos(nw*q))/nw^2*what^2
         A = q*I + ((1 - cos(nw*q))/(nw^2))*what + ((nw*q - sin(nw*q))/(nw^3))*what*what
@@ -124,37 +124,38 @@ isrot(R) = det(R[1:3,1:3]) ≈ 1 && norm(R[1:3,1:3]'R[1:3,1:3]-I) < 1e-10
 isse3(T) = isrot(T) && T[4,1:4] == [0 0 0 1]
 
 """`Rangle(R1,R2 = eye(3),deg = false)` calculates the angle between two rotation matrices"""
-function Rangle(R1,R2 = eye(3),deg = false)
+function Rangle(R1,R2 = I,deg = false)
+    cosθ = (trace(R1[1:3,1:3]' * R2[1:3,1:3])-1)/2
+    if cosθ > 1
+        cosθ = 1
+    elseif cosθ < -1
+        cosθ = -1
+    end
+    θ = acos(cosθ)
+    if deg
+        θ *= 180/pi
+    end
+    return θ
+end
+
+function Rangle(R1,R2i = I,deg = false)
     N = size(R1,3)
-    if N == 1
-        cosθ = (trace(R1[1:3,1:3]' * R2[1:3,1:3])-1)/2
+    θ = zeros(N)
+    R2 = R2i == I ? Matrix{Float64}(I,3,3) : R2i
+    for i = 1:N
+        cosθ = (trace(R1[1:3,1:3,i]' * R2[1:3,1:3,(size(R2,3)==1 ? 1 : i)])-1)/2
         if cosθ > 1
             cosθ = 1
         elseif cosθ < -1
             cosθ = -1
         end
-        θ = acos(cosθ)
+        θ[i] = acos(cosθ)
         if deg
-            θ *= 180/pi
+            θ[i] *= 180/pi
         end
-        return θ
-    else
-        θ = zeros(N)
-        for i = 1:N
-            cosθ = (trace(R1[1:3,1:3,i]' * R2[1:3,1:3,(size(R2,3)==1 ? 1 : i)])-1)/2
-            if cosθ > 1
-                cosθ = 1
-            elseif cosθ < -1
-                cosθ = -1
-            end
-            θ[i] = acos(cosθ)
-            if deg
-                θ[i] *= 180/pi
-            end
-        end
-        return θ
-
     end
+    return θ
+
 end
 
 """This is a helper method for calibPOE"""

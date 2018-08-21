@@ -35,6 +35,7 @@ include("posDepFric.jl")
 
 module Calibration
 using ..Robotlib
+using LinearAlgebra, Statistics
 import Robotlib.xii
 import Robotlib.Ai
 include("calibLPOE.jl")
