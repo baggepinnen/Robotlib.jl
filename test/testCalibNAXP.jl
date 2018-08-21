@@ -106,7 +106,7 @@ function run_calib()
         lines_Sv  = Vector{Float64}[]
         T_RB_TFv  = Matrix{Float64}(4,4,0)
         plane     = Plane[]
-        planes    = Array{Int}(0)
+        planes    = Array{Int}(undef, 0)
         SSE       = zeros(N_planes)
         println("Gnereating planes and poses")
         for j = 1:N_planes
@@ -122,7 +122,7 @@ function run_calib()
         lines_S  = cat(2, lines_Sv...)
         T_RB_TF  = cat(3, T_RB_TFv...)
 
-        any(abs.(SSE .> 1e-3)) && warn("Points does not seem to lie on a plane")
+        any(abs.(SSE .> 1e-3)) && @warn("Points does not seem to lie on a plane")
         dist = [norm(T_RB_TF[1:4,4,i] - T_TF_S*[points_S[:,i];1]) for i in 1:size(T_RB_TF,3)]
         #     hist(dist,15)
 

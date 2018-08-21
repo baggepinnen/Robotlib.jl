@@ -15,7 +15,7 @@ function calibForce(POSES,F,m0=0.3; offset=true, useCVX = false)
     g = 9.82
     mg = m0*g # Initial guess is m0, the method accepts 5 orders of magnitude error at least
 
-    I = eye(3)
+    I = I3
     B = Array{Float64}(3N)
     B2 = Array{Float64}(3N)
     if offset # Include offset

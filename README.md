@@ -1,4 +1,3 @@
-[![Robotlib](http://pkg.julialang.org/badges/Robotlib_0.4.svg)](http://pkg.julialang.org/?pkg=Robotlib)
 [![Robotlib](http://pkg.julialang.org/badges/Robotlib_0.5.svg)](http://pkg.julialang.org/?pkg=Robotlib)
 [![Robotlib](http://pkg.julialang.org/badges/Robotlib_0.6.svg)](http://pkg.julialang.org/?pkg=Robotlib)
 [![Build Status](https://travis-ci.org/baggepinnen/Robotlib.jl.svg?branch=master)](https://travis-ci.org/baggepinnen/Robotlib.jl)
@@ -173,7 +172,7 @@ function setupframes(path)
 	line_seam_RB = T_RB_T*line_seam
 
 	# Plot results
-	plot(Frame(eye(4),"RB","U"), 200)
+	plot(Frame(I4,"RB","U"), 200)
 	plot!(cloud_seam_RB, c=:blue)
 	plot!(cloud_seam_projected_RB, c=:red)
 	plot!(line_seam_RB, 500, label="Line seam")

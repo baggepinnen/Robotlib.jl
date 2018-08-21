@@ -34,7 +34,7 @@ line_seam_RB = T_RB_T*line_seam
 
 
 
-# plot(Frame(eye(4),"RB","U"),200)
+# plot(Frame(I4,"RB","U"),200)
 # plot!(cloud_seam_RB,label="Cloud seam_RB")
 # plot!(cloud_seam_projected_RB,label="Cloud seam_RB projected")
 # plot!(line_seam_RB,500,label="Line seam")

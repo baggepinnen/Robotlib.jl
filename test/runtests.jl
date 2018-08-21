@@ -88,12 +88,12 @@ function simulateCalibration4(N)
     qt      = 2π*rand(N,n)
     q1      = qt + 0.01*π/180*randn(N,n)
     q2      = qt + 0.01*π/180*randn(N,n)
-    q       = cat(3,q1,q2)
+    q       = cat(q1,q2, dims=3)
     dh      = DH7600()
     AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, I4);
     xin = DH2twistsLPOE(Tn0)
-    xin = cat(3,xin,xin)
-    Tn0mod = cat(4,deepcopy(Tn0),deepcopy(Tn0))
+    xin = cat(xin,xin, dims=3)
+    Tn0mod = cat(deepcopy(Tn0),deepcopy(Tn0), dims=4)
     for i = 1:n+1
         Tn0mod[1:3,4,i,1] += 0.1randn(3)
         Tn0mod[1:3,4,i,2] += 0.1randn(3)
@@ -131,12 +131,12 @@ function run_tests()
     ei = 0.0
     ec = 0.0
     for i = 1:N
-        T1 = fkineLPOE(Tn0mod,xin[:,:,1],q[i,:,1])
-        T2 = fkineLPOE(Tn0mod,xin[:,:,2],q[i,:,2])
+        T1 = fkineLPOE(Tn0mod[:,:,:,1],xin[:,:,1],q[i,:,1])
+        T2 = fkineLPOE(Tn0mod[:,:,:,2],xin[:,:,2],q[i,:,2])
         ei += norm(twistcoords(log(Ta[:,:,i]*trinv(T1))))
         ei += norm(twistcoords(log(Ta[:,:,i]*trinv(T2))))
-        T1 = fkineLPOE(Tn0c,xin[:,:,1],q[i,:,1])
-        T2 = fkineLPOE(Tn0c,xin[:,:,2],q[i,:,2])
+        T1 = fkineLPOE(Tn0c[:,:,:,1],xin[:,:,1],q[i,:,1])
+        T2 = fkineLPOE(Tn0c[:,:,:,2],xin[:,:,2],q[i,:,2])
         ec += norm(twistcoords(log(Ta[:,:,i]*trinv(T1))))
         ec += norm(twistcoords(log(Ta[:,:,i]*trinv(T2))))
     end

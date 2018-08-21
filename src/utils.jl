@@ -88,7 +88,7 @@ end
 """Calculates the matrix logarithm of a rotation matrix ∈ SO(3)"""
 function logR(R)
     @assert isrot(R)
-    phi = acos((min(trace(R),3)-1)/2)
+    phi = acos((min(tr(R),3)-1)/2)
     if abs(phi) < 1e-10
         ω = (R-R')/2
     else
@@ -123,9 +123,9 @@ trinv(T) = [T[1:3,1:3]' -T[1:3,1:3]'*T[1:3,4];0 0 0 1]
 isrot(R) = det(R[1:3,1:3]) ≈ 1 && norm(R[1:3,1:3]'R[1:3,1:3]-I) < 1e-10
 isse3(T) = isrot(T) && T[4,1:4] == [0 0 0 1]
 
-"""`Rangle(R1,R2 = eye(3),deg = false)` calculates the angle between two rotation matrices"""
-function Rangle(R1,R2 = I,deg = false)
-    cosθ = (trace(R1[1:3,1:3]' * R2[1:3,1:3])-1)/2
+"""`Rangle(R1,R2 = I3,deg = false)` calculates the angle between two rotation matrices"""
+function Rangle(R1::AbstractMatrix,R2 = I,deg = false)
+    @views cosθ = (tr(R1[1:3,1:3]' * R2[1:3,1:3])-1)/2
     if cosθ > 1
         cosθ = 1
     elseif cosθ < -1
@@ -138,12 +138,12 @@ function Rangle(R1,R2 = I,deg = false)
     return θ
 end
 
-function Rangle(R1,R2i = I,deg = false)
+function Rangle(R1::AbstractArray{T,3},R2i = I,deg = false) where T
     N = size(R1,3)
     θ = zeros(N)
-    R2 = R2i == I ? Matrix{Float64}(I,3,3) : R2i
+    R2 = R2i == I ? I3 : R2i
     for i = 1:N
-        cosθ = (trace(R1[1:3,1:3,i]' * R2[1:3,1:3,(size(R2,3)==1 ? 1 : i)])-1)/2
+        cosθ = (tr(R1[1:3,1:3,i]' * R2[1:3,1:3,(size(R2,3)==1 ? 1 : i)])-1)/2
         if cosθ > 1
             cosθ = 1
         elseif cosθ < -1
@@ -163,7 +163,7 @@ function Ai(q,xi)
     n = size(q,1)
     A = zeros(6,6(n+1))
     qext = [q;1]
-    pa = eye(6)
+    pa = Matrix{Float64}(i, 6, 6)
     for i = 1:n+1
         ω = xi[4:6,i]
         Ω = [skew(xi[4:6,i]) skew(xi[1:3,i]);
@@ -182,7 +182,7 @@ end
 function xii(q,xi)
     n = size(q,1)
     A = zeros(6,n)
-    pa = eye(6)
+    pa = Matrix{Float64}(i, 6, 6)
     for i = 1:n
         A[:,i] = pa*xi[:,i]
         pa = pa*ad(expξ(xi[:,i],q[i])) # Correct order?
@@ -194,7 +194,7 @@ end
 
 
 function prodad(xi,q,n)
-    pa = eye(6)
+    pa = Matrix{Float64}(i, 6, 6)
     for i = 1:n
         pa = pa*ad(expξ(skew4(xi[:,i]),q[i]))
     end
@@ -232,8 +232,8 @@ function DH2twistsPOE(Tn)
     n = size(Tn,3)-1
     xi = zeros(6,n+2)
     P = skew4([0,0,0,0,0,1])
-    T = eye(4)
-    M = eye(4)
+    T = I4
+    M = I4
     for i = 1:n+1
         Xi = M*P*trinv(M)
         xi[:,i] = twistcoords(Xi)
@@ -265,7 +265,7 @@ function toOrthoNormal!(M)
     R = M[1:3,1:3]
     U,S,V = svd(R)
     a = sign(det(U*V'))
-    S = diagm([1,1,a])
+    S = diagm(0=>[1,1,a])
     R = U*S*V'
     M[1:3,1:3] = R
     M
@@ -276,7 +276,7 @@ function toOrthoNormal(Mi)
     R = M[1:3,1:3]
     U,S,V = svd(R)
     a = sign(det(U*V'))
-    S = diagm([1,1,a])
+    S = diagm(0=>[1,1,a])
     R = U*S*V'
     M[1:3,1:3] = R
     M

@@ -36,7 +36,7 @@ line_seam_RB  = T_RB_T*line_seam
 
 using Plots
 default(markersize=1)
-plot(Frame(eye(4),"RB","U"),200, label=true)
+plot(Frame(I4,"RB","U"),200, label=true)
 plot!(cloud_seam_RB)
 plot!(cloud_seam_projected_RB)
 plot!(line_seam_RB,500,label="Line seam")
@@ -58,6 +58,7 @@ module Frames
 
 using StaticArrays, RecipesBase, LinearAlgebra
 
+
 export Frame, Point, Plane, Points, Line, GeometricObject, add_frame_name!
 export readcloud, readTmatrix, readplane, fitline, fitplane, framefromfeatures, project
 export plot3Dsmart, display, show, print
@@ -66,7 +67,7 @@ export inv, *,+,-,/,\,transpose,ctranspose, dot
 import Base: print, zeros, length, size, getindex, setindex!, convert, promote_rule, push!, show, display, start, next, done, +, *, .*, /, ./, -, \, inv
 import LinearAlgebra: ×, transpose, ctranspose, dot, ⋅, det
 # using LaTeXStrings
-import Robotlib: T2R, T2t
+import Robotlib: T2R, T2t, I3, I4
 
 const Vect{Ty} = Union{AbstractVector{Ty}, MVector{3,Ty}}
 const Matr{Ty} = Union{AbstractMatrix{Ty}, MMatrix{3,3,Ty}}
@@ -158,7 +159,7 @@ function Frame(R::Matr{Ty}, t::AbstractArray{Ty}, A::String="U", B::String="U") 
     add_frame!(f)
     f
 end
-Frame() = Frame{Float64}(eye(3),zeros(3),"U","U")
+Frame() = Frame{Float64}(I3,zeros(3),"U","U")
 
 ref_frames = Set{Frame}()
 frame_map = Dict{String,String}()
@@ -368,7 +369,7 @@ function normalize!(p::Point) p.p/=norm(p.p); end
 
 function ⊥(R::Matr)
     (U,S,V) = svd(R)
-    a = diagm([1, 1, sign(det(U*V'))])
+    a = diagm(0=>[1, 1, sign(det(U*V'))])
     return U*a*V'
 end
 
@@ -398,7 +399,7 @@ function fitplane(points::Points)
     (U,S,V) = svd(cpoints)
 
     n = V[:,3]
-    r = n*vecdot(cog,n)[1]
+    r = n*dot(cog,n)[1]
 
     @assert abs(norm(n)-1) < 1e-8
     @assert abs(abs(normalized(r-cog)⋅n)) < 1e-14
@@ -412,7 +413,7 @@ function fitline(points::Points)
     (cog,cpoints) = center(points)
     (U,S,V) = svd(cpoints)
     v = V[:,1]
-    r = cog-vecdot(v,cog).*v
+    r = cog-dot(v,cog).*v
 
     @assert abs(norm(v)-1) < 1e-8
     @assert abs(abs(normalized(r-cog)⋅v) - 1) < 1e-14
@@ -523,7 +524,7 @@ function readplane(file)
 end
 
 function readTmatrix(coordlines)
-    T = eye(4,4)
+    T = Matrix(I4)
     for (i,line) in enumerate(coordlines)
         T[i,:] = line
     end
@@ -540,7 +541,7 @@ function prepfile(file)
         coords = split(stripline,[',',' '])
         coords = filter(x-> x!="",coords)
         try
-            fcoords = float(coords)
+            fcoords = parse.(Float64, coords)
             isempty(fcoords) && continue
             push!(coordlines,fcoords)
         catch e

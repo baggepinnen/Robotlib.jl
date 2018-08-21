@@ -1,10 +1,10 @@
 using Robotlib, SymPy
-Tworld2base = eye(4)
+Tworld2base = I4
 # """
-# `τ = gravity{P}(q::VecOrMat{P}, rm, m, dh::DH, Tworld2base = eye(4))`
+# `τ = gravity{P}(q::VecOrMat{P}, rm, m, dh::DH, Tworld2base = I4)`
 # calculates the gravity torques given a joint angles `q`, (distances to center of mass × mass) `rm` and masses `m`. The DH-parameters for the robot must also be provided
 # """
-function gravity(q::VecOrMat{P}, rm, m, dh::DH, Tworld2base = eye(4)) where P
+function gravity(q::VecOrMat{P}, rm, m, dh::DH, Tworld2base = I4) where P
     Tn  = dh2Tn(dh,q)
     gravity(q, rm, m, Tn, Tworld2base)
 end
@@ -14,7 +14,7 @@ end
 
 `q` is the joint coordinates, `rm` are distances to center of masses times masses, `m` are the masses and `Tn` are the transformations between consecutive joints.
 """
-function gravity(q::VecOrMat{P}, rm, m, Tn::AbstractArray, Tworld2base = eye(4)) where P
+function gravity(q::VecOrMat{P}, rm, m, Tn::AbstractArray, Tworld2base = I4) where P
     n   = size(Tn,3)-1
     # Find elements that are ≈ 0 and make them zero, smiplifies a lot!
     if P == SymPy.Sym
@@ -121,11 +121,11 @@ end
 # dh       = DHYuMi()
 # baseAnglesLeft = [-0.63 , 0.95 , -0.18]
 # Rbase          = rpy2R(baseAnglesLeft,"xyz")
-# Tbase          = eye(4)
+# Tbase          = I4
 # Tbase[1:3,1:3] = Rbase
 
 """
-    create_gravmodel(filename, r,m, dh, Tbase=eye(4))
+    create_gravmodel(filename, r,m, dh, Tbase=I4)
 Given known masses and vectors to center of masses, this function creates a new function to calculate the gravity torque.
 If only `r*m` is known, call the function with `m=1` and `r=rm`
 `r ∈ ℜ(3 × n_joints)`
@@ -133,7 +133,7 @@ If only `r*m` is known, call the function with `m=1` and `r=rm`
 
 The created function is written to a file with and is called like `τ = gravity(q)`
 """
-function create_gravmodel(filename, r::AbstractMatrix,m, dh::DH, Tbase=eye(4))
+function create_gravmodel(filename, r::AbstractMatrix,m, dh::DH, Tbase=I4)
     n_joints       = size(dh.dhpar,1)
     rm             = (r.*m)'
     q              = Sym[symbols("q$j",real=true) for j=1:n_joints]

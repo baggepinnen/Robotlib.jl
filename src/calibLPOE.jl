@@ -349,7 +349,7 @@ function simulateCalibration2(N)
     n       = 6
     q       = 2π*rand(N,n)
     dh      = DH7600()
-    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, eye(4));
+    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, I4);
     xin     = DH2twistsPOE(dh)
     xinmod   = deepcopy(xin)
     for i = 1:n+1
@@ -368,7 +368,7 @@ function simulateCalibration3(N)
     n       = 6
     q       = 2π*rand(N,n)
     dh      = DH7600()
-    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, eye(4));
+    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, I4);
     xin = DH2twistsLPOE(Tn0)
     Tn0mod = deepcopy(Tn0)
     for i = 1:n+1
@@ -377,7 +377,7 @@ function simulateCalibration3(N)
     Ta  = zeros(4,4,N)
     for i = 1:N
         Ta[:,:,i] = fkineLPOE(Tn0,xin,q[i,:])
-        AAA,BBB,T = jacobian(q[i,:]',dh, eye(4));
+        AAA,BBB,T = jacobian(q[i,:]',dh, I4);
         @assert T ≈ Ta[:,:,i]
     end
     return q, xin, Tn0, Tn0mod, Ta
@@ -392,7 +392,7 @@ function simulateCalibration4(N)
     q2      = qt + 0.01*π/180*randn(N,n)
     q       = cat(3,q1,q2)
     dh      = DH7600()
-    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, eye(4));
+    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, I4);
     xin = DH2twistsLPOE(Tn0)
     xin = cat(3,xin,xin)
     Tn0mod = cat(4,deepcopy(Tn0),deepcopy(Tn0))
