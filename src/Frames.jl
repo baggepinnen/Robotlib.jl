@@ -64,7 +64,7 @@ export readcloud, readTmatrix, readplane, fitline, fitplane, framefromfeatures, 
 export plot3Dsmart, display, show, print
 export inv, *,+,-,/,\,transpose,ctranspose, dot
 
-import Base: print, zeros, length, size, getindex, setindex!, convert, promote_rule, push!, show, display, start, next, done, +, *, .*, /, ./, -, \, inv
+import Base: print, zeros, length, size, getindex, setindex!, convert, promote_rule, push!, show, display, iterate, +, *, .*, /, ./, -, \, inv
 import LinearAlgebra: ×, transpose, ctranspose, dot, ⋅, det
 # using LaTeXStrings
 import Robotlib: T2R, T2t, I3, I4
@@ -121,9 +121,14 @@ size(points::Points) = size(points.p)[1]
 
 length(points::Points) = length(points.p)
 
-Base.start(points::Points) = Base.start(points.p)
-Base.next(points::Points, state) = Base.next(points.p,state)
-Base.done(points::Points, state) = Base.done(points.p,state)
+@static if VERSION >= v"0.7"
+    Base.iterate(points::Points, state) = iterate(points.p, state)
+    Base.iterate(points::Points) = iterate(points.p)
+else
+    Base.start(points::Points) = Base.start(points.p)
+    Base.next(points::Points, state) = Base.next(points.p,state)
+    Base.done(points::Points, state) = Base.done(points.p,state)
+end
 
 function convert(::Type{Matrix{Float64}}, p::Points)
     N = length(p)
