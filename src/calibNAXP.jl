@@ -10,7 +10,7 @@ sensor XY plane with y-axis pointing outwards from the sensor.\n
 `lines_S` are vectors corresponding to the direction of the measured laser line
 planes is a vector of indices corresponding to which plane a mesurement
 comes from. It must be same length as `points_S`.\n
-`N_calibs` determines the number of iterations\n
+`iters` determines the number of iterations\n
 @inproceedings{carlson2015six,
   title={Six DOF eye-to-hand calibration from 2D measurements using planar constraints},
   author={Carlson, Fredrik Bagge and Johansson, Rolf and Robertsson, Anders},
@@ -20,36 +20,36 @@ comes from. It must be same length as `points_S`.\n
   organization={IEEE}
 }
 """
-function calibNAXP(points_S, lines_S, POSES, T_TF_S, planes,  N_calibs; doplot=false)
-    N_planes = maximum(planes)
-    RMScalibs = zeros(N_calibs)
-    ALLcalibs = zeros(N_calibs,N_planes)
-    for c = 1:N_calibs
+function calibNAXP(points_S, lines_S, POSES, T_TF_S, planes,  iters; doplot=false)
+    N_planes  = maximum(planes)
+    RMScalibs = zeros(iters)
+    ALLcalibs = zeros(iters,N_planes)
+    for c = 1:iters
         N_poses = size(POSES,3)
         # Convert points to RB cordinate system
-        points = zeros(4,N_poses)
-        lines = zeros(3,N_poses)
+        points  = zeros(4,N_poses)
+        lines   = zeros(3,N_poses)
         for i = 1:N_poses
-            T_RB_S = POSES[:,:,i] * T_TF_S
+            T_RB_S      = POSES[:,:,i] * T_TF_S
             points[:,i] = T_RB_S*[points_S[:,i]; 1]
-            lines[:,i] = T2R(T_RB_S)*lines_S[:,i]
+            lines[:,i]  = T2R(T_RB_S)*lines_S[:,i]
         end
 
         # Find plane centers, normals and distances
-        mu_RB = zeros(3,N_poses)
-        N_RB = mu_RB
+        mu_RB   = zeros(3,N_poses)
+        N_RB    = mu_RB
         normals = zeros(N_planes,3)
         for j = 1:N_planes
-            ind = planes .== j
-            mu_t = mean(points[1:3,ind],2)
+            ind          = planes .== j
+            mu_t         = mean(points[1:3,ind],2)
             mu_RB[:,ind] = repmat(mu_t,1,sum(ind))
-            D,V = eig(cov(points[1:3,ind]'))
-            N_RBt = V[:,1]
+            D,V          = eig(cov(points[1:3,ind]'))
+            N_RBt        = V[:,1]
             if vecdot(mu_t,N_RBt) < 0
                 N_RBt = -1*N_RBt
             end
-            N_RBt = N_RBt*(N_RBt'mu_t)
-            N_RB[:,ind] = repmat(N_RBt,1,sum(ind))
+            N_RBt        = N_RBt*(N_RBt'mu_t)
+            N_RB[:,ind]  = repmat(N_RBt,1,sum(ind))
             normals[j,:] = N_RBt
         end
 
@@ -57,11 +57,11 @@ function calibNAXP(points_S, lines_S, POSES, T_TF_S, planes,  N_calibs; doplot=f
         A = zeros(2*N_poses,9)
         y = zeros(2*N_poses,1)
         for i = 1:N_poses
-            Nt = N_RB[:,i]
-            Ra = POSES[1:3,1:3,i]
-            Ta = POSES[1:3,4,i]
-            Pt = points_S[:,i]
-            y[i] = norm(N_RB[:,i])^2-vecdot(Nt,Ta)
+            Nt     = N_RB[:,i]
+            Ra     = POSES[1:3,1:3,i]
+            Ta     = POSES[1:3,4,i]
+            Pt     = points_S[:,i]
+            y[i]   = norm(N_RB[:,i])^2-vecdot(Nt,Ta)
             A[i,:] = (reshape(repmat(Nt'Ra,3,1)',9,1).*[reshape(repmat(Pt[1:2],1,3)',6,1);1;1;1])' #TODO: rewrite
             if true
                 Pt = points_S[:,i] + 0.1*1.01^c*randn()*lines_S[:,i]
@@ -70,34 +70,34 @@ function calibNAXP(points_S, lines_S, POSES, T_TF_S, planes,  N_calibs; doplot=f
             end
 
         end
-        w = A\y
-        er = y-A*w
+        w   = A\y
+        er  = y-A*w
 
-        H = reshape(w,3,3)
-        Rx = H[1:3,1]
-        Ry = H[1:3,2]
-        Rz = cross(Rx,Ry) # These lines must be changed if laser plane is changed
+        H   = reshape(w,3,3)
+        Rx  = H[1:3,1]
+        Ry  = H[1:3,2]
+        Rz  = cross(Rx,Ry) # These lines must be changed if laser plane is changed
         Rnn = [Rx Ry Rz]
-        @show Rnn
-        @edb R = toOrthoNormal(Rnn)
-        t = H[1:3,3]
+        # @show Rnn
+        R   = toOrthoNormal(Rnn)
+        t   = H[1:3,3]
 
-        w2 = R[1:3,1:2]
-        w2 = w2[:]
-        y2 = y - A[:,1:6]*w2
-        t2 = A[:,7:9]\y2
-        if c < 0 #N_calibs
+        w2  = R[1:3,1:2]
+        w2  = w2[:]
+        y2  = y - A[:,1:6]*w2
+        t2  = A[:,7:9]\y2
+        if c < 0 #iters
             T_TF_S = Rt2T(R,t)
         else
             T_TF_S = Rt2T(R,t2)
         end
         RMSi = zeros(N_planes)
         for j = 1:N_planes
-            ind = planes .== j
-            ind = findall(ind)
+            ind     = planes .== j
+            ind     = findall(ind)
             RMSi[j] = sqrt(pointDiff(T_TF_S,POSES[:,:,ind],points_S[1:3,ind])[1])
         end
-        RMScalibs[c] = mean(RMSi)
+        RMScalibs[c]   = mean(RMSi)
         ALLcalibs[c,:] = RMSi'
         #  any(abs(RMSi) > 1e-1) && warn("Points does not seem to lie on a plane")
     end

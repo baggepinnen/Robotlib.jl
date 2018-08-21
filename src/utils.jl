@@ -1,9 +1,9 @@
 Rt2T(R,t) = [R t; 0 0 0 1]
-T2R(T::Matrix) = T[1:3,1:3]
-T2t(T::Matrix) = T[1:3,4]
+T2R(T::AbstractMatrix) = T[1:3,1:3]
+T2t(T::AbstractMatrix) = T[1:3,4]
 skewcoords(R) = [R[3,2];R[1,3];R[2,1]]
 twistcoords(xi) = [xi[1:3, 4]; skewcoords(xi[1:3, 1:3])]
-@inline skew(s)::Matrix{eltype(s)} = [0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
+@inline skew(s)::AbstractMatrix{eltype(s)} = [0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
 @inline function skew!(R::T,s)::T where T
     R[1,1] = 0
     R[2,1] = s[3]
@@ -16,7 +16,7 @@ twistcoords(xi) = [xi[1:3, 4]; skewcoords(xi[1:3, 1:3])]
     R[3,3] = 0
     return R
 end
-skew4(s)::Matrix{eltype(s)} = [skew(s[4:6]) s[1:3]; 0 0 0 0]
+skew4(s)::AbstractMatrix{eltype(s)} = [skew(s[4:6]) s[1:3]; 0 0 0 0]
 
 # expω(w,q=1) = I + sin(norm(w)*q)/norm(w)*skew(w) + (1-cos(norm(w)*q))/norm(w)^2*skew(w)^2 # verified to work
 
@@ -362,7 +362,7 @@ function R2rpy(m::AbstractArray{T,3}; conv="xyz", deg = false) where T
     return rpy
 end
 
-function R2rpy(m::Matrix; conv="xyz", deg = false)
+function R2rpy(m::AbstractMatrix; conv="xyz", deg = false)
 
     rpy = zeros(3)
 
