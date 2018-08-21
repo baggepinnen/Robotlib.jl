@@ -135,6 +135,7 @@ function run_calib()
         T_TF_S_real = copy(T_TF_S)
         if true
             T_TF_S0 = Rt2T(rpy2R(60π/180*(rand(3)-0.5)),0.4*(rand(3)-0.5))*T_TF_S_real
+            # T_TF_S0 = Rt2T(rpy2R(10π/180*(rand(3)-0.5)),0.1*(rand(3)-0.5))*T_TF_S_real
             #         T_TF_S0 = rt2tr(rpy2R(2*(rand(1,3)-0.5),'deg'),0.01*(rand(3,1)-0.5))*T_TF_S_real;
         else
             T_TF_S0 = copy(T_TF_S_real)
@@ -149,7 +150,7 @@ function run_calib()
         normStart[mc] = vecnorm(T_TF_S0-T_TF_S_real)
         distStart[mc] = norm(T_TF_S0[1:3,4]-T_TF_S_real[1:3,4])
         rotStart[mc] = norm(180/π*R2rpy(T_TF_S0\T_TF_S_real))
-
+        # display(T_TF_S_real)
         T_TF_S, RMScalibs,ALLcalibs, norms = calibNAXP2(points_S, lines_S, T_RB_TF, T_TF_S0, planes,  iters)#, T_TF_S_real)
 
         SSEMC[mc,:] = RMScalibs

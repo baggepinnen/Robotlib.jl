@@ -154,14 +154,14 @@ function calibNAXP2(points_S, lines_S, POSES, T_TF_S, planes::AbstractVector{Int
             N0     = [Nt; 0]
             Ps     = [points_S[:,i]; 1]
             Pr     = points[:,i]
-            y[i]   = -N0⋅(Ps - trinv(Tr)*Pr)
-            a      = -skew(Nt)*[Ps[1:3] (trinv(Tr)*Pr)[1:3]]
-            A[i,:] = [a[:,1]+a[:,2]; 2Nt]
+            y[i]   = -N0⋅(trinv(Tr)*(Ps - N0))
+            a      = -skew(Nt)*((trinv(Tr)*(Ps+N0))[1:3])
+            A[i,:] = [a; Nt]
             if true # Add point from line
                 Ps = [points_S[:,i] + 0.1*1.01^c*randn()*lines_S[:,i]; 1]
-                y[i+N_poses] = -N0⋅(Ps - trinv(Tr)*Pr)
-                a = -skew(Nt)*[Ps[1:3] (trinv(Tr)*Pr)[1:3]]
-                A[i+N_poses,:] = [a[:,1]+a[:,2]; 2Nt]
+                y[i+N_poses] = -N0⋅(trinv(Tr)*(Ps - N0))
+                a      = -skew(Nt)*((trinv(Tr)*(Ps+N0))[1:3])
+                A[i+N_poses,:] = [a; Nt]
             end
 
         end
@@ -169,8 +169,10 @@ function calibNAXP2(points_S, lines_S, POSES, T_TF_S, planes::AbstractVector{Int
         er  = y-A*w
         # @show sum(abs2.(er))
         S = [skew(w[1:3]) w[4:6]; [0 0 0 0]]
+        # display(T_TF_S)
         T_TF_S = (I-S)\(I+S)
-        # @show T_TF_S - expξ([w[4:6]; w[1:3]])
+        # display.((T_TF_S, w))
+        # error()
 
         RMSi = zeros(N_planes)
         for j = 1:N_planes

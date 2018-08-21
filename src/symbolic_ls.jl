@@ -94,25 +94,25 @@ w = [g;u][:]
 # Prb = A*inv(I4-S)*(I4+S)*Ps
 
 
-eq1 = N0'*[G u;0 0 0 0]*(Ps + trinv(A)*Prb)
+eq1 = N0'*S*trinv(A)*(Ps + N0)
 
 eq = eq1[:] # Vector of interesting equations,
-# terms of order zeros should be placed on RHS
 
-AA     = Array{Sym}(length(eq), length(w))
+AA     = Array{Sym}(length(w))
 BB     = Array{Sym}(length(eq), 1)
-AAz    = falses(size(AA))
+AA2    = similar(AA)
 
-for i = 1:length(eq)
-    for j = 1:length(w)
-        AA[i,j] = coeffs(expand(eq[i]),w[j])[2] # Find all coefficients of parameter j in eq i
-    end
+
+for j = 1:length(w)
+    AA[j] = coeffs(expand(eq[i]),w[j])[1]
+    AA2[j] = coeffs(expand(eq[i]),w[j])[2]
 end
 
-# byhand = (reshape(-repmat((N'A[1:3,1:3]),3,1)',9,1) .*[reshape(repmat(P[1:2],1,3)',6,1);2N])
-byhand2 = -skew(N)*[Ps[1:3] (trinv(A)*Prb)[1:3]]
-byhand2 = sum(byhand2, dims=2)
-byhand2 = [byhand2; 2N]
+
+# TODO: don't forget to extract potential coefficients that does not have a match in AA
+
+byhand2 = -skew(N)*((trinv(A)*(Ps+N0))[1:3])
+byhand2 = [byhand2; N]
 # @assert all(simplify.(byhand) .== simplify.(byhand2[:]))
 @assert all(simplify.(byhand2 .- AA[:]) .== 0)
 
@@ -122,3 +122,23 @@ r = map(AA) do a
     end
 end
 r = hcat(r...)
+
+
+
+
+p = randn(3); n = randn(3); T = randn(3,3)
+p *= (n'n)/(n'p)
+n'n - n'p
+
+n'T*p
+trace(T*p*n')
+
+(T*p)⋅n
+((T*n)⋅n)
+
+n'T*p
+n'T*n
+
+trace(n*p'*T')
+
+Pn = n*n'
