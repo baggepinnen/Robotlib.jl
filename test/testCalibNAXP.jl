@@ -1,8 +1,11 @@
-using Robotlib, StaticArrays
+using Robotlib, StaticArrays, Test
 import Robotlib: Rt2T, T2R, T2t
 include(joinpath(dirname(@__FILE__),"..","src","calibNAXP.jl"))
 
 const TM = SMatrix{4,4,Float64,16}
+
+
+@test isapprox(pointDiff(I4,cat(fill(I4,5)...,dims=3),zeros(3,5))[], 0, atol=1e-10)
 
 mutable struct Plane{T1,T2,T3,T4,T5}
     N::T1
@@ -34,11 +37,11 @@ function generateRandomPoses(N_poses, sigma_n, T_TF_S, plane)
     N_RB      = plane.N
     d_RB      = plane.d
     T_RB_TF   = Array{Float64}(4,4,N_poses)
-    i         = 1
     lines_RB  = zeros(3,N_poses)
     lines_S   = zeros(3,N_poses)
     points_RB = zeros(3,N_poses)
     points_S  = zeros(4,N_poses)
+    i         = 1
     while i <= N_poses
         T_RB_TF[:,:,i]       = Rt2T(rpy2R(1.5*randn(), 1.5*randn(), 1.5*randn()),0.6*randn(3) + 2*N_RB)
         T_RB_S               = T_RB_TF[:,:,i]*T_TF_S |> TM
@@ -49,32 +52,32 @@ function generateRandomPoses(N_poses, sigma_n, T_TF_S, plane)
         lines_S[:,i]         = intersection_line_S
         laser_0_RB           = T_RB_S[1:3,4]
         laser_y_RB           = T_RB_S[1:3,2]
-        lambda               = (d_RB-vecdot(N_RB,laser_0_RB))/(vecdot(N_RB,laser_y_RB))
-        points_RB[:,i]       = laser_0_RB + lambda*laser_y_RB
-        points_S[:,i]        = inv(T_RB_S)*[points_RB[:,i]; 1]
-        if abs(lambda) > 2
+        λ                    = (d_RB-N_RB'laser_0_RB)/(N_RB'laser_y_RB)
+        if abs(λ) > 2
             continue
         end
+        points_RB[:,i]       = laser_0_RB + λ*laser_y_RB
+        points_S[:,i]        = inv(T_RB_S)*[points_RB[:,i]; 1]
         i += 1
     end
     points_S = points_S[1:3,:]
-    points_S = points_S + sigma_n*randn(size(points_S))
+    points_S .+= sigma_n*randn(size(points_S))
 
     # Verify poses
-    C = cov(points_RB');    D,V = eig(C)
+    D,V = eig(cov(points_RB'))
     nhat_points = V[:,1]
-    C = cov(lines_RB');    D,V = eig(C)
+    D,V = eig(cov(lines_RB'))
     nhat_lines = V[:,1]
-    if 1-abs(vecdot(nhat_points,nhat_lines)) > 0.001 || D[1,1] > 1e-5
+    if 1-abs(nhat_points'nhat_lines) > 0.001 || D[1,1] > 1e-5
         @warn("Something is wrong")
-        @show 1-abs(vecdot(nhat_points,nhat_lines)), D[1,1]
+        @show 1-abs(nhat_points'nhat_lines), D[1,1]
     end
 
     points = zeros(4,N_poses)
     for i = 1:N_poses
         T_RB_S = T_RB_TF[:,:,i] * T_TF_S  |> TM
         #         points(:,end+1) = T_RB_S*[(points_S[:,i]);1];
-        points[:,i] = T_RB_S*[(points_S[:,i]);1]
+        points[:,i] = T_RB_S*[points_S[:,i];1]
         #         points(:,end+1) = inv(T_RB_S)*[(points_S[:,i] - 0.01*lines_S[:,i]);1];
     end
     if any(abs.(points[1:3,:] - points_RB) .> 1e-2)
@@ -85,12 +88,12 @@ end
 
 
 
+MC        = 10
+N_planes  = 3
+iters     = 30
+N_poses   = 10
+sigma_n   = 5e-4
 function run_calib()
-    MC        = 100
-    N_planes  = 3
-    iters     = 30
-    N_poses   = 10
-    sigma_n   = 5e-4
     SSEStart  = zeros(MC)
     normStart = zeros(MC)
     distStart = zeros(MC)
@@ -99,48 +102,46 @@ function run_calib()
     rotEnd    = zeros(MC)
     SSEMC     = zeros(MC,iters)
     normMC    = zeros(MC,iters)
+    mc = 1
     for mc = 1:MC
         # Simulate measurement data
         T_TF_S    = Rt2T(rpy2R(randn(3)),0.5randn(3)) |> TM #TCP to sensor
-        points_Sv = Vector{Float64}[]
-        lines_Sv  = Vector{Float64}[]
-        T_RB_TFv  = Matrix{Float64}(4,4,0)
+        points_Sv = Matrix{Float64}[]
+        lines_Sv  = Matrix{Float64}[]
+        T_RB_TFv  = Array{Float64,3}[]
         plane     = Plane[]
-        planes    = Array{Int}(undef, 0)
         SSE       = zeros(N_planes)
         println("Gnereating planes and poses")
         for j = 1:N_planes
             push!(plane, generateRandomPlane(j))
-            points_St,lines_St, T_RB_TFt = generateRandomPoses(N_poses, sigma_n,T_TF_S, plane[j])
+            points_St, lines_St, T_RB_TFt = generateRandomPoses(N_poses, sigma_n,T_TF_S, plane[j])
             push!(points_Sv, points_St)
-            push!(lines_Sv; lines_St)
+            push!(lines_Sv, lines_St)
             push!(T_RB_TFv, T_RB_TFt)
-            push!(planes, j*ones(Int,N_poses))
             SSE[j] = pointDiff(T_TF_S,T_RB_TFt,points_St)[1]
         end
+        planes   = repeat((1:N_planes)',N_poses)[:]
         points_S = cat(2, points_Sv...)
         lines_S  = cat(2, lines_Sv...)
         T_RB_TF  = cat(3, T_RB_TFv...)
 
-        any(abs.(SSE .> 1e-3)) && @warn("Points does not seem to lie on a plane")
+        any(abs.(SSE .> 1e-3)) && @error("Points does not seem to lie on a plane")
         dist = [norm(T_RB_TF[1:4,4,i] - T_TF_S*[points_S[:,i];1]) for i in 1:size(T_RB_TF,3)]
         #     hist(dist,15)
 
         ## Calibration
         # display('----------------------------------------')
         # Generate nominal transformation
-        N_poses = size(points_S,2)
-        T_TF_S_real = T_TF_S
+        T_TF_S_real = copy(T_TF_S)
         if true
             T_TF_S0 = Rt2T(rpy2R(60π/180*(rand(3)-0.5)),0.4*(rand(3)-0.5))*T_TF_S_real
             #         T_TF_S0 = rt2tr(rpy2R(2*(rand(1,3)-0.5),'deg'),0.01*(rand(3,1)-0.5))*T_TF_S_real;
         else
-            T_TF_S0 = T_TF_S_real
+            T_TF_S0 = copy(T_TF_S_real)
         end
 
         for j = 1:N_planes
-            ind = planes .== j
-            ind = findall(ind)
+            ind = findall(planes .== j)
             SSE[j] = sqrt(pointDiff(T_TF_S0, T_RB_TF[:,:,ind], points_S[1:3,ind])[1])
         end
 
@@ -149,8 +150,7 @@ function run_calib()
         distStart[mc] = norm(T_TF_S0[1:3,4]-T_TF_S_real[1:3,4])
         rotStart[mc] = norm(180/π*R2rpy(T_TF_S0\T_TF_S_real))
 
-        println("Calibrating")
-        @time T_TF_S, RMScalibs,ALLcalibs, norms = calibNAXP(points_S, lines_S, T_RB_TF, T_TF_S0, planes,  iters)#, T_TF_S_real)
+        T_TF_S, RMScalibs,ALLcalibs, norms = calibNAXP2(points_S, lines_S, T_RB_TF, T_TF_S0, planes,  iters)#, T_TF_S_real)
 
         SSEMC[mc,:] = RMScalibs
         normMC[mc,:] = norms
@@ -166,17 +166,24 @@ function run_calib()
 end
 
 SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC = run_calib()
-# normStart
-# normMC
 
 iters = size(SSEMC,2)
-plot(0:iters,[normStart', normMC]',yscale=:log10,c=:black, xlabel="Number of iterations")
-plot!([0 iters], [sigma_n sigma_n],l=:dash, c=:red)
+using StatPlots
+# plot(0:iters,copy([normStart normMC]'),yscale=:log10,c=:black, xlabel="Number of iterations", layout=2, subplot=1)
+# hline!([sigma_n, sigma_n],l=:dash, c=:red)
+plot(0:iters,[SSEStart SSEMC]',yscale=:log10,c=:black, xlabel="Number of iterations",title="RMS distance from points to plane [m]")
+hline!([sigma_n sigma_n],l=:dash,c=:red)
 
-plot(0:iters,[SSEStart', SSEMC]',yscale=:log10,c=:black, xlabel="Number of iterations",title="RMS distance from points to plane [m]")
-plot!([0 iters], [sigma_n sigma_n],l=:dash,c=:red)
-
-boxplot(["Before" "After"],([distStart', distEnd']), title="Distance error [m]")
+# boxplot(["Before" "After"],([distStart distEnd]), title="Distance error [m]", yscale=:log10, layout=2, subplot=1)
 # hold on, plot([0 3], [sigma_n sigma_n],'--r')
 
-boxplot(["Before" "After"],([rotStart', rotEnd']),title="Rotation error [degree]")
+# boxplot!(["Before" "After"],([rotStart rotEnd]),title="Rotation error [degree]", yscale=:log10, subplot=2)
+
+
+
+# f1(w) = (S = [skew(w[1:3]) w[4:6]; [0 0 0 0]]; T_TF_S = (I-S)/(I+S))
+# f2(w) = expξ([w[4:6]; w[1:3]])
+#
+# w = randn(6)
+# f1(w)
+# f2(w)
