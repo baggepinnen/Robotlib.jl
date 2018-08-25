@@ -15,7 +15,7 @@ function calibForce(POSES,F,m0=0.3; offset=true)
     g = 9.82
     mg = m0*g # Initial guess is m0, the method accepts 5 orders of magnitude error at least
 
-    I = eye(3)
+    I = Robotlib.I3
     A  = Array{eltype(F)}(undef, 3N, offset ? 12 : 9)
     B  = Array{eltype(F)}(undef, 3N)
     A2 = Array{eltype(F)}(undef, 3N, offset ? 4 : 1)
@@ -29,7 +29,7 @@ function calibForce(POSES,F,m0=0.3; offset=true)
         B[3(i-1)+1:3i]   = b
     end
     @info("Condition number of Gram matrix: ", cond(A'A))
-    w  = A\B.*mg
+    w  = tls(A,B.*mg)
     Rf = reshape(w[1:9],3,3)
     @info("Determinant of Rf before orthonormalization: ", det(Rf)," (Should be close to 1, but don't be afraid if it's not, should however be positive!)")
     det(Rf) < 0 && @error("det(Rf) < 0, left handed coordinate system?")
@@ -51,6 +51,44 @@ function calibForce(POSES,F,m0=0.3; offset=true)
     if offset
         return Rf,m,forceoffs
     else
-        return Rf,m
+        return Rf , m
     end
+end
+
+
+import Robotlib: skew
+
+"""
+    This function uses Cayley transform to solve for R. It requires a known mass so it is recommended to use `calibForce` instead.
+"""
+function calibForce2(POSES,F,m)
+
+    N  = size(POSES,3)
+
+    local forceoffs
+    g  = -9.82
+    mg = m*g
+
+    I  = Robotlib.I3
+    A  = Array{eltype(F)}(undef, 3N, 3)
+    B  = Array{eltype(F)}(undef, 3N)
+
+    for i = 1:N
+        RA               = POSES[3,1:3,i]
+        A[3(i-1)+1:3i,:] = skew(F[i,1:3][:] + RA*mg)
+        B[3(i-1)+1:3i]   = RA*mg - F[i,1:3]
+    end
+    @info("Condition number of Gram matrix: ", cond(A'A))
+    w  = tls(A,B)
+    S  = skew(w)
+    Rf = (I+S)\(I-S)
+end
+
+function tls(A,b)
+    AA  = [A b]
+    s   = svd(AA)
+    m,n = length(b),size(A,2)
+    V21 = s.V[1:n,n+1:end]
+    V22 = s.V[n+1:end,n+1:end]
+    x   = -V21/V22
 end

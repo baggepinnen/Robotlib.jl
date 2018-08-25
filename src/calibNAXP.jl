@@ -43,14 +43,14 @@ function calibNAXP(points_S, lines_S, POSES, T_TF_S, planes::AbstractVector{Int}
         for j = 1:N_planes
             ind          = planes .== j
             mu_t         = mean(points[1:3,ind],dims=2)
-            mu_RB[:,ind] = repmat(mu_t,1,sum(ind))
-            D,V          = eig(cov(points[1:3,ind]'))
+            mu_RB[:,ind] = repeat(mu_t,1,sum(ind))
+            V            = eigen(cov(points[1:3,ind]')).vectors
             N_RBt        = V[:,1]
             if dot(mu_t,N_RBt) < 0
                 N_RBt = -1*N_RBt
             end
             N_RBt        = N_RBt*(N_RBt'mu_t)
-            N_RB[:,ind]  = repmat(N_RBt,1,sum(ind))
+            N_RB[:,ind]  = repeat(N_RBt,1,sum(ind))
             normals[j,:] = N_RBt
         end
 
@@ -63,11 +63,11 @@ function calibNAXP(points_S, lines_S, POSES, T_TF_S, planes::AbstractVector{Int}
             Ta     = POSES[1:3,4,i]
             Pt     = points_S[:,i]
             y[i]   = norm(N_RB[:,i])^2-dot(Nt,Ta)
-            A[i,:] = (reshape(repmat(Nt'Ra,3,1)',9,1).*[reshape(repmat(Pt[1:2],1,3)',6,1);1;1;1])' #TODO: rewrite
+            A[i,:] = (reshape(repeat(Nt'Ra,3,1)',9,1).*[reshape(repeat(Pt[1:2],1,3)',6,1);1;1;1])' #TODO: rewrite
             if true
                 Pt = points_S[:,i] + 0.1*1.01^c*randn()*lines_S[:,i]
                 y[i+N_poses] = norm(N_RB[:,i])^2-dot(Nt,Ta)
-                A[i+N_poses,:] = (reshape(repmat(Nt'Ra,3,1)',9,1) .*[reshape(repmat(Pt[1:2],1,3)',6,1);1;1;1])'
+                A[i+N_poses,:] = (reshape(repeat(Nt'Ra,3,1)',9,1) .*[reshape(repeat(Pt[1:2],1,3)',6,1);1;1;1])'
             end
 
         end
@@ -135,14 +135,14 @@ end
 #         for j = 1:N_planes
 #             ind          = planes .== j
 #             mu_t         = mean(points[1:3,ind],dims=2)
-#             mu_RB[:,ind] = repmat(mu_t,1,sum(ind))
-#             D,V          = eig(cov(points[1:3,ind]'))
+#             mu_RB[:,ind] = repeat(mu_t,1,sum(ind))
+#             V          = eigen(cov(points[1:3,ind]')).vectors
 #             N_RBt        = V[:,1]
 #             if mu_t⋅N_RBt < 0
 #                 N_RBt = -1*N_RBt
 #             end
 #             N_RBt        = N_RBt*(N_RBt⋅mu_t)
-#             N_RB[:,ind]  = repmat(N_RBt,1,sum(ind))
+#             N_RB[:,ind]  = repeat(N_RBt,1,sum(ind))
 #             normals[j,:] = N_RBt
 #         end
 #
