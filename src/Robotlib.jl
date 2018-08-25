@@ -42,6 +42,7 @@ import Robotlib.xii
 import Robotlib.Ai
 include("calibLPOE.jl")
 include("calibForce.jl")
+include("calibNAXP.jl")
 export calibLPOE, calibLPOEdual, calibForce, calibPOE_offsets_from_points
 
 end

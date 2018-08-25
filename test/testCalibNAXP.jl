@@ -1,11 +1,10 @@
 using Robotlib, StaticArrays, Test
-import Robotlib: Rt2T, T2R, T2t
-include(joinpath(dirname(@__FILE__),"..","src","calibNAXP.jl"))
+using Robotlib: Rt2T, T2R, T2t, I4
+using Robotlib.Calibration: calibNAXP, pointDiff
+
 
 const TM = SMatrix{4,4,Float64,16}
 
-
-@test isapprox(pointDiff(I4,cat(fill(I4,5)...,dims=3),zeros(3,5))[], 0, atol=1e-10)
 
 mutable struct Plane{T1,T2,T3,T4,T5}
     N::T1
@@ -121,9 +120,9 @@ function run_calib()
             SSE[j] = pointDiff(T_TF_S,T_RB_TFt,points_St)[1]
         end
         planes   = repeat((1:N_planes)',N_poses)[:]
-        points_S = cat(2, points_Sv...)
-        lines_S  = cat(2, lines_Sv...)
-        T_RB_TF  = cat(3, T_RB_TFv...)
+        points_S = cat(points_Sv..., dims=2)
+        lines_S  = cat(lines_Sv..., dims=2)
+        T_RB_TF  = cat(T_RB_TFv..., dims=3)
 
         any(abs.(SSE .> 1e-3)) && @error("Points does not seem to lie on a plane")
         dist = [norm(T_RB_TF[1:4,4,i] - T_TF_S*[points_S[:,i];1]) for i in 1:size(T_RB_TF,3)]
@@ -151,7 +150,7 @@ function run_calib()
         distStart[mc] = norm(T_TF_S0[1:3,4]-T_TF_S_real[1:3,4])
         rotStart[mc] = norm(180/π*R2rpy(T_TF_S0\T_TF_S_real))
         # display(T_TF_S_real)
-        T_TF_S, RMScalibs,ALLcalibs, norms = calibNAXP2(points_S, lines_S, T_RB_TF, T_TF_S0, planes,  iters)#, T_TF_S_real)
+        T_TF_S, RMScalibs,ALLcalibs, norms = calibNAXP(points_S, lines_S, T_RB_TF, T_TF_S0, planes,  iters)#, T_TF_S_real)
 
         SSEMC[mc,:] = RMScalibs
         normMC[mc,:] = norms
@@ -166,14 +165,21 @@ function run_calib()
     SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC
 end
 
+@testset "CalibNAXP" begin
+
+@test isapprox(pointDiff(I4,cat(fill(I4,5)...,dims=3),zeros(3,5))[], 0, atol=1e-10)
+
 SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC = run_calib()
 
-iters = size(SSEMC,2)
-using StatPlots
-# plot(0:iters,copy([normStart normMC]'),yscale=:log10,c=:black, xlabel="Number of iterations", layout=2, subplot=1)
-# hline!([sigma_n, sigma_n],l=:dash, c=:red)
-plot(0:iters,[SSEStart SSEMC]',yscale=:log10,c=:black, xlabel="Number of iterations",title="RMS distance from points to plane [m]")
-hline!([sigma_n sigma_n],l=:dash,c=:red)
+@test all(SSEMC[:,end] .< 2sigma_n)
+end
+
+# iters = size(SSEMC,2)
+# using StatPlots
+# # plot(0:iters,copy([normStart normMC]'),yscale=:log10,c=:black, xlabel="Number of iterations", layout=2, subplot=1)
+# # hline!([sigma_n, sigma_n],l=:dash, c=:red)
+# plot(0:iters,[SSEStart SSEMC]',yscale=:log10,c=:black, xlabel="Number of iterations",title="RMS distance from points to plane [m]")
+# hline!([sigma_n sigma_n],l=:dash,c=:red)
 
 # boxplot(["Before" "After"],([distStart distEnd]), title="Distance error [m]", yscale=:log10, layout=2, subplot=1)
 # hold on, plot([0 3], [sigma_n sigma_n],'--r')

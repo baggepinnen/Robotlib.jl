@@ -16,10 +16,10 @@ function calibForce(POSES,F,m0=0.3; offset=true)
     mg = m0*g # Initial guess is m0, the method accepts 5 orders of magnitude error at least
 
     I = eye(3)
-    A  = Array{Float64}(3N,offset ? 12 : 9)
-    B  = Array{Float64}(3N)
-    A2 = Array{Float64}(3N,offset ? 4 : 1)
-    B2 = Array{Float64}(3N)
+    A  = Array{eltype(F)}(undef, 3N, offset ? 12 : 9)
+    B  = Array{eltype(F)}(undef, 3N)
+    A2 = Array{eltype(F)}(undef, 3N, offset ? 4 : 1)
+    B2 = Array{eltype(F)}(undef, 3N)
     At = offset ? (F,i) -> [F[i,1]*I   F[i,2]*I    F[i,3]*I   I] : (F,i) -> [F[i,1]*I   F[i,2]*I    F[i,3]*I]
 
     for i = 1:N
@@ -28,24 +28,23 @@ function calibForce(POSES,F,m0=0.3; offset=true)
         A[3(i-1)+1:3i,:] = At(F,i)
         B[3(i-1)+1:3i]   = b
     end
-    info("Condition number of Gram matrix: ", cond(A'A))
+    @info("Condition number of Gram matrix: ", cond(A'A))
     w  = A\B.*mg
     Rf = reshape(w[1:9],3,3)
-    info("Determinant of Rf before orthonormalization: ", det(Rf)," (Should be close to 1, but don't be afraid if it's not, should however be positive!)")
+    @info("Determinant of Rf before orthonormalization: ", det(Rf)," (Should be close to 1, but don't be afraid if it's not, should however be positive!)")
     det(Rf) < 0 && @error("det(Rf) < 0, left handed coordinate system?")
     toOrthoNormal!(Rf)
     At = offset ? RA -> [RA[:,3] I] : RA -> RA[:,3]
     for ii = 1:2
         for i = 1:N
             RA                = POSES[1:3,1:3,i]'
-            At                = [RA[:,3] I]
             b                 = -Rf*F[i,1:3]
             A2[3(i-1)+1:3i,:] = At(RA)
             B2[3(i-1)+1:3i]   = b
         end
         w         = A2\B2
         mg        = w[1]
-        forceoffs = w[2:4]
+        offset && (forceoffs = w[2:4])
     end
     m = mg/g
     m < 0 && @error("Estimated mass is negative, left handed coordinate system for sensor?")
