@@ -23,7 +23,9 @@ For YuMi, joint angles `q` must be converted to logical order using e.g. abb2log
 You must also consider the base transform of YuMi
 """
 module Robotlib
-using LinearAlgebra, Statistics
+using LinearAlgebra, Statistics, StaticArrays
+const I4 = SMatrix{4, 4, Float64, 16}(Matrix{Float64}(I, 4, 4))
+const I3 = SMatrix{3, 3, Float64, 9}(Matrix{Float64}(I, 3, 3))
 include("DH.jl")
 include("utils.jl")
 include("kinematics.jl")
@@ -35,6 +37,7 @@ include("posDepFric.jl")
 
 module Calibration
 using ..Robotlib
+using LinearAlgebra, Statistics
 import Robotlib.xii
 import Robotlib.Ai
 include("calibLPOE.jl")
@@ -52,6 +55,7 @@ export csv2mat, orcalog2mat, getData, readmat
 export frictionRBFN, getCenters
 
 dir(x...) = joinpath(dirname(pathof(Robotlib)),x...)
+
 
 precompile(get_kinematic_functions, (String,))
 precompile(fkineLPOE, (Array{Float64,3},Array{Float64,2},Array{Float64,1}))

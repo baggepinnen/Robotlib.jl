@@ -4,7 +4,7 @@ mutable struct DH
     GR::Matrix{Float64}
 end
 
-DH(dhpar,offset) = DH(dhpar,offset,eye(length(offset)))
+DH(dhpar,offset) = DH(dhpar,offset,Matrix{Float64}(I, length(offset),length(offset)))
 
 function DH2400()
     DH_alpha0 = -π/2

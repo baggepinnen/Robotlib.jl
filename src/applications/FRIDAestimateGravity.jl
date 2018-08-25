@@ -56,7 +56,7 @@ function getRegressor(q,q̇)
     A = Array(Float64,7N,np)
     ii = 1
     for i = 1:N
-        A[ii:ii+6,:] = [gravityFridaLS(q[i,:])  diagm(q̇[i,:] .> 0)   diagm(q̇[i,:] .< 0) diagm(q̇[i,:] .> 0)*diagm(q̇[i,:])  diagm(q̇[i,:] .< 0)*diagm(q̇[i,:])]
+        A[ii:ii+6,:] = [gravityFridaLS(q[i,:])  diagm(0=>q̇[i,:] .> 0)   diagm(0=>q̇[i,:] .< 0) diagm(0=>q̇[i,:] .> 0)*diagm(0=>q̇[i,:])  diagm(0=>q̇[i,:] .< 0)*diagm(0=>q̇[i,:])]
         ii+= 7
     end
     return A
@@ -73,7 +73,7 @@ esty(y) = vec(y')[!still]
 
 
 k = estA(A)\esty(τ)
-# k = [estA(A); 0.1eye(np)]\[esty(τ);zeros(np)]
+# k = [estA(A); 0.1I]\[esty(τ);zeros(np)]
 τhat = reshape(A*k,7,N)'
 err = τ-τhat
 println("Error: ", rms(esty(err)))

@@ -1,8 +1,10 @@
-[![Robotlib](http://pkg.julialang.org/badges/Robotlib_0.4.svg)](http://pkg.julialang.org/?pkg=Robotlib)
 [![Robotlib](http://pkg.julialang.org/badges/Robotlib_0.5.svg)](http://pkg.julialang.org/?pkg=Robotlib)
 [![Robotlib](http://pkg.julialang.org/badges/Robotlib_0.6.svg)](http://pkg.julialang.org/?pkg=Robotlib)
 [![Build Status](https://travis-ci.org/baggepinnen/Robotlib.jl.svg?branch=master)](https://travis-ci.org/baggepinnen/Robotlib.jl)
 [![codecov](https://codecov.io/gh/baggepinnen/Robotlib.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/baggepinnen/Robotlib.jl)
+
+
+Update to support julia v0.7 / v1.0 is ongoing
 
 # Robotlib
 This is a library of functions to help out in a robotics lab. At present stage, it contains functions for forward kinematics, jacobians, iterative inverse kinematics and for a few robotics related calibration problems. The library also contains a number of functions to convert from various orientation representations and other robotics related helper functions.
@@ -11,7 +13,6 @@ Install using
 
 `Pkg.add("Robotlib")`
 
-For latest changes, run `Pkg.checkout("Robotlib")`
 
 ## Usage
 ```julia
@@ -171,7 +172,7 @@ function setupframes(path)
 	line_seam_RB = T_RB_T*line_seam
 
 	# Plot results
-	plot(Frame(eye(4),"RB","U"), 200)
+	plot(Frame(I4,"RB","U"), 200)
 	plot!(cloud_seam_RB, c=:blue)
 	plot!(cloud_seam_projected_RB, c=:red)
 	plot!(line_seam_RB, 500, label="Line seam")

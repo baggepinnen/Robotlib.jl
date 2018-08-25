@@ -1,7 +1,7 @@
-"""`Jn, J0, T, Ti, Tn = jacobian(qin, DH::DH, tool=eye(4))`
+"""`Jn, J0, T, Ti, Tn = jacobian(qin, DH::DH, tool=I4)`
 Calculates the jacobian in base (J0) and tool frame (Jn) as well as the forward kinematics (T),
 given the joint angles and the DH-parameters"""
-function jacobian(q::AbstractVecOrMat{P}, DH::DH, tool=eye(4)) where P
+function jacobian(q::AbstractVecOrMat{P}, DH::DH, tool=I4) where P
     n_joints    = size(q,1)
     dhpar       = DH.dhpar
     # q           = qin + DH.offset # Moved to dh2Tn
@@ -46,8 +46,8 @@ function jacobianPOE(q::AbstractVecOrMat{P}, xi) where P
     #Page 117 in Murray 94
     n_joints  = size(q,1)
     Jss       = zeros(P,6,n_joints)
-    adint     = eye(6)
-    T         = eye(4)
+    adint     = Matrix{Float64}(i, 6, 6)
+    T         = I4
     for i = 1:n_joints
         Jss[:,i] = adint*xi[:,i]
         Ti      = expξ(xi[:,i],q[i])
@@ -69,7 +69,7 @@ function jacobianPOEb(q::AbstractVecOrMat{P}, xi) where P
     Jbb       = zeros(P,6,n_joints)
     T         = expξ2(xi[:,end-1],1)*expξ2(xi[:,end],1)
     adint     = adi(T)
-    Ti        = eye(4)
+    Ti        = I4
     for i = n_joints:-1:1
         expξ2!(Ti,xi[:,i],q[i])
         adint   = adint*adi(Ti)
@@ -92,7 +92,7 @@ end
     n_joints  = size(q,1)
     Jbb       = zeros(6,n_joints)
     adint     = adi(T)
-    Ti        = eye(4)
+    Ti        = I4
     @inbounds for i = n_joints:-1:1
         expξ2!(Ti,xi[:,i],q[i])
         adint   = adint*adi(Ti)
@@ -109,7 +109,7 @@ end
 
 
 """Computes a set of local transformation matrices given the DH-parameters of a robot. Can be sent an optional joint-angle vector and a tool"""
-function dh2Tn!(Tn, DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=eye(4)) where P
+function dh2Tn!(Tn, DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=I4) where P
     dhpar    = DH.dhpar
     n_joints = size(dhpar,1)
     q = q .+ DH.offset
@@ -123,7 +123,7 @@ function dh2Tn!(Tn, DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=eye(4)) whe
     return Tn
 end
 
-function dh2Tn(DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=eye(4)) where P
+function dh2Tn(DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=I4) where P
     n_joints = size(DH.dhpar,1)
     Tn       = zeros(P,4,4,n_joints+1)
     return dh2Tn!(Tn, DH, q, tool)
@@ -141,7 +141,7 @@ end
 
 """`fkineLPOE(Tn0,xi,q)` Forward kinematics using LPOE"""
 function fkineLPOE(Tn0::AbstractArray{Ty},xi::AbstractMatrix{Ty},q::AbstractVector{Ty})::Matrix{Ty} where Ty
-    T = eye(4)
+    T = Matrix(I4)
     n = size(xi,2)-1
     for j = 1:n
         T = T*Tn0[:,:,j]*expξ(xi[:,j],q[j]) # turn all joints
@@ -253,8 +253,8 @@ function testJacobian()
     dh = DH7600();
     q = [1,1,0,0,0,0];
     q = randn(6)
-    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, eye(4));
-    Jn,J0,Tjac,Tijac,Tnjac = jacobian(q,dh, eye(4));
+    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, I4);
+    Jn,J0,Tjac,Tijac,Tnjac = jacobian(q,dh, I4);
 
     xiL = DH2twistsLPOE(Tn0)
     xi = DH2twistsPOE(Tn0)
