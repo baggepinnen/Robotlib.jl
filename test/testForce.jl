@@ -27,9 +27,28 @@ R,m,offs = Robotlib.Calibration.calibForce(POSES,forces; offset=true)
 
 end
 
+function savefig2(filename)
 
-# using DSP
-# σr = exp10.(range(-4,stop=1,length=100))
+    savefig(filename)
+    temppath, temp = mktemp()
+    pattern = r",\s*axis background/.style={fill={rgb,1:red,\d.\d+;green,\d.\d+;blue,\d.\d+}}"
+    hp = r"height = {[\d.]+mm}"
+    line = read(filename,String)
+    # println(line)
+    line = replace(line, pattern => "")
+    line = replace(line, r"width = {[\d.]+mm}" => "")
+    line = replace(line, r"height = {[\d.]+mm}" => "height = \\figureheight, width = \\figurewidth")
+    println(temp, line)
+
+    close(temp)
+    mv(temppath, filename, remove_destination=true)
+end
+
+
+
+# using Plots, DSP, Robotlib, Random, LaTeXStrings
+# pgfplots()
+# σr = exp10.(range(-4,stop=1,length=1000))
 # res = map(σr) do σ
 #
 #     N         = 100
@@ -47,4 +66,6 @@ end
 # end
 #
 # e1,e2 = getindex.(res,1),getindex.(res,2)
-# plot(σr,filtfilt(ones(5),[5],[e1 e2]), xscale=:log10, yscale=:log10, lab=["Relaxation" "Cayley"], title="Error in \$R\$",legend=:bottomright)
+# plot(σr,filtfilt(ones(20),[20],[e1 e2]), xscale=:log10, yscale=:log10, lab=["Relaxation" "Cayley"], xlabel=L"$\sigma$ [N]", ylabel=L"$||R_e||_F^2$",legend=:bottomright)
+# hline!([3, 3], lab="", l=:dash)
+# savefig2("/home/fredrikb/phdthesis/calibpaper/figs/calibforce2.tex")
