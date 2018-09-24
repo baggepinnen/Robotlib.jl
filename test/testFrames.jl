@@ -1,4 +1,7 @@
 using Robotlib, Robotlib.Frames, MAT, Test
+
+@testset "Frames" begin
+
 R = toOrthoNormal(randn(3,3))
 t = randn(3)
 f = Frame(R,t)
@@ -48,3 +51,5 @@ T = convert(Matrix, f)
 @test convert(Array,f) == T
 @test promote(T,f) == (T,T)
 @test promote_type(Matrix{Float64}, Frame{Float64}) == Matrix{Float64}
+
+end

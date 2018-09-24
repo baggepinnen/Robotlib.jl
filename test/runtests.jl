@@ -1,8 +1,9 @@
-using Robotlib, LinearAlgebra, Random
+using Robotlib, LinearAlgebra, Random, Statistics
 using Test
-import Robotlib: ad, adi
+import Robotlib: ad, adi, I4
 
-const I4 = Matrix{Float64}(I, 4, 4)
+include("testCalibNAXP.jl")
+include("testForce.jl")
 
 function simulateCalibration1(N)
     n       = 6
@@ -106,7 +107,7 @@ function simulateCalibration4(N)
     return q, xin, Tn0, Tn0mod, Ta
 end
 
-function run_tests()
+@testset "Calibration and kinematics" begin
     # q, xin,T0, xinmod, Ta= simulateCalibration2(100)
     # xic,et,er = Robotlib.Calibration.calibPOE(xinmod,Ta,q,maxiter=150, λ = 10000.0)
     # display(norm(xin[:,1:7]-xinmod[:,1:7]))
@@ -144,7 +145,6 @@ function run_tests()
     @test ec < ei
 end
 
-run_tests()
 
 println("===== Testing frames =====")
 include("testFrames.jl")

@@ -6,10 +6,9 @@ using Robotlib.Calibration
 import Robotlib.Calibration: pointDiff, calibNAXP
 # include(joinpath(dirname(@__FILE__),"..","src","calibNAXP.jl"))
 
+
 const TM = SMatrix{4,4,Float64,16}
 
-
-@test isapprox(pointDiff(I4,cat(fill(I4,5)...,dims=3),zeros(3,5))[], 0, atol=1e-10)
 
 mutable struct Plane{T1,T2,T3,T4,T5}
     N::T1
@@ -40,7 +39,7 @@ function generateRandomPoses(N_poses, sigma_n, T_TF_S, plane)
     LN_S      = [0, 0, 1] # Normal of laser plane in sensor frame
     N_RB      = plane.N
     d_RB      = plane.d
-    T_RB_TF   = Array{Float64}(4,4,N_poses)
+    T_RB_TF   = Array{Float64}(undef,4,4,N_poses)
     lines_RB  = zeros(3,N_poses)
     lines_S   = zeros(3,N_poses)
     points_RB = zeros(3,N_poses)
@@ -68,13 +67,13 @@ function generateRandomPoses(N_poses, sigma_n, T_TF_S, plane)
     points_S .+= sigma_n*randn(size(points_S))
 
     # Verify poses
-    D,V = eig(cov(points_RB'))
-    nhat_points = V[:,1]
-    D,V = eig(cov(lines_RB'))
+    ei = eigen(cov(points_RB'))
+    nhat_points = ei.vectors[:,1]
+    V = eigen(cov(lines_RB')).vectors
     nhat_lines = V[:,1]
-    if 1-abs(nhat_points'nhat_lines) > 0.001 || D[1,1] > 1e-5
+    if 1-abs(nhat_points'nhat_lines) > 0.001 || ei.values[1,1] > 1e-5
         @warn("Something is wrong")
-        @show 1-abs(nhat_points'nhat_lines), D[1,1]
+        @show 1-abs(nhat_points'nhat_lines), ei.values[1,1]
     end
 
     points = zeros(4,N_poses)
@@ -94,7 +93,7 @@ end
 
 MC        = 100
 N_planes  = 3
-iters     = 50
+iters     = 30
 N_poses   = 10
 sigma_n   = 5e-4# In paper: 5e-4
 function run_calib()
@@ -125,9 +124,9 @@ function run_calib()
             SSE[j] = pointDiff(T_TF_S,T_RB_TFt,points_St)[1]
         end
         planes   = repeat((1:N_planes)',N_poses)[:]
-        points_S = cat(2, points_Sv...)
-        lines_S  = cat(2, lines_Sv...)
-        T_RB_TF  = cat(3, T_RB_TFv...)
+        points_S = cat(points_Sv..., dims=2)
+        lines_S  = cat(lines_Sv..., dims=2)
+        T_RB_TF  = cat(T_RB_TFv..., dims=3)
 
         any(abs.(SSE .> 1e-3)) && @error("Points does not seem to lie on a plane")
         dist = [norm(T_RB_TF[1:4,4,i] - T_TF_S*[points_S[:,i];1]) for i in 1:size(T_RB_TF,3)]
@@ -151,7 +150,7 @@ function run_calib()
         end
 
         SSEStart[mc] = mean(SSE)
-        normStart[mc] = vecnorm(T_TF_S0-T_TF_S_real)
+        normStart[mc] = norm(vec(T_TF_S0-T_TF_S_real))
         distStart[mc] = norm(T_TF_S0[1:3,4]-T_TF_S_real[1:3,4])
         rotStart[mc] = norm(180/π*R2rpy(T_TF_S0\T_TF_S_real))
         # display(T_TF_S_real)
@@ -169,6 +168,10 @@ function run_calib()
     end
     SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC
 end
+
+@testset "CalibNAXP" begin
+
+@test isapprox(pointDiff(I4,cat(fill(I4,5)...,dims=3),zeros(3,5))[], 0, atol=1e-10)
 
 SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC = run_calib()
 
