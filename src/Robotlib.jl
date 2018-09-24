@@ -37,12 +37,14 @@ include("posDepFric.jl")
 
 module Calibration
 using ..Robotlib
+using ..Robotlib: T2R,Rt2T, T2R, T2t, skewcoords, twistcoords
 using LinearAlgebra, Statistics
 import Robotlib.xii
 import Robotlib.Ai
 include("calibLPOE.jl")
 include("calibForce.jl")
-export calibLPOE, calibLPOEdual, calibForce, calibPOE_offsets_from_points
+include("calibNAXP.jl")
+export calibLPOE, calibLPOEdual, calibForce, calibPOE_offsets_from_points, calibNAXP
 
 end
 

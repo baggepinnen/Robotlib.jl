@@ -1,15 +1,17 @@
 """
+    T_TF_S, meanRMS,RMS, norms = calibNAXP(points_S, lines_S, POSES, T_TF_S, planes::AbstractVector{Int},  iters = 50; doplot=false)
+
 This functions implements the algorithm from the paper
 "Six DOF eye-to-hand calibration from 2D measurements using planar constraints"
-which solves the problem `Prb = N'A(X*Ps)`
+which solves the problem `Prb = n'A(X*Ps)`
 If result is bad, check if you send data in correct form\n
-`POSES` is always the position of the tool frame from the robot FK\n
-`points_S` are measurements from a line laser scanner. Given
+`POSES ∈ R(4,4,N)` is always the position of the tool frame from the robot FK\n
+`points_S ∈ R(3,N)` are measurements from a line laser scanner. Given
 in the sensor frame. This script assumes that the laser plane is the
 sensor XY plane with y-axis pointing outwards from the sensor.\n
-`lines_S` are vectors corresponding to the direction of the measured laser line
-planes is a vector of indices corresponding to which plane a mesurement
-comes from. It must be same length as `points_S`.\n
+`lines_S ∈ R(3,N)` are vectors corresponding to the direction of the measured laser line
+`planes ∈ Z(N)` is a vector of indices corresponding to which plane a mesurement
+comes from. It must be same length as `points_S` and enumerate the planes starting at 1. Example (N=15, number of planes = 3): [1,1,1,1,1,2,2,2,2,2,3,3,3,3,3]\n
 `iters` determines the number of iterations\n
 @inproceedings{carlson2015six,
   title={Six DOF eye-to-hand calibration from 2D measurements using planar constraints},
@@ -20,93 +22,109 @@ comes from. It must be same length as `points_S`.\n
   organization={IEEE}
 }
 """
-function calibNAXP(points_S, lines_S, POSES, T_TF_S, planes::AbstractVector{Int},  iters::Integer; doplot=false)
+function calibNAXP(points_S, lines_S, POSES, T_TF_S, planes::AbstractVector{Int},  iters::Integer = 50; doplot=false, trueT_TF_S=nothing)
+    N_poses   = size(POSES,3)
     N_planes  = maximum(planes)
     RMScalibs = zeros(iters)
-    ALLcalibs = zeros(iters,N_planes)
+    ALLcalibs = zeros(iters, N_planes)
+    norms     = trueT_TF_S == nothing ? nothing : zeros(iters)
     for c = 1:iters
-        N_poses = size(POSES,3)
         # Convert points to RB cordinate system
-        points  = zeros(4,N_poses)
-        lines   = zeros(3,N_poses)
-        for i = 1:N_poses
-            T_RB_S      = POSES[:,:,i] * T_TF_S
-            points[:,i] = T_RB_S*[points_S[:,i]; 1]
-            lines[:,i]  = T2R(T_RB_S)*lines_S[:,i]
-        end
-
-        # Find plane centers, normals and distances
-        mu_RB   = zeros(3,N_poses)
-        N_RB    = mu_RB
-        normals = zeros(N_planes,3)
-        for j = 1:N_planes
-            ind          = planes .== j
-            mu_t         = mean(points[1:3,ind],2)
-            mu_RB[:,ind] = repmat(mu_t,1,sum(ind))
-            D,V          = eig(cov(points[1:3,ind]'))
-            N_RBt        = V[:,1]
-            if dot(mu_t,N_RBt) < 0
-                N_RBt = -1*N_RBt
-            end
-            N_RBt        = N_RBt*(N_RBt'mu_t)
-            N_RB[:,ind]  = repmat(N_RBt,1,sum(ind))
-            normals[j,:] = N_RBt
-        end
+        points, lines = transform_data(POSES, points_S, lines_S, T_TF_S)
+        normals, N_RB = findplanes(planes, points)
 
         # Estimation
-        A = zeros(2*N_poses,9)
-        y = zeros(2*N_poses)
-        for i = 1:N_poses
-            Nt     = N_RB[:,i]
-            Ra     = POSES[1:3,1:3,i]
-            Ta     = POSES[1:3,4,i]
-            Pt     = points_S[:,i]
-            y[i]   = norm(N_RB[:,i])^2-dot(Nt,Ta)
-            A[i,:] = (reshape(repmat(Nt'Ra,3,1)',9,1).*[reshape(repmat(Pt[1:2],1,3)',6,1);1;1;1])' #TODO: rewrite
-            if true
-                Pt = points_S[:,i] + 0.1*1.01^c*randn()*lines_S[:,i]
-                y[i+N_poses] = norm(N_RB[:,i])^2-dot(Nt,Ta)
-                A[i+N_poses,:] = (reshape(repmat(Nt'Ra,3,1)',9,1) .*[reshape(repmat(Pt[1:2],1,3)',6,1);1;1;1])'
-            end
-
-        end
+        A,y = get_matrices(N_RB, POSES, points_S, lines_S)
         w   = A\y
-        er  = y-A*w
+        R,t = w2Rt(w)
 
-        H   = reshape(w,3,3)
-        Rx  = H[1:3,1]
-        Ry  = H[1:3,2]
-        Rz  = cross(Rx,Ry) # These lines must be changed if laser plane is changed
-        Rnn = [Rx Ry Rz]
-        # @show Rnn
-        R   = toOrthoNormal(Rnn)
-        t   = H[1:3,3]
+         # Re-estimation of translation
+        w₂     = R[1:3,1:2][:]
+        y₂     = y - A[:,1:6]*w₂
+        t₂     = A[:,7:9]\y₂
+        T_TF_S = Rt2T(R,t₂)
 
-        w2  = R[1:3,1:2]
-        w2  = w2[:]
-        y2  = y - A[:,1:6]*w2
-        t2  = A[:,7:9]\y2
-        if c < 0 #iters
-            T_TF_S = Rt2T(R,t)
-        else
-            T_TF_S = Rt2T(R,t2)
-        end
-        RMSi = zeros(N_planes)
-        for j = 1:N_planes
+        # Calculate iteration errors
+        RMSi = map(1:N_planes) do j
             ind     = planes .== j
             ind     = findall(ind)
-            RMSi[j] = sqrt(pointDiff(T_TF_S,POSES[:,:,ind],points_S[1:3,ind])[1])
+            sqrt(pointDiff(T_TF_S,POSES[:,:,ind],points_S[1:3,ind])[1])
         end
         RMScalibs[c]   = mean(RMSi)
-        ALLcalibs[c,:] = RMSi'
+        ALLcalibs[c,:] = RMSi
+        trueT_TF_S == nothing || (norms[c] = norm(T_TF_S-trueT_TF_S))
         #  any(abs(RMSi) > 1e-1) && warn("Points does not seem to lie on a plane")
     end
     if doplot
         plotPlanes(normals)
         plotLines(points,lines)
     end
-    norms = 0 # TODO: not implemented
     T_TF_S, RMScalibs,ALLcalibs, norms
+end
+
+function w2Rt(w)
+    H   = reshape(w,3,3)
+    Rx  = H[1:3,1]
+    Ry  = H[1:3,2]
+    Rz  = cross(Rx,Ry) # These lines must be changed if laser plane is changed
+    Rnn = [Rx Ry Rz]
+    # @show Rnn
+    R   = toOrthoNormal(Rnn)
+    t   = H[1:3,3]
+    R,t
+end
+
+function get_matrices(N_RB, POSES, points_S, lines_S)
+    N_poses = size(POSES,3)
+    A = zeros(2*N_poses,9)
+    y = zeros(2*N_poses)
+    for i = 1:N_poses
+        Ni     = N_RB[:,i]
+        Ra     = POSES[1:3,1:3,i]
+        Ta     = POSES[1:3,4,i]
+        Pi     = points_S[:,i]
+        y[i]   = norm(Ni)^2-Ni'Ta
+        A[i,:] = (reshape(repmat(Ni'Ra,3,1)',9,1).*[reshape(repmat(Pi[1:2],1,3)',6,1);1;1;1])' #TODO: rewrite
+        # Sample one additional point along line
+        Pi = points_S[:,i] + 1lines_S[:,i]
+        y[i+N_poses] = norm(N_RB[:,i])^2-Ni'Ta
+        A[i+N_poses,:] = (reshape(repmat(Ni'Ra,3,1)',9,1) .*[reshape(repmat(Pi[1:2],1,3)',6,1);1;1;1])'
+    end
+    A,y
+end
+
+function transform_data(POSES, points_S, lines_S, T_TF_S)
+    N_poses = size(POSES,3)
+    points  = zeros(4,N_poses)
+    lines   = similar(lines_S)
+    for i = 1:N_poses
+        T_RB_S      = POSES[:,:,i] * T_TF_S
+        points[:,i] = T_RB_S*[points_S[:,i]; 1]
+        lines[:,i]  = T2R(T_RB_S)*lines_S[:,i]
+    end
+    points, lines
+end
+
+function findplanes(planes, points)
+    N_poses = length(planes)
+    N_planes  = maximum(planes)
+    μ_RB    = zeros(3,N_poses)
+    N_RB    = μ_RB
+    normals = zeros(N_planes,3)
+    for j = 1:N_planes
+        ind          = planes .== j
+        μᵢ           = mean(points[1:3,ind],dims=2)[:]
+        μ_RB[:,ind]  = repmat(μᵢ,1,sum(ind))
+        D,V          = eig(cov(points[1:3,ind]')) # PCA
+        N_RBi        = V[:,1] # Eigenvector of smalles eigval is the normal of the plane
+        if μᵢ'N_RBi < 0 # Make sure all normals point in same direction
+            N_RBi = -1*N_RBi
+        end
+        N_RBi        = N_RBi*(N_RBi'μᵢ)
+        N_RB[:,ind]  = repmat(N_RBi,1,sum(ind)) # Repeat plane normal for all planes with same ind
+        normals[j,:] = N_RBi
+    end
+    normals, N_RB
 end
 
 function plotLines(points,lines)

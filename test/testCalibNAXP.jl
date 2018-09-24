@@ -1,6 +1,10 @@
+using Statistics, LinearAlgebra, Random
+Random.seed!(1)
 using Robotlib, StaticArrays, Test
-import Robotlib: Rt2T, T2R, T2t
-include(joinpath(dirname(@__FILE__),"..","src","calibNAXP.jl"))
+import Robotlib: Rt2T, T2R, T2t, I4
+using Robotlib.Calibration
+import Robotlib.Calibration: pointDiff, calibNAXP
+# include(joinpath(dirname(@__FILE__),"..","src","calibNAXP.jl"))
 
 const TM = SMatrix{4,4,Float64,16}
 
@@ -88,11 +92,11 @@ end
 
 
 
-MC        = 10
+MC        = 100
 N_planes  = 3
-iters     = 30
+iters     = 50
 N_poses   = 10
-sigma_n   = 5e-4
+sigma_n   = 5e-4# In paper: 5e-4
 function run_calib()
     SSEStart  = zeros(MC)
     normStart = zeros(MC)
@@ -111,7 +115,7 @@ function run_calib()
         T_RB_TFv  = Array{Float64,3}[]
         plane     = Plane[]
         SSE       = zeros(N_planes)
-        println("Gnereating planes and poses")
+        println("Genereating planes and poses")
         for j = 1:N_planes
             push!(plane, generateRandomPlane(j))
             points_St, lines_St, T_RB_TFt = generateRandomPoses(N_poses, sigma_n,T_TF_S, plane[j])
@@ -151,7 +155,7 @@ function run_calib()
         distStart[mc] = norm(T_TF_S0[1:3,4]-T_TF_S_real[1:3,4])
         rotStart[mc] = norm(180/π*R2rpy(T_TF_S0\T_TF_S_real))
         # display(T_TF_S_real)
-        T_TF_S, RMScalibs,ALLcalibs, norms = calibNAXP2(points_S, lines_S, T_RB_TF, T_TF_S0, planes,  iters)#, T_TF_S_real)
+        T_TF_S, RMScalibs,ALLcalibs, norms = calibNAXP(points_S, lines_S, T_RB_TF, T_TF_S0, planes,  iters, trueT_TF_S=T_TF_S_real)
 
         SSEMC[mc,:] = RMScalibs
         normMC[mc,:] = norms
@@ -170,21 +174,12 @@ SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC = run_c
 
 iters = size(SSEMC,2)
 using StatPlots
-# plot(0:iters,copy([normStart normMC]'),yscale=:log10,c=:black, xlabel="Number of iterations", layout=2, subplot=1)
-# hline!([sigma_n, sigma_n],l=:dash, c=:red)
-plot(0:iters,[SSEStart SSEMC]',yscale=:log10,c=:black, xlabel="Number of iterations",title="RMS distance from points to plane [m]")
-hline!([sigma_n sigma_n],l=:dash,c=:red)
+gr(legend=false)
+plot(0:iters,copy([normStart normMC]'),yscale=:log10,c=:black, xlabel="Number of iterations", layout=2, subplot=1)
+hline!([sigma_n, sigma_n],l=:dash, c=:red, subplot=1)
+plot!(0:iters,[SSEStart SSEMC]',yscale=:log10,c=:black, xlabel="Number of iterations",title="RMS distance from points to plane [m]", subplot=2)
+hline!([sigma_n sigma_n],l=:dash,c=:red, subplot=2)
 
 # boxplot(["Before" "After"],([distStart distEnd]), title="Distance error [m]", yscale=:log10, layout=2, subplot=1)
-# hold on, plot([0 3], [sigma_n sigma_n],'--r')
-
+# hline!([sigma_n sigma_n],c=:red)
 # boxplot!(["Before" "After"],([rotStart rotEnd]),title="Rotation error [degree]", yscale=:log10, subplot=2)
-
-
-
-# f1(w) = (S = [skew(w[1:3]) w[4:6]; [0 0 0 0]]; T_TF_S = (I-S)/(I+S))
-# f2(w) = expξ([w[4:6]; w[1:3]])
-#
-# w = randn(6)
-# f1(w)
-# f2(w)
