@@ -36,13 +36,14 @@ function calibNAXP(points_S, lines_S, POSES, T_TF_S, planes::AbstractVector{Int}
 
         # Estimation
         A,y = get_matrices(N_RB, POSES, points_S, lines_S)
-        w   = A\y
+        w   = c <= 5 ? A\y : tls(A,y)
+        # w   = tls(A,y)
         R,t = w2Rt(w)
 
          # Re-estimation of translation
         w₂     = R[1:3,1:2][:]
         y₂     = y - A[:,1:6]*w₂
-        t₂     = A[:,7:9]\y₂
+        t₂     = c <= 5 ? A[:,7:9]\y₂ : tls(A[:,7:9],y₂)
         T_TF_S = Rt2T(R,t₂)
 
         # Calculate iteration errors

@@ -6,9 +6,7 @@ using Robotlib.Calibration
 import Robotlib.Calibration: pointDiff, calibNAXP
 # include(joinpath(dirname(@__FILE__),"..","src","calibNAXP.jl"))
 
-
 const TM = SMatrix{4,4,Float64,16}
-
 
 mutable struct Plane{T1,T2,T3,T4,T5}
     N::T1
@@ -169,7 +167,7 @@ function run_calib()
     SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC
 end
 
-@testset "CalibNAXP" begin
+# @testset "CalibNAXP" begin
 
 @test isapprox(pointDiff(I4,cat(fill(I4,5)...,dims=3),zeros(3,5))[], 0, atol=1e-10)
 
@@ -186,3 +184,5 @@ hline!([sigma_n sigma_n],l=:dash,c=:red, subplot=2)
 # boxplot(["Before" "After"],([distStart distEnd]), title="Distance error [m]", yscale=:log10, layout=2, subplot=1)
 # hline!([sigma_n sigma_n],c=:red)
 # boxplot!(["Before" "After"],([rotStart rotEnd]),title="Rotation error [degree]", yscale=:log10, subplot=2)
+
+# end
