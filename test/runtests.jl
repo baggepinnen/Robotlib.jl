@@ -1,6 +1,7 @@
 using Robotlib, LinearAlgebra, Random, Statistics
 using Test
 import Robotlib: ad, adi, I4
+Random.seed!(1)
 
 include("testCalibNAXP.jl")
 include("testForce.jl")
@@ -112,6 +113,7 @@ end
     # xic,et,er = Robotlib.Calibration.calibPOE(xinmod,Ta,q,maxiter=150, λ = 10000.0)
     # display(norm(xin[:,1:7]-xinmod[:,1:7]))
     # display(norm(xin[:,1:7]-xic[:,1:7]))
+
     N = 100
     println("===== Testing calibLPOE =====")
     q, xin,Tn0,Tn0mod, Ta = simulateCalibrationLPOE(N)
@@ -129,9 +131,10 @@ end
         sqrt(sum((Tn0[1:3,4,:]-Tn0mod[1:3,4,:,1]).^2+(Tn0[1:3,4,:]-Tn0mod[1:3,4,:,2]).^2)/N))
     println("Error between Tn0 and Tn0c  : ",
         sqrt(sum((Tn0[1:3,4,:]-Tn0c[1:3,4,:,1]).^2+(Tn0[1:3,4,:]-Tn0c[1:3,4,:,2]).^2)/N))
-    ei = 0.0
-    ec = 0.0
+    global ei = 0.0
+    global ec = 0.0
     for i = 1:N
+        global ei, ec
         T1 = fkineLPOE(Tn0mod[:,:,:,1],xin[:,:,1],q[i,:,1])
         T2 = fkineLPOE(Tn0mod[:,:,:,2],xin[:,:,2],q[i,:,2])
         ei += norm(twistcoords(log(Ta[:,:,i]*trinv(T1))))
@@ -147,4 +150,5 @@ end
 
 
 println("===== Testing frames =====")
-include("testFrames.jl")
+@warn("Testing of Frames is inactivated since MAT.jl didn't build. Re-enable when this is resolved https://github.com/JuliaIO/MAT.jl/issues/90")
+# include("testFrames.jl")

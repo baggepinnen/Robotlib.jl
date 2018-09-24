@@ -56,15 +56,15 @@ println("Wrote T_TAB_SEAM, T_T_SEAM, T_RB_TAB to files in \$path")
 """
 module Frames
 
-using StaticArrays, RecipesBase, LinearAlgebra
-
+using StaticArrays, RecipesBase, LinearAlgebra, Statistics
+using ..Robotlib
 
 export Frame, Point, Plane, Points, Line, GeometricObject, add_frame_name!
 export readcloud, readTmatrix, readplane, fitline, fitplane, framefromfeatures, project
 export plot3Dsmart, display, show, print
 export inv, *,+,-,/,\,transpose,ctranspose, dot
 
-import Base: print, zeros, length, size, getindex, setindex!, convert, promote_rule, push!, show, display, iterate, +, *, .*, /, ./, -, \, inv
+import Base: print, zeros, length, size, getindex, setindex!, convert, promote_rule, push!, show, display, +, *, .*, /, ./, -, \, inv
 import LinearAlgebra: ×, transpose, ctranspose, dot, ⋅, det
 # using LaTeXStrings
 import Robotlib: T2R, T2t, I3, I4

@@ -8,7 +8,7 @@ function demo_calibforce(filename = "")
     h          = 0.004032;
     dh         = DHYuMi()
 
-    if if filename != "" # Use this option if you have a textbased logfile
+    if filename != "" # Use this option if you have a textbased logfile
         pathopen   = filename
         pathsave   = "log.mat"
         data       = orcalog2mat(pathopen, pathsave)

@@ -135,9 +135,9 @@ function run_calib()
         # Generate nominal transformation
         T_TF_S_real = copy(T_TF_S)
         if true
-            T_TF_S0 = Rt2T(rpy2R(60π/180*(rand(3)-0.5)),0.4*(rand(3)-0.5))*T_TF_S_real
-            # T_TF_S0 = Rt2T(rpy2R(10π/180*(rand(3)-0.5)),0.1*(rand(3)-0.5))*T_TF_S_real
-            #         T_TF_S0 = rt2tr(rpy2R(2*(rand(1,3)-0.5),'deg'),0.01*(rand(3,1)-0.5))*T_TF_S_real;
+            T_TF_S0 = Rt2T(rpy2R(60π/180*(rand(3).-0.5)),0.4*(rand(3).-0.5))*T_TF_S_real
+            # T_TF_S0 = Rt2T(rpy2R(10π/180*(rand(3).-0.5)),0.1*(rand(3).-0.5))*T_TF_S_real
+            #         T_TF_S0 = rt2tr(rpy2R(2*(rand(1,3).-0.5),'deg'),0.01*(rand(3,1).-0.5))*T_TF_S_real;
         else
             T_TF_S0 = copy(T_TF_S_real)
         end
@@ -173,13 +173,13 @@ end
 
 SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC = run_calib()
 
-iters = size(SSEMC,2)
-using StatPlots
-gr(legend=false)
-plot(0:iters,copy([normStart normMC]'),yscale=:log10,c=:black, xlabel="Number of iterations", layout=2, subplot=1)
-hline!([sigma_n, sigma_n],l=:dash, c=:red, subplot=1)
-plot!(0:iters,[SSEStart SSEMC]',yscale=:log10,c=:black, xlabel="Number of iterations",title="RMS distance from points to plane [m]", subplot=2)
-hline!([sigma_n sigma_n],l=:dash,c=:red, subplot=2)
+# iters = size(SSEMC,2)
+# using StatPlots
+# gr(legend=false)
+# plot(0:iters,copy([normStart normMC]'),yscale=:log10,c=:black, xlabel="Number of iterations", layout=2, subplot=1)
+# hline!([sigma_n, sigma_n],l=:dash, c=:red, subplot=1)
+# plot!(0:iters,[SSEStart SSEMC]',yscale=:log10,c=:black, xlabel="Number of iterations",title="RMS distance from points to plane [m]", subplot=2)
+# hline!([sigma_n sigma_n],l=:dash,c=:red, subplot=2)
 
 # boxplot(["Before" "After"],([distStart distEnd]), title="Distance error [m]", yscale=:log10, layout=2, subplot=1)
 # hline!([sigma_n sigma_n],c=:red)

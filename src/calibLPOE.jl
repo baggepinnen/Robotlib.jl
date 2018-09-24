@@ -458,6 +458,7 @@ if false
     ei = 0.0
     ec = 0.0
     for i = 1:N
+        global ei,ec
         T1 = fkineLPOE(Tn0mod,xin,q[i,:,1])
         T2 = fkineLPOE(Tn0mod,xin,q[i,:,2])
         ei += norm(twistcoords(log(Ta[:,:,i]*trinv(T1))))

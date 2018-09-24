@@ -86,11 +86,11 @@ function get_matrices(N_RB, POSES, points_S, lines_S)
         Ta     = POSES[1:3,4,i]
         Pi     = points_S[:,i]
         y[i]   = norm(Ni)^2-Ni'Ta
-        A[i,:] = (reshape(repmat(Ni'Ra,3,1)',9,1).*[reshape(repmat(Pi[1:2],1,3)',6,1);1;1;1])' #TODO: rewrite
+        A[i,:] = (reshape(repeat(Ni'Ra,3,1)',9,1).*[reshape(repeat(Pi[1:2],1,3)',6,1);1;1;1])' #TODO: rewrite
         # Sample one additional point along line
         Pi = points_S[:,i] + 1lines_S[:,i]
         y[i+N_poses] = norm(N_RB[:,i])^2-Ni'Ta
-        A[i+N_poses,:] = (reshape(repmat(Ni'Ra,3,1)',9,1) .*[reshape(repmat(Pi[1:2],1,3)',6,1);1;1;1])'
+        A[i+N_poses,:] = (reshape(repeat(Ni'Ra,3,1)',9,1) .*[reshape(repeat(Pi[1:2],1,3)',6,1);1;1;1])'
     end
     A,y
 end
@@ -116,14 +116,14 @@ function findplanes(planes, points)
     for j = 1:N_planes
         ind          = planes .== j
         μᵢ           = mean(points[1:3,ind],dims=2)[:]
-        μ_RB[:,ind]  = repmat(μᵢ,1,sum(ind))
-        D,V          = eig(cov(points[1:3,ind]')) # PCA
+        μ_RB[:,ind]  = repeat(μᵢ,1,sum(ind))
+        D,V          = eigen(cov(points[1:3,ind]')) # PCA
         N_RBi        = V[:,1] # Eigenvector of smalles eigval is the normal of the plane
         if μᵢ'N_RBi < 0 # Make sure all normals point in same direction
             N_RBi = -1*N_RBi
         end
         N_RBi        = N_RBi*(N_RBi'μᵢ)
-        N_RB[:,ind]  = repmat(N_RBi,1,sum(ind)) # Repeat plane normal for all planes with same ind
+        N_RB[:,ind]  = repeat(N_RBi,1,sum(ind)) # Repeat plane normal for all planes with same ind
         normals[j,:] = N_RBi
     end
     normals, N_RB

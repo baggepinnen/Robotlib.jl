@@ -1,10 +1,10 @@
-[![Robotlib](http://pkg.julialang.org/badges/Robotlib_0.5.svg)](http://pkg.julialang.org/?pkg=Robotlib)
 [![Robotlib](http://pkg.julialang.org/badges/Robotlib_0.6.svg)](http://pkg.julialang.org/?pkg=Robotlib)
 [![Build Status](https://travis-ci.org/baggepinnen/Robotlib.jl.svg?branch=master)](https://travis-ci.org/baggepinnen/Robotlib.jl)
 [![codecov](https://codecov.io/gh/baggepinnen/Robotlib.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/baggepinnen/Robotlib.jl)
 
 
-Update to support julia v0.7 / v1.0 is ongoing
+Now supporting Julia v0.7/v1.0.
+Dependency MAT.jl is currently not building on Julia v1.0 and hence all file loading functionality and some tests have been deactivated.
 
 # Robotlib
 This is a library of functions to help out in a robotics lab. At present stage, it contains functions for forward kinematics, jacobians, iterative inverse kinematics and for a few robotics related calibration problems. The library also contains a number of functions to convert from various orientation representations and other robotics related helper functions.
