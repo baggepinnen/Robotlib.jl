@@ -33,7 +33,7 @@ function generateRandomPlane(no)
     Plane(N_RB, [N_RB;1], d_RB, Pn, Qn)
 end
 
-function generateRandomPoses(N_poses, sigma_n, T_TF_S, plane)
+function generateRandomPoses(N_poses, σₙ, T_TF_S, plane)
     LN_S      = [0, 0, 1] # Normal of laser plane in sensor frame
     N_RB      = plane.N
     d_RB      = plane.d
@@ -51,18 +51,20 @@ function generateRandomPoses(N_poses, sigma_n, T_TF_S, plane)
         intersection_line_S  = inv(T2R(T_RB_S))*intersection_line_RB
         lines_RB[:,i]        = intersection_line_RB
         lines_S[:,i]         = intersection_line_S
-        laser_0_RB           = T_RB_S[1:3,4]
+        laser_orig_RB        = T_RB_S[1:3,4]
         laser_y_RB           = T_RB_S[1:3,2]
-        λ                    = (d_RB-N_RB'laser_0_RB)/(N_RB'laser_y_RB)
-        if abs(λ) > 2
+        λ                    = (d_RB-N_RB'laser_orig_RB)/(N_RB'laser_y_RB)
+        # λ is the distance from laser origin to plane, should be positive and small to be realistic, also, the angle with the plane normal should not be too large. In paper, the following (slightly unrealistic) condition was used
+        # if abs(λ) > 2
+        if abs(λ) > 0.2 || λ < 0 || (180/pi .* acos(intersection_line_S[2])) > 120
             continue
         end
-        points_RB[:,i]       = laser_0_RB + λ*laser_y_RB
+        points_RB[:,i]       = laser_orig_RB + λ*laser_y_RB
         points_S[:,i]        = inv(T_RB_S)*[points_RB[:,i]; 1]
         i += 1
     end
     points_S = points_S[1:3,:]
-    points_S .+= sigma_n*randn(size(points_S))
+    points_S .+= σₙ*randn(size(points_S))
 
     # Verify poses
     ei = eigen(cov(points_RB'))
@@ -89,12 +91,12 @@ end
 
 
 
-MC        = 100
-N_planes  = 3
-iters     = 30
-N_poses   = 10
-sigma_n   = 5e-4# In paper: 5e-4
-function run_calib()
+MC       = 50   # In paper 100
+N_planes = 3    # In paper 3
+iters    = 80   # In paper 30
+N_poses  = 20   # In paper 10
+σₙ       = 5e-4 # In paper: 5e-4
+function run_calib(verbose=false)
     SSEStart  = zeros(MC)
     normStart = zeros(MC)
     distStart = zeros(MC)
@@ -103,6 +105,10 @@ function run_calib()
     rotEnd    = zeros(MC)
     SSEMC     = zeros(MC,iters)
     normMC    = zeros(MC,iters)
+    distEnd2  = zeros(MC)
+    rotEnd2   = zeros(MC)
+    SSEMC2    = zeros(MC,iters)
+    normMC2   = zeros(MC,iters)
     mc = 1
     for mc = 1:MC
         # Simulate measurement data
@@ -112,10 +118,10 @@ function run_calib()
         T_RB_TFv  = Array{Float64,3}[]
         plane     = Plane[]
         SSE       = zeros(N_planes)
-        println("Genereating planes and poses")
+        verbose && println("Genereating planes and poses")
         for j = 1:N_planes
             push!(plane, generateRandomPlane(j))
-            points_St, lines_St, T_RB_TFt = generateRandomPoses(N_poses, sigma_n,T_TF_S, plane[j])
+            points_St, lines_St, T_RB_TFt = generateRandomPoses(N_poses, σₙ,T_TF_S, plane[j])
             push!(points_Sv, points_St)
             push!(lines_Sv, lines_St)
             push!(T_RB_TFv, T_RB_TFt)
@@ -152,37 +158,50 @@ function run_calib()
         distStart[mc] = norm(T_TF_S0[1:3,4]-T_TF_S_real[1:3,4])
         rotStart[mc] = norm(180/π*R2rpy(T_TF_S0\T_TF_S_real))
         # display(T_TF_S_real)
-        T_TF_S, RMScalibs,ALLcalibs, norms = calibNAXP(points_S, lines_S, T_RB_TF, T_TF_S0, planes,  iters, trueT_TF_S=T_TF_S_real)
+        T_TF_S, RMScalibs,ALLcalibs, norms = calibNAXP(points_S, lines_S, T_RB_TF, T_TF_S0, planes,  iters, trueT_TF_S=T_TF_S_real, variance=(1,1))
+        T_TF_S2, RMScalibs2,ALLcalibs2, norms2 = T_TF_S, RMScalibs,ALLcalibs, norms#Robotlib.Calibration.calibNAXP_bootstrap(points_S, lines_S, T_RB_TF, T_TF_S0, planes,  iters, trueT_TF_S=T_TF_S_real, nbootstrap=500)
 
         SSEMC[mc,:] = RMScalibs
         normMC[mc,:] = norms
-
         if RMScalibs[end] > 1e-2
             println("Bad result")
         end
-
         distEnd[mc] = norm(T_TF_S[1:3,4]-T_TF_S_real[1:3,4])
         rotEnd[mc] = norm(180/π*R2rpy(T_TF_S\T_TF_S_real))
+
+        SSEMC2[mc,:] = RMScalibs2
+        normMC2[mc,:] = norms2
+        if RMScalibs2[end] > 1e-2
+            println("Bad result")
+        end
+        distEnd2[mc] = norm(T_TF_S2[1:3,4]-T_TF_S_real[1:3,4])
+        rotEnd2[mc] = norm(180/π*R2rpy(T_TF_S2\T_TF_S_real))
     end
-    SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC
+    SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC, distEnd2, rotEnd2, SSEMC2, normMC2
 end
 
 # @testset "CalibNAXP" begin
 
 @test isapprox(pointDiff(I4,cat(fill(I4,5)...,dims=3),zeros(3,5))[], 0, atol=1e-10)
 
-SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC = run_calib()
+SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC, distEnd2, rotEnd2, SSEMC2, normMC2 = run_calib()
 
-# iters = size(SSEMC,2)
-# using StatPlots
-# gr(legend=false)
-# plot(0:iters,copy([normStart normMC]'),yscale=:log10,c=:black, xlabel="Number of iterations", layout=2, subplot=1)
-# hline!([sigma_n, sigma_n],l=:dash, c=:red, subplot=1)
-# plot!(0:iters,[SSEStart SSEMC]',yscale=:log10,c=:black, xlabel="Number of iterations",title="RMS distance from points to plane [m]", subplot=2)
-# hline!([sigma_n sigma_n],l=:dash,c=:red, subplot=2)
+iters = size(SSEMC,2)
+using StatPlots
+gr(legend=false)
+plot(0:iters,copy([normStart normMC]'),yscale=:log10,c=:black, xlabel="Number of iterations", layout=2, subplot=1)
+# plot!(0:iters,copy([normStart normMC2]'),yscale=:log10,c=:green, subplot=1)
+hline!([σₙ, σₙ],l=:dash, c=:red, subplot=1)
 
-# boxplot(["Before" "After"],([distStart distEnd]), title="Distance error [m]", yscale=:log10, layout=2, subplot=1)
-# hline!([sigma_n sigma_n],c=:red)
-# boxplot!(["Before" "After"],([rotStart rotEnd]),title="Rotation error [degree]", yscale=:log10, subplot=2)
+plot!(0:iters,[SSEStart SSEMC]',yscale=:log10,c=:black, xlabel="Number of iterations",title="RMS distance from points to plane [m]", subplot=2)
+# plot!(0:iters,[SSEStart SSEMC2]',c=:green, subplot=2)
+hline!([σₙ σₙ],l=:dash,c=:red, subplot=2)
+
+
+
+
+boxplot(["Before" "After" "After WTLS"],([distStart distEnd distEnd2]), title="Distance error [m]", yscale=:log10, layout=2, subplot=1)
+hline!([σₙ σₙ],c=:red)
+boxplot!(["Before" "After" "After WTLS"],([rotStart rotEnd rotEnd2]),title="Rotation error [degree]", yscale=:log10, subplot=2)
 
 # end

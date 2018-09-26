@@ -190,5 +190,38 @@ function setupframes(path)
     MAT.matwrite(path*"T_RB_TAB.mat",["T_RB_TAB" => T_RB_TAB.T])
     println("Wrote T_TAB_SEAM, T_T_SEAM, T_RB_TAB to files in $path")
 end
+```
 
+
+# Citing
+This software package was developed for the following thesis
+```bibtex
+@thesis{bagge2017,
+  author       = {Bagge Carlson, Fredrik},
+  month        = {03},
+  note         = {Licentiate Thesis},
+  publisher    = {Department of Automatic Control, Lund University},
+  title        = {Modeling and Estimation Topics in Robotics},
+  year         = {2017},
+}
+```
+The algorithm `calibNAXP` was presented in
+```bibtex
+@inproceedings{bagge2015calibration,
+  title        = {Six {DOF} eye-to-hand calibration from {2D} measurements using planar constraints},
+  author       = {Bagge Carlson, Fredrik and Johansson, Rolf and Robertsson, Anders},
+  booktitle    = {International Conference on Intelligent Robots and Systems (IROS)},
+  year         = {2015},
+  organization = {IEEE}
+}
+```
+The friction model `frictionRBFN` was presented in
+```bibtex
+@inproceedings{bagge2015friction,
+  title        = {Modeling and identification of position and temperature dependent friction phenomena without temperature sensing},
+  author       = {Bagge Carlson, Fredrik and Robertsson, Anders and Johansson, Rolf},
+  booktitle    = {International Conference on Intelligent Robots and Systems (IROS)},
+  year         = {2015},
+  organization = {IEEE}
+}
 ```
