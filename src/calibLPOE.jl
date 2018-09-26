@@ -13,7 +13,6 @@ Performs knematic calibration using the local POE formulation of kinematics.
 See `runtests.jl` for simulated usage. Some functions to generate simulation data for calibration purposes are provided in $(@__FILE__)
 """
 function calibLPOE(xin,Tn0in,Ta,q;maxiter=10, λ=1.0)
-
     xi      = deepcopy(xin)
     Tn0     = deepcopy(Tn0in)
     n       = size(xi,2)-1
@@ -30,7 +29,6 @@ function calibLPOE(xin,Tn0in,Ta,q;maxiter=10, λ=1.0)
     @assert size(Ta,3) == N
 
     for iter = 1:maxiter # do a few iterations of the calibration
-
         for i = 1:N
             Tfull = fkineLPOE(Tn0,xi,q[i,:])
             # populate the matrices of the linear estimation problem
@@ -65,18 +63,16 @@ function calibLPOE(xin,Tn0in,Ta,q;maxiter=10, λ=1.0)
             xi = deepcopy(xini)
             Tn0 = deepcopy(Tn0cand)
         end
-
     end
-
     return Tn0, xi, et, er
-
 end
 
 
 """
 `calibLPOEdual(xi,Tn0,q;maxiter=10, λ=1.0)`
 Performs dual arm calibration given joint twists xi and nominal transformations Tn0
-Returns calibrated nominal transformations
+Returns calibrated nominal transformations.
+This function does not converge to the correct kinematic parameters since the problem is underspecified. It only converges to kinematic parameters that make the two arms agree.
 """
 function calibLPOEdual(xin,Tn0in,q;maxiter=10, λ=1.0)
 
@@ -329,7 +325,10 @@ function evalErrorPOE_offsets_from_points(xi,Q,dq)
     return sum(J)
 end
 
-
+"""
+q, xin, T0, xinmod, Ta = simulateCalibration1(N)
+Create simulated data
+"""
 function simulateCalibration1(N)
     n       = 6
     q       = 2π*rand(N,n)
@@ -369,6 +368,10 @@ function simulateCalibration1(N)
     return q, xin, T0, xinmod, Ta
 end
 
+"""
+q, xin, T0, xinmod, Ta = simulateCalibration_POE(N)
+Create simulated data for use with `calibPOE`
+"""
 function simulateCalibration_POE(N)
     Random.seed!(1)
     n       = 6
@@ -388,6 +391,10 @@ function simulateCalibration_POE(N)
     return q, xin, T0, xinmod, Ta
 end
 
+"""
+q, xin, Tn0, Tn0mod, Ta = simulateCalibration_LPOE(N)
+Create simulated data for use with `calibLPOE`
+"""
 function simulateCalibration_LPOE(N)
     Random.seed!(1)
     n       = 6
@@ -408,6 +415,11 @@ function simulateCalibration_LPOE(N)
     return q, xin, Tn0, Tn0mod, Ta
 end
 
+"""
+q, xin, Tn0, Tn0mod, Ta = simulateCalibration_LPOE_dual(N)
+
+Create simulated data for use with `calibLPOE_dual`
+"""
 function simulateCalibration_LPOE_dual(N)
     Random.seed!(1)
     n       = 6
