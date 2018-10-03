@@ -5,3 +5,4 @@ RecipesBase
 StatsBase
 Quaternions
 StaticArrays
+TotalLeastSquares

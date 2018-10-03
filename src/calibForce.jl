@@ -83,12 +83,3 @@ function calibForce2(POSES,F,m)
     S  = skew(w)
     Rf = (I+S)\(I-S)
 end
-
-function tls(A,b)
-    AA  = [A b]
-    s   = svd(AA)
-    m,n = length(b),size(A,2)
-    V21 = s.V[1:n,n+1:end]
-    V22 = s.V[n+1:end,n+1:end]
-    x   = -V21/V22
-end

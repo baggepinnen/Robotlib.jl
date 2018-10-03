@@ -6,12 +6,12 @@ function frictionRBFN(q, q̇, centers; sigma=zeros(2), normalized=true)
     N,n_joints  = size(q)
     n,pnb       = size(centers[1])
     bp          = zeros(n_joints, n_joints*pnb)
-    A           = Array(Float64, n_joints*N, n_joints*pnb)
+    A           = Array{Float64}(undef, n_joints*N, n_joints*pnb)
 
     for j = 1:N
         if all(sigma .== zeros(sigma))
             sets = [Set(centers[j][i,:]) for i = 1:n]
-            sigma = (((maximum(centers[j],2) - minimum(centers[j],2))/3)./Float64[length(sets[i]) for i=1:n])[:] #Maybe 2 is a better default value?
+            sigma = (((maximum(centers[j],dims=2) - minimum(centers[j],dims=2))/3)./Float64[length(sets[i]) for i=1:n])[:] #Maybe 2 is a better default value?
         end
         for i = 1:n_joints
             kernelInput     = [q[j,i] q̇[j,i]];
@@ -26,7 +26,7 @@ end
 
 function mnorm_pdf(p,c,S)
     d  = p[:]-c
-    exp(-vecdot(d.^2,S))
+    exp(-dot(d.^2,S))
 end
 
 function basisParametersNd(p,centers, sigma, velocity::Int=0, normalize=true)
@@ -61,8 +61,8 @@ function getCenters(n_basis, bounds)
     v = Nbasis
     h = 1
     for i = 1:N
-        v = convert(Int64,v / n_basis[i])
-        centers[i,:] = vec(repmat(C[i]',v,h))'
+        v = v ÷ n_basis[i]
+        centers[i,:] = vec(repeat(C[i]',v,h))'
         h *= n_basis[i]
     end
     centers
@@ -70,11 +70,11 @@ end
 
 
 
-function getCenters(n_basis::Vector{Int64}, q::Matrix{Float64}, q̇::Matrix{Float64})
+function getCenters(n_basis::AbstractVector{Int64}, q::AbstractMatrix, q̇::AbstractMatrix)
     n_joints = size(q,2)
-    minq = minimum([q q̇],1)
-    maxq = maximum([q q̇],1)
-    centers = Array{Matrix{Float64}}(n_joints)
+    minq = minimum([q q̇],dims=1)
+    maxq = maximum([q q̇],dims=1)
+    centers = Array{Matrix{eltype(q)}}(undef,n_joints)
     for i = 1:n_joints
         bounds = [minq[[i i+n_joints]]' maxq[[i i+n_joints]]']
         centers[i] = getCenters(n_basis, bounds)

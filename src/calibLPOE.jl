@@ -1,6 +1,18 @@
 import Robotlib: ad, adi
-function calibLPOE(xin,Tn0in,Ta,q;maxiter=10, λ=1.0)
+using Random
+"""
+    Tn0, xi, et, er = calibLPOE(xin,Tn0in,Ta,q; maxiter=10, λ=1.0)
 
+Performs knematic calibration using the local POE formulation of kinematics.
+- `Tn0` Nominal forward kinematics
+- `xi` Twists
+- `et` Translational errors as function of iteration of algorithm
+- `er` Rotational errors as function of iteration of algorithm
+- `λ` Regularization parameter
+
+See `runtests.jl` for simulated usage. Some functions to generate simulation data for calibration purposes are provided in $(@__FILE__)
+"""
+function calibLPOE(xin,Tn0in,Ta,q;maxiter=10, λ=1.0)
     xi      = deepcopy(xin)
     Tn0     = deepcopy(Tn0in)
     n       = size(xi,2)-1
@@ -17,7 +29,6 @@ function calibLPOE(xin,Tn0in,Ta,q;maxiter=10, λ=1.0)
     @assert size(Ta,3) == N
 
     for iter = 1:maxiter # do a few iterations of the calibration
-
         for i = 1:N
             Tfull = fkineLPOE(Tn0,xi,q[i,:])
             # populate the matrices of the linear estimation problem
@@ -52,18 +63,16 @@ function calibLPOE(xin,Tn0in,Ta,q;maxiter=10, λ=1.0)
             xi = deepcopy(xini)
             Tn0 = deepcopy(Tn0cand)
         end
-
     end
-
     return Tn0, xi, et, er
-
 end
 
 
 """
 `calibLPOEdual(xi,Tn0,q;maxiter=10, λ=1.0)`
 Performs dual arm calibration given joint twists xi and nominal transformations Tn0
-Returns calibrated nominal transformations
+Returns calibrated nominal transformations.
+This function does not converge to the correct kinematic parameters since the problem is underspecified. It only converges to kinematic parameters that make the two arms agree.
 """
 function calibLPOEdual(xin,Tn0in,q;maxiter=10, λ=1.0)
 
@@ -129,7 +138,18 @@ function calibLPOEdual(xin,Tn0in,q;maxiter=10, λ=1.0)
 
 end
 
-function calibPOE(Xin,Ta,q;maxiter=50, λ = 10000.0)
+"""
+    xin, et, er = calibPOE(Xin,Ta,q; maxiter=50, λ = 10000.0)
+
+Performs knematic calibration using the POE formulation of kinematics.
+- `xin` Twists
+- `et` Translational errors as function of iteration of algorithm
+- `er` Rotational errors as function of iteration of algorithm
+- `λ` Regularization parameter
+
+See `runtests.jl` for simulated usage. Some functions to generate simulation data for calibration purposes are provided in $(@__FILE__)
+"""
+function calibPOE(Xin,Ta,q; maxiter=50, λ = 10000.0)
 
     xin     = copy(Xin)
     n       = size(xin,2)-2
@@ -305,7 +325,10 @@ function evalErrorPOE_offsets_from_points(xi,Q,dq)
     return sum(J)
 end
 
-
+"""
+q, xin, T0, xinmod, Ta = simulateCalibration1(N)
+Create simulated data
+"""
 function simulateCalibration1(N)
     n       = 6
     q       = 2π*rand(N,n)
@@ -345,7 +368,12 @@ function simulateCalibration1(N)
     return q, xin, T0, xinmod, Ta
 end
 
-function simulateCalibration2(N)
+"""
+q, xin, T0, xinmod, Ta = simulateCalibration_POE(N)
+Create simulated data for use with `calibPOE`
+"""
+function simulateCalibration_POE(N)
+    Random.seed!(1)
     n       = 6
     q       = 2π*rand(N,n)
     dh      = DH7600()
@@ -363,7 +391,11 @@ function simulateCalibration2(N)
     return q, xin, T0, xinmod, Ta
 end
 
-function simulateCalibration3(N)
+"""
+q, xin, Tn0, Tn0mod, Ta = simulateCalibration_LPOE(N)
+Create simulated data for use with `calibLPOE`
+"""
+function simulateCalibration_LPOE(N)
     Random.seed!(1)
     n       = 6
     q       = 2π*rand(N,n)
@@ -377,100 +409,39 @@ function simulateCalibration3(N)
     Ta  = zeros(4,4,N)
     for i = 1:N
         Ta[:,:,i] = fkineLPOE(Tn0,xin,q[i,:])
-        AAA,BBB,T = jacobian(q[i,:]',dh, I4);
+        AAA,BBB,T = jacobian(q[i,:],dh, I4);
         @assert T ≈ Ta[:,:,i]
     end
     return q, xin, Tn0, Tn0mod, Ta
 end
 
+"""
+q, xin, Tn0, Tn0mod, Ta = simulateCalibration_LPOE_dual(N)
 
-function simulateCalibration4(N)
-    #srand(1)
+Create simulated data for use with `calibLPOE_dual`
+"""
+function simulateCalibration_LPOE_dual(N)
+    Random.seed!(1)
     n       = 6
     qt      = 2π*rand(N,n)
     q1      = qt + 0.01*π/180*randn(N,n)
     q2      = qt + 0.01*π/180*randn(N,n)
-    q       = cat(3,q1,q2)
+    q       = cat(q1,q2, dims=3)
     dh      = DH7600()
     AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, I4);
     xin = DH2twistsLPOE(Tn0)
-    xin = cat(3,xin,xin)
-    Tn0mod = cat(4,deepcopy(Tn0),deepcopy(Tn0))
+    xin = cat(xin,xin, dims=3)
+    Tn0mod = cat(deepcopy(Tn0),deepcopy(Tn0), dims=4)
     for i = 1:n+1
         Tn0mod[1:3,4,i,1] += 0.1randn(3)
         Tn0mod[1:3,4,i,2] += 0.1randn(3)
     end
     Ta  = zeros(4,4,N)
     for i = 1:N
-        Ta[:,:,i] = fkineLPOE(Tn0,xin,qt[i,:])
+        Ta[:,:,i] = fkineLPOE(Tn0,xin[:,:,1],qt[i,:])
     end
 
     return q, xin, Tn0, Tn0mod, Ta
 end
-
-# if false
-#     pathopen    = "/work/fredrikb/flexifab/logs/calibrationNikon/2400_flexifabseamtracking.csv"
-#     pathsave    = "/tmp/fredrikb/log.mat"
-#     orcalog2mat(pathopen, pathsave)
-#     ds          = 100
-#     data        = MAT.matread(pathsave)
-#     q           = getData("j_act_j*",data, ds, removeNaN = false)
-#     q_frame     = getData("q_frame*",data, ds, removeNaN = false)
-#
-#     nans = any(isnan(q),2) | any(isnan(q_frame),2)
-#
-#     q = q[!nans,:]
-#     q_frame = q_frame[!nans,:]
-#     # plot(q)
-#     using Quaternions
-#
-#     N = size(q,1)
-#     Ta = zeros(4,4,N)
-#     for i = 1:N
-#         t = q_frame[i,6:8]'/1000
-#         R = rotationmatrix(Quaternion(q_frame[i,1:4]...))
-#         @assert isrot(R)
-#         Ta[:,:,i] = [R t;0 0 0 1]
-#     end
-#
-# end
-if false
-    q, xin,T0, xinmod, Ta= Robotlib.Calibration.simulateCalibration2(100)
-    xic,et,er = calibPOE(xinmod,Ta,q,maxiter=150, λ = 10000.0)
-    display(norm(xin[:,1:7]-xinmod[:,1:7]))
-    display(norm(xin[:,1:7]-xic[:,1:7]))
-end
-
-if false
-    q, xin,Tn0,Tn0mod, Ta = simulateCalibration3(100)
-    @time Tn0c,xic,et,er = calibLPOE(xin,Tn0mod,Ta,q,maxiter=10, λ = 100.0)
-    display(sqrt(sum((Tn0-Tn0mod).^2)/100))
-    display(sqrt(sum((Tn0-Tn0c).^2)/100))
-    display(round(Tn0-Tn0c, digits=5))
-end
-
-if false
-    N = 100
-    q, xin,Tn0,Tn0mod, Ta = simulateCalibration4(N)
-    @time Tn0c,xic,et,er = calibLPOEdual(xin,Tn0mod,q,maxiter=6, λ = 0.01)
-    println("Error between Tn0 and Tn0mod: ",sqrt(sum((Tn0[1:3,4,:]-Tn0mod[1:3,4,:,1]).^2+(Tn0[1:3,4,:]-Tn0mod[1:3,4,:,2]).^2)/N))
-    println("Error between Tn0 and Tn0c  : ",sqrt(sum((Tn0[1:3,4,:]-Tn0c[1:3,4,:,1]).^2+(Tn0[1:3,4,:]-Tn0c[1:3,4,:,2]).^2)/N))
-    ei = 0.0
-    ec = 0.0
-    for i = 1:N
-        global ei,ec
-        T1 = fkineLPOE(Tn0mod,xin,q[i,:,1])
-        T2 = fkineLPOE(Tn0mod,xin,q[i,:,2])
-        ei += norm(twistcoords(log(Ta[:,:,i]*trinv(T1))))
-        ei += norm(twistcoords(log(Ta[:,:,i]*trinv(T2))))
-        T1 = fkineLPOE(Tn0c,xin,q[i,:,1])
-        T2 = fkineLPOE(Tn0c,xin,q[i,:,2])
-        ec += norm(twistcoords(log(Ta[:,:,i]*trinv(T1))))
-        ec += norm(twistcoords(log(Ta[:,:,i]*trinv(T2))))
-    end
-    println("Initial error: ",round(ei/N, digits=5), " Calibrated error: ", round(ec/N, digits=5))
-end
-
-
 
 #plot(et[et .!= 0])

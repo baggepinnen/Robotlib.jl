@@ -63,7 +63,7 @@ q̈ = filtfilt(ones(50),[50.],centralDiff(q̇))
 # plot(abs([q̇, q̈]))
 
 # Sort out data with low acceleration
-lowAcc  = all(abs(q̈) .< 3e-4,2)
+lowAcc  = all(abs.(q̈) .< 3e-4,2)
 q       = q[lowAcc,:]
 q̇       = q̇[lowAcc,:]
 τ       = τ[lowAcc,:]
@@ -72,13 +72,13 @@ N       = size(q,1)
 
 
 # Apply forward kinematics to get end-effector poses
-T  = cat(3,[fkine(q[i,:]) for i = 1:N]...)
+T  = cat([fkine(q[i,:]) for i = 1:N]..., dims=3)
 
 trajplot(T) # Plots a trajectory of R4x4 transformation matrices
 
 # Perform the force sensor calibration and plot the errors
 Rf,m,offset     = Robotlib.Calibration.calibForce(T,f,0.2205,offset=true)
-err = cat(2,[Rf*f[i,1:3] + offset - T[1:3,1:3,i]'*[0, 0, m*-9.82] for i = 1:N]...)'
+err = hcat([Rf*f[i,1:3] + offset - T[1:3,1:3,i]'*[0, 0, m*-9.82] for i = 1:N]...)'
 plot(f[:,1:3],lab="Force")
 plot!(err,l=:dash,lab="Error")
 println("Error: ", round(rms(err), digits=4))
@@ -112,7 +112,7 @@ The module includes a submodule, Frames, which is aimed at replacing the Nikon K
 The module includes a submodule, Calibration, which includes a number of calibration routines. It must be separately imported with `using Robotlib.Calibration`
 
 ## Kinematics
-The library has functions for calculation of forward kinematics, inverse kinematics and jacobians. Several versions of all kinematics functions are provided; calculations can be made using either the DH-convention or the product of exponentials formulation. To support a new robot, create an object of the type `DH`, or provide a matrix with POE-style link twists, for use with the kinematic functions.
+The library has functions for calculation of forward kinematics, inverse kinematics and jacobians. Several versions of all kinematics functions are provided; calculations can be made using either the DH-convention or the (local) product of exponentials formulation. To support a new robot, create an object of the type `DH`, or provide a matrix with POE-style link twists, for use with the kinematic functions.
 ### Usage
 ```julia
 dh = DH7600() # ABB Irb 7600
@@ -124,7 +124,7 @@ or alternatively
 dh = DH7600()
 Jn, J0, T, Ti, trans = jacobian(q, dh)
 ```
-many other options exits, check the kinematics.jl
+many other options exits, check [kinematics.jl](src/kinematics.jl)
 
 # Frames
 This module is aimed at assisting with the creation of frames for tracking using optical tracking systems. It supports projection of points and lines onto planes, creating frames from features and has some plotting functionality.
@@ -190,5 +190,38 @@ function setupframes(path)
     MAT.matwrite(path*"T_RB_TAB.mat",["T_RB_TAB" => T_RB_TAB.T])
     println("Wrote T_TAB_SEAM, T_T_SEAM, T_RB_TAB to files in $path")
 end
+```
 
+
+# Citing
+This software package was developed for the following thesis
+```bibtex
+@thesis{bagge2017,
+  author       = {Bagge Carlson, Fredrik},
+  month        = {03},
+  note         = {Licentiate Thesis},
+  publisher    = {Department of Automatic Control, Lund University},
+  title        = {Modeling and Estimation Topics in Robotics},
+  year         = {2017},
+}
+```
+The algorithm `calibNAXP` was presented in
+```bibtex
+@inproceedings{bagge2015calibration,
+  title        = {Six {DOF} eye-to-hand calibration from {2D} measurements using planar constraints},
+  author       = {Bagge Carlson, Fredrik and Johansson, Rolf and Robertsson, Anders},
+  booktitle    = {International Conference on Intelligent Robots and Systems (IROS)},
+  year         = {2015},
+  organization = {IEEE}
+}
+```
+The friction model `frictionRBFN` was presented in
+```bibtex
+@inproceedings{bagge2015friction,
+  title        = {Modeling and identification of position and temperature dependent friction phenomena without temperature sensing},
+  author       = {Bagge Carlson, Fredrik and Robertsson, Anders and Johansson, Rolf},
+  booktitle    = {International Conference on Intelligent Robots and Systems (IROS)},
+  year         = {2015},
+  organization = {IEEE}
+}
 ```
