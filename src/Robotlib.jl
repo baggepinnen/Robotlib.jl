@@ -23,7 +23,7 @@ For YuMi, joint angles `q` must be converted to logical order using e.g. abb2log
 You must also consider the base transform of YuMi
 """
 module Robotlib
-using LinearAlgebra, Statistics, StaticArrays
+using LinearAlgebra, Statistics, StaticArrays, SparseArrays
 const I4 = SMatrix{4, 4, Float64, 16}(Matrix{Float64}(I, 4, 4))
 const I3 = SMatrix{3, 3, Float64, 9}(Matrix{Float64}(I, 3, 3))
 include("DH.jl")
@@ -37,9 +37,10 @@ include("robotplot.jl")
 include("posDepFric.jl")
 
 module Calibration
+using TotalLeastSquares
 using ..Robotlib
-using ..Robotlib: T2R,Rt2T, T2R, T2t, skewcoords, twistcoords
-using LinearAlgebra, Statistics
+using ..Robotlib: T2R,Rt2T, T2R, T2t, skewcoords, twistcoords, I3, I4
+using LinearAlgebra, Statistics, SparseArrays
 import Robotlib.xii
 import Robotlib.Ai
 include("calibLPOE.jl")

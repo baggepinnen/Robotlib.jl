@@ -55,8 +55,7 @@ println("Wrote T_TAB_SEAM, T_T_SEAM, T_RB_TAB to files in \$path")
 ```
 """
 module Frames
-
-using StaticArrays, RecipesBase, LinearAlgebra, Statistics
+using StaticArrays, RecipesBase, LinearAlgebra, Statistics, SparseArrays
 using ..Robotlib
 
 export Frame, Point, Plane, Points, Line, GeometricObject, add_frame_name!

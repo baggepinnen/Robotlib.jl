@@ -1,4 +1,3 @@
-using TotalLeastSquares
 import Robotlib: T2R, Rt2T
 """
     T_TF_S, meanRMS,RMS, norms = calibNAXP(points_S, lines_S, POSES, T_TF_S, planes::AbstractVector{Int},  iters = 50; doplot=false)
@@ -109,7 +108,7 @@ function get_matrices(N_RB, POSES, points_S, lines_S,variance=nothing)
         A[i+N_poses,:] = (reshape(repeat(Ni'Ra,3,1)',9,1) .*[reshape(repeat(Pi[1:2],1,3)',6,1);1;1;1])'
         if variance != nothing
             Σy[i,i] = Σp
-            Σy[i+N_poses, i+N_poses] = trace(Σp2[i])
+            Σy[i+N_poses, i+N_poses] = tr(Σp2[i])
             Σy[i+N_poses, i] = Σy[i, i+N_poses] = Σp
         end
     end

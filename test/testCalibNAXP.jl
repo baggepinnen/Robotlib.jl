@@ -186,22 +186,20 @@ end
 
 SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC, distEnd2, rotEnd2, SSEMC2, normMC2 = run_calib()
 
-iters = size(SSEMC,2)
-using StatPlots
-gr(legend=false)
-plot(0:iters,copy([normStart normMC]'),yscale=:log10,c=:black, xlabel="Number of iterations", layout=2, subplot=1)
-# plot!(0:iters,copy([normStart normMC2]'),yscale=:log10,c=:green, subplot=1)
-hline!([σₙ, σₙ],l=:dash, c=:red, subplot=1)
-
-plot!(0:iters,[SSEStart SSEMC]',yscale=:log10,c=:black, xlabel="Number of iterations",title="RMS distance from points to plane [m]", subplot=2)
-# plot!(0:iters,[SSEStart SSEMC2]',c=:green, subplot=2)
-hline!([σₙ σₙ],l=:dash,c=:red, subplot=2)
-
-
-
-
-boxplot(["Before" "After" "After WTLS"],([distStart distEnd distEnd2]), title="Distance error [m]", yscale=:log10, layout=2, subplot=1)
-hline!([σₙ σₙ],c=:red)
-boxplot!(["Before" "After" "After WTLS"],([rotStart rotEnd rotEnd2]),title="Rotation error [degree]", yscale=:log10, subplot=2)
+# iters = size(SSEMC,2)
+# using StatPlots
+# gr(legend=false)
+# plot(0:iters,copy([normStart normMC]'),yscale=:log10,c=:black, xlabel="Number of iterations", layout=2, subplot=1)
+# # plot!(0:iters,copy([normStart normMC2]'),yscale=:log10,c=:green, subplot=1)
+# hline!([σₙ, σₙ],l=:dash, c=:red, subplot=1)
+#
+# plot!(0:iters,[SSEStart SSEMC]',yscale=:log10,c=:black, xlabel="Number of iterations",title="RMS distance from points to plane [m]", subplot=2)
+# # plot!(0:iters,[SSEStart SSEMC2]',c=:green, subplot=2)
+# hline!([σₙ σₙ],l=:dash,c=:red, subplot=2)
+#
+#
+# boxplot(["Before" "After" "After WTLS"],([distStart distEnd distEnd2]), title="Distance error [m]", yscale=:log10, layout=2, subplot=1)
+# hline!([σₙ σₙ],c=:red)
+# boxplot!(["Before" "After" "After WTLS"],([rotStart rotEnd rotEnd2]),title="Rotation error [degree]", yscale=:log10, subplot=2)
 
 # end
