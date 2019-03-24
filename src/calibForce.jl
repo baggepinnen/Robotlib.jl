@@ -4,7 +4,7 @@ If result is bad, check if you send data in correct form;
 `POSES` ∈ ℜ(4,4,N) is always the position of the tool frame from the robot FK,
 4x4 transformation matrices
 `F` ∈ ℜ(N,3) vector of forces (accepts ℜ(Nx6) matrix with torques also)
-usage `Rf*force[i,1:3] + forceoffs = POSES[1:3,1:3,i]'*[0, 0, mf*-9.82]`
+usage `Rf*force[i,1:3] + forceoffs = POSES[1:3,1:3,i]'*[0, 0, mf*-9.82]`. This implementation assumes that the grabity vector is [0,0,-g], or in words, that the gravity is acting along the negative z axis.
 Bagge
 """
 function calibForce(POSES,F,m0=0.3; offset=true)
@@ -62,10 +62,7 @@ import Robotlib: skew
     This function uses Cayley transform to solve for R. It requires a known mass so it is recommended to use `calibForce` instead.
 """
 function calibForce2(POSES,F,m)
-
     N  = size(POSES,3)
-
-    local forceoffs
     g  = -9.82
     mg = m*g
 
