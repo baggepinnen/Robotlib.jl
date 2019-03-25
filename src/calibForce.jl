@@ -4,17 +4,18 @@ If result is bad, check if you send data in correct form;
 `POSES` ∈ ℜ(4,4,N) is always the position of the tool frame from the robot FK,
 4x4 transformation matrices
 `F` ∈ ℜ(N,3) vector of forces (accepts ℜ(Nx6) matrix with torques also)
-usage `Rf*force[i,1:3] + forceoffs = POSES[1:3,1:3,i]'*[0, 0, mf*-9.82]`. This implementation assumes that the grabity vector is [0,0,-g], or in words, that the gravity is acting along the negative z axis.
+usage `Rf*force[i,1:3] + forceoffs = POSES[1:3,1:3,i]'*[0, 0, mf*-9.82]`. This implementation assumes that the gravity vector is [0,0,-g], or in words, that the gravity is acting along the negative z axis.
 Bagge
 """
-function calibForce(POSES,F,m0=0.3; offset=true)
+function calibForce(POSES,F,m0::Real=0.3; kwargs...)
+    g0 = [0,0,-m0*9.82]
+    calibForce(POSES,F,g0; kwargs...)
+end
+function calibForce(POSES,F,g::AbstractVector; offset=true, verbose=true)
 
     N = size(POSES,3)
 
-    local forceoffs
-    g = 9.82
-    mg = m0*g # Initial guess is m0, the method accepts 5 orders of magnitude error at least
-
+    local forceoffs, m
     I = Robotlib.I3
     A  = Array{eltype(F)}(undef, 3N, offset ? 12 : 9)
     B  = Array{eltype(F)}(undef, 3N)
@@ -24,34 +25,36 @@ function calibForce(POSES,F,m0=0.3; offset=true)
 
     for i = 1:N
         RA               = POSES[1:3,1:3,i]'
-        b                = -RA[1:3,3]
+        b                = RA*g
         A[3(i-1)+1:3i,:] = At(F,i)
         B[3(i-1)+1:3i]   = b
     end
-    @info("Condition number of Gram matrix: ", cond(A'A))
-    w  = tls(A,B.*mg)
+    verbose && @info("Condition number of Gram matrix: ", cond(A'A))
+    w  = tls(A,B)
     Rf = reshape(w[1:9],3,3)
-    @info("Determinant of Rf before orthonormalization: ", det(Rf)," (Should be close to 1, but don't be afraid if it's not, should however be positive!)")
-    det(Rf) < 0 && @error("det(Rf) < 0, left handed coordinate system?")
-    toOrthoNormal!(Rf)
-    At = offset ? RA -> [RA[:,3] I] : RA -> RA[:,3]
-    for ii = 1:2
-        for i = 1:N
-            RA                = POSES[1:3,1:3,i]'
-            b                 = -Rf*F[i,1:3]
-            A2[3(i-1)+1:3i,:] = At(RA)
-            B2[3(i-1)+1:3i]   = b
-        end
-        w         = A2\B2
-        mg        = w[1]
-        offset && (forceoffs = w[2:4])
+    verbose && @info("Determinant of Rf before orthonormalization: ", det(Rf)," (Should be close to 1, but don't be afraid if it's not, should however be positive!)")
+    if det(Rf) < 0
+        verbose && @warn("det(Rf) < 0, left handed coordinate system? Trying to solve the problem with reversed gravity (-g)")
+        return calibForce(POSES,F,-g; offset=offset, verbose=verbose)
     end
-    m = mg/g
+    toOrthoNormal!(Rf)
+    At = offset ? RA -> [RA*g I] : RA -> RA*g
+
+    for i = 1:N
+        RA                = POSES[1:3,1:3,i]'
+        b                 = Rf*F[i,1:3]
+        A2[3(i-1)+1:3i,:] = At(RA)
+        B2[3(i-1)+1:3i]   = b
+    end
+    w         = A2\B2
+    m         = w[1]
+    offset && (forceoffs = w[2:4])
+
     m < 0 && @error("Estimated mass is negative, left handed coordinate system for sensor?")
     if offset
         return Rf,m,forceoffs
     else
-        return Rf , m
+        return Rf, m
     end
 end
 
