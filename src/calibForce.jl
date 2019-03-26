@@ -5,7 +5,8 @@ If result is bad, check if you send data in correct form;
 4x4 transformation matrices
 `F` ∈ ℜ(N,3) vector of forces (accepts ℜ(Nx6) matrix with torques also)
 usage `Rf*force[i,1:3] + forceoffs = POSES[1:3,1:3,i]'*[0, 0, mf*-9.82]`. This implementation assumes that the gravity vector is [0,0,-g], or in words, that the gravity is acting along the negative z axis.
-Bagge
+
+[Bagge Carlson, F.](https://www.control.lth.se/staff/fredrik-bagge-carlson/), ["Machine Learning and System Identification for Estimation in Physical Systems"](https://lup.lub.lu.se/search/publication/ffb8dc85-ce12-4f75-8f2b-0881e492f6c0) (PhD Thesis 2018).
 """
 function calibForce(POSES,F,m0::Real=0.3; kwargs...)
     g0 = [0,0,-m0*9.82]
@@ -21,7 +22,7 @@ function calibForce(POSES,F,g::AbstractVector; offset=true, verbose=true)
     B  = Array{eltype(F)}(undef, 3N)
     A2 = Array{eltype(F)}(undef, 3N, offset ? 4 : 1)
     B2 = Array{eltype(F)}(undef, 3N)
-    At = offset ? (F,i) -> [F[i,1]*I   F[i,2]*I    F[i,3]*I   I] : (F,i) -> [F[i,1]*I   F[i,2]*I    F[i,3]*I]
+    At = offset ? (F,i) -> [F[i,1]*I   F[i,2]*I    F[i,3]*I   -I] : (F,i) -> [F[i,1]*I   F[i,2]*I    F[i,3]*I]
 
     for i = 1:N
         RA               = POSES[1:3,1:3,i]'
@@ -38,7 +39,7 @@ function calibForce(POSES,F,g::AbstractVector; offset=true, verbose=true)
         return calibForce(POSES,F,-g; offset=offset, verbose=verbose)
     end
     toOrthoNormal!(Rf)
-    At = offset ? RA -> [RA*g I] : RA -> RA*g
+    At = offset ? RA -> [RA*g/norm(g) -I] : RA -> RA*g/norm(g)
 
     for i = 1:N
         RA                = POSES[1:3,1:3,i]'
@@ -47,7 +48,7 @@ function calibForce(POSES,F,g::AbstractVector; offset=true, verbose=true)
         B2[3(i-1)+1:3i]   = b
     end
     w         = A2\B2
-    m         = w[1]
+    m         = w[1]/9.82
     offset && (forceoffs = w[2:4])
 
     m < 0 && @error("Estimated mass is negative, left handed coordinate system for sensor?")

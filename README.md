@@ -4,14 +4,13 @@
 
 
 Now supporting Julia v0.7/v1.0.
-Dependency MAT.jl is currently not building on Julia v1.0 and hence all file loading functionality and some tests have been deactivated.
 
 # Robotlib
 This is a library of functions to help out in a robotics lab. At present stage, it contains functions for forward kinematics, jacobians, iterative inverse kinematics and for a few robotics related calibration problems. The library also contains a number of functions to convert from various orientation representations and other robotics related helper functions.
 
 Install using
 
-`Pkg.add("Robotlib")`
+`using Pkg; Pkg.add("Robotlib")`
 
 
 ## Usage
@@ -70,7 +69,6 @@ q̇       = q̇[lowAcc,:]
 f       = f[lowAcc,:]
 N       = size(q,1)
 
-
 # Apply forward kinematics to get end-effector poses
 T  = cat([fkine(q[i,:]) for i = 1:N]..., dims=3)
 
@@ -84,27 +82,13 @@ plot!(err,l=:dash,lab="Error")
 println("Error: ", round(rms(err), digits=4))
 ```
 
-## The module imports the following files
-
-```julia
-include("POEutils.jl")
-include("DH.jl")
-include("kinematics.jl")
-include("robotplot.jl")
-include("Frames.jl")
-include("read_log.jl")
-include("csv2mat.jl")
-```
 
 ## Exported functions
 ```julia
-Rt2T, T2R, T2t, skewcoords, twistcoords, skew, skew4, expω, expξ, expξ2, expξ!, logT, logR
-ad, adi, trinv, isrot, isse3, Rangle, conformize, DH2twistsPOE, DH2twistsLPOE, dh2Tn
-toOrthoNormal!, toOrthoNormal, rpy2R, Quaternion, xyθ
-fkinePOE, fkineLPOE, ikinePOE, dh2Tn, jacobianPOE, jacobianPOEikine, jacobian, get_kinematic_functions
-plot_traj, plot_traj3, plot_traj_sub, plot3smart, plotsub
-DH, DH2400, DHYuMi, DH7600, DHtest, abb2logical!, logical2abb!, abb2logical, logical2abb
-csv2mat, orcalog2mat, getData, readmat
+julia> foreach(String.(names(Robotlib))) do s
+       print(s, ", ")
+       end
+DH, DH2400, DH2twistsLPOE, DH2twistsPOE, DH7600, DHYuMi, DHtest, Quaternion, R2rpy, Rangle, Robotlib, abb2logical, abb2logical!, centralDiff, centraldiff, conformize, csv2mat, dh2Tn, expξ, expξ!, expξ2, expω, fkineLPOE, fkinePOE, frictionRBFN, getCenters, getData, get_kinematic_functions, ikinePOE, isrot, isse3, jacobian, jacobianPOE, jacobianPOEikine, logR, logT, logical2abb, logical2abb!, orcalog2mat, plot3smart, plot3smart!, readmat, rpy2R, skew, skew4, skewcoords, smartDiff, toOrthoNormal, toOrthoNormal!, traj2quat, trajplot, trajplot!, trajplot3, trajplot3!, trinv, twistcoords, xyθ
 ```
 
 The module includes a submodule, Frames, which is aimed at replacing the Nikon K600 software. It supports creation of frames, simple projections, fitting of planes, lines etc. and has a number of plotting options. It must be separately imported with `using Robotlib.Frames`
@@ -194,17 +178,22 @@ end
 
 
 # Citing
-This software package was developed for the following thesis
+This package was developed for the thesis
+[Bagge Carlson, F.](https://www.control.lth.se/staff/fredrik-bagge-carlson/), ["Machine Learning and System Identification for Estimation in Physical Systems"](https://lup.lub.lu.se/search/publication/ffb8dc85-ce12-4f75-8f2b-0881e492f6c0) (PhD Thesis 2018).
 ```bibtex
-@thesis{bagge2017,
+@thesis{bagge2018,
+  title        = {Machine Learning and System Identification for Estimation in Physical Systems},
   author       = {Bagge Carlson, Fredrik},
-  month        = {03},
-  note         = {Licentiate Thesis},
-  publisher    = {Department of Automatic Control, Lund University},
-  title        = {Modeling and Estimation Topics in Robotics},
-  year         = {2017},
+  keyword      = {Machine Learning,System Identification,Robotics,Spectral estimation,Calibration,State estimation},
+  month        = {12},
+  type         = {PhD Thesis},
+  number       = {TFRT-1122},
+  institution  = {Dept. Automatic Control, Lund University, Sweden},
+  year         = {2018},
+  url          = {https://lup.lub.lu.se/search/publication/ffb8dc85-ce12-4f75-8f2b-0881e492f6c0},
 }
 ```
+
 The algorithm `calibNAXP` was presented in
 ```bibtex
 @inproceedings{bagge2015calibration,
@@ -215,6 +204,7 @@ The algorithm `calibNAXP` was presented in
   organization = {IEEE}
 }
 ```
+
 The friction model `frictionRBFN` was presented in
 ```bibtex
 @inproceedings{bagge2015friction,

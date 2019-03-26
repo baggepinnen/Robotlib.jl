@@ -1,8 +1,9 @@
 using Robotlib, LinearAlgebra, Random, Statistics
 using Test
 import Robotlib: ad, adi, I4
-Random.seed!(1)
 
+@testset "Robotlib tests" begin
+Random.seed!(1)
 include("testCalibNAXP.jl")
 include("testForce.jl")
 
@@ -94,5 +95,6 @@ end
 
 
 println("===== Testing frames =====")
-@warn("Testing of Frames is inactivated since MAT.jl didn't build. Re-enable when this is resolved https://github.com/JuliaIO/MAT.jl/issues/90")
-# include("testFrames.jl")
+# @warn("Testing of Frames is inactivated since MAT.jl didn't build. Re-enable when this is resolved https://github.com/JuliaIO/MAT.jl/issues/90")
+include("testFrames.jl")
+end

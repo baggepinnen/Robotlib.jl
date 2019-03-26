@@ -45,7 +45,7 @@ e.g. \"posRawAbs\"
 function getData(pattern, data, ds=1; removeNaN = false)
     indexes = findData(pattern, data)
     if sum(indexes) < 1
-        warn("No data found using the string $pattern")
+        @warn("No data found using the string $pattern")
         return
     end
     names = collect(keys(data))[indexes]
