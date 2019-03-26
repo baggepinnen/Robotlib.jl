@@ -81,9 +81,9 @@ end
 
 
 ##
-σ = 1
+σ = 10
 traces = map(1:200) do mc
-    N         = 100
+    N         = 1000
     Rf        = Robotlib.toOrthoNormal(randn(3,3))
     gf        = 100randn(3)
     POSES     = cat([Robotlib.toOrthoNormal(randn(3,3)) for i = 1:N]..., dims=3)
@@ -114,7 +114,8 @@ errortraces = map(traces) do (Rf, gf, Rg)
 end
 
 default(size=(800,600), grid=true, linealpha=0.3, linecolor=:black)
-plot(getindex.(errortraces, 1), layout=3, subplot=1, yscale=:log10, xscale=:log10, title="R angle [deg]")
-plot!(getindex.(errortraces, 2), subplot=2, yscale=:log10, xscale=:log10, title="g relative error")
-plot!(getindex.(errortraces, 3), subplot=3, yscale=:log10, xscale=:log10, title="g angle [deg]")
+scales = (yscale=:log10, xscale=:log10, legend=false)
+plot(getindex.(errortraces, 1); layout=(3,1), subplot=1, scales..., title="\$R\$ angle [deg]")
+plot!(getindex.(errortraces, 2); subplot=2, scales..., title="\$g\$ relative error")
+plot!(getindex.(errortraces, 3); subplot=3, scales..., title="\$g\$ angle [deg]")
 # hline!([√3*3σ/sqrt(N)], l=(:black,:dash, 3), sp=2)
