@@ -16,7 +16,7 @@ function calibForce(POSES,F,g::AbstractVector; offset=true, verbose=true)
 
     N = size(POSES,3)
 
-    local forceoffs, m
+    local forceoffs
     I = Robotlib.I3
     A  = Array{eltype(F)}(undef, 3N, offset ? 12 : 9)
     B  = Array{eltype(F)}(undef, 3N)

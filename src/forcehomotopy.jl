@@ -1,4 +1,5 @@
-using Robotlib, TotalLeastSquares, HomotopyContinuation, DynamicPolynomials
+using Robotlib, TotalLeastSquares
+# using HomotopyContinuation, DynamicPolynomials
 using Test, Random
 RTR(R) = R'R
 
@@ -63,15 +64,34 @@ function calibForceIterative(POSES,F,g; trace=false)
     N = size(POSES,3)
     I = Robotlib.I3
     A  = Array{eltype(F)}(undef, 3N, 3)
-    B  = Array{eltype(F)}(undef, 3N)
+    B = F'[:]
     local m
     trace && (Rg = [])
     for iter = 1:6
         Rf, m = Robotlib.Calibration.calibForce(POSES,F,g; offset=false, verbose=false)
         for i = 1:N
             A[3(i-1)+1:3i,:] = Rf'POSES[:,:,i]'
-            B[3(i-1)+1:3i]   = F[i,:]
         end
+        g = A\B
+        trace && push!(Rg, (Rf, g))
+    end
+    trace && (return Rf,g,m,Rg)
+    Rf,g,m
+end
+
+function calibForceIterative2(POSES,F,g; trace=false)
+    N = size(POSES,3)
+    I = Robotlib.I3
+    A  = Array{eltype(F)}(undef, 3N, 3)
+    for i = 1:N
+        A[3(i-1)+1:3i,:] = POSES[:,:,i]'
+    end
+    A = factorize(A)
+    local m
+    trace && (Rg = [])
+    for iter = 1:6
+        Rf, m = Robotlib.Calibration.calibForce(POSES,F,g; offset=false, verbose=false)
+        B = (Rf*F')[:]
         g = A\B
         trace && push!(Rg, (Rf, g))
     end
@@ -82,8 +102,9 @@ end
 
 ##
 σ = 10
-traces = map(1:200) do mc
-    N         = 1000
+Random.seed!(1)
+@time traces = map(1:200) do mc
+    N         = 100
     Rf        = Robotlib.toOrthoNormal(randn(3,3))
     gf        = 100randn(3)
     POSES     = cat([Robotlib.toOrthoNormal(randn(3,3)) for i = 1:N]..., dims=3)
@@ -91,11 +112,14 @@ traces = map(1:200) do mc
     forces .+= σ*randn()
 
     ##
-
-    @time R,g,m, Rg = calibForceIterative(POSES,forces,randn(3), trace=true)
+    g0 = randn(3)
+    R,g,m, Rg = calibForceIterative(POSES,forces,g0, trace=true)
+    # res1 = calibForceIterative(POSES,forces,g0, trace=true)
+    # res2 = calibForceIterative2(POSES,forces,g0, trace=true)
+    # @assert all(res1[i] ≈ res2[i] for i = 1:3)
     Rf,gf,Rg
 end
-
+##
 errors = map(traces) do (Rf, gf, Rg)
     R,g = Rg[end]
     Rerr = Rangle(R,Rf, true)
@@ -115,7 +139,7 @@ end
 
 default(size=(800,600), grid=true, linealpha=0.3, linecolor=:black)
 scales = (yscale=:log10, xscale=:log10, legend=false)
-plot(getindex.(errortraces, 1); layout=(3,1), subplot=1, scales..., title="\$R\$ angle [deg]")
+plot(getindex.(errortraces, 1); layout=(1,3), subplot=1, scales..., title="\$R\$ angle [deg]")
 plot!(getindex.(errortraces, 2); subplot=2, scales..., title="\$g\$ relative error")
 plot!(getindex.(errortraces, 3); subplot=3, scales..., title="\$g\$ angle [deg]")
 # hline!([√3*3σ/sqrt(N)], l=(:black,:dash, 3), sp=2)
