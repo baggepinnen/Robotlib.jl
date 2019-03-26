@@ -1,11 +1,11 @@
 using Robotlib, Test, Random
 @testset "Calib Force" begin
 N         = 100
-Rf        = toOrthoNormal(randn(3,3))
+Rf        = Robotlib.toOrthoNormal(randn(3,3))
 mf        = 1
-POSES     = cat([toOrthoNormal(randn(3,3)) for i = 1:N]..., dims=3)
+POSES     = cat([Robotlib.toOrthoNormal(randn(3,3)) for i = 1:N]..., dims=3)
 forceoffs = zeros(3)
-forces    = hcat([Rf'*(POSES[1:3,1:3,i]'*[0, 0, mf*-9.82] - forceoffs) for i = 1:N]...)'
+forces    = hcat([Rf'*(POSES[1:3,1:3,i]'*[0, 0, mf*-9.82] - forceoffs) for i = 1:N]...)' |> copy
 
 R,m = Robotlib.Calibration.calibForce(POSES,forces; offset=false)
 
