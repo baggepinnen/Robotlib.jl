@@ -32,7 +32,7 @@ function calibForce(POSES,F,g::AbstractVector; offset=true, verbose=true)
     verbose && @info("Condition number of Gram matrix: ", cond(A'A))
     w  = tls(A,B)
     Rf = reshape(w[1:9],3,3)
-    verbose && @info("Determinant of Rf before orthonormalization: ", det(Rf)," (Should be close to 1, but don't be afraid if it's not, should however be positive!)")
+    verbose && @info("Determinant of Rf before orthonormalization: ", det(Rf), opnorm(Rf))
     if det(Rf) < 0
         verbose && @warn("det(Rf) < 0, left handed coordinate system? Trying to solve the problem with reversed gravity (-g)")
         return calibForce(POSES,F,-g; offset=offset, verbose=verbose)

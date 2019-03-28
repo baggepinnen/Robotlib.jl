@@ -67,7 +67,7 @@ function calibForceIterative(POSES,F,g; trace=false)
     local m
     trace && (Rg = [])
     for iter = 1:6
-        Rf, m = Robotlib.Calibration.calibForce(POSES,F,g; offset=false, verbose=false)
+        Rf, m = Robotlib.Calibration.calibForce(POSES,F,g; offset=false, verbose=true)
         for i = 1:N
             A[3(i-1)+1:3i,:] = Rf'POSES[:,:,i]'
             B[3(i-1)+1:3i]   = F[i,:]
@@ -80,19 +80,71 @@ function calibForceIterative(POSES,F,g; trace=false)
 end
 
 
+function calibForceIterative3(POSES,F; trace=false)
+    N = size(POSES,3)
+    I = Robotlib.I3
+    Rf = I
+    A  = Array{eltype(F)}(undef, 3N, 3)
+    B  = Array{eltype(F)}(undef, 3N)
+    local m
+    trace && (Rg = [])
+    for iter = 1:6
+        for i = 1:N
+            A[3(i-1)+1:3i,:] = Rf'POSES[:,:,i]'
+            B[3(i-1)+1:3i]   = F[i,:]
+        end
+        g = A\B
+        Rf, m = Robotlib.Calibration.calibForce(POSES,F,g; offset=false, verbose=false)
+        trace && push!(Rg, (Rf, g))
+    end
+    trace && (return Rf,g,m,Rg)
+    Rf,g,m
+end
+
+function calibForceIterative4(POSES,forces; trace=false)
+    N = size(POSES,3)
+    I3 = Matrix{Float64}(I, 3, 3)
+    r = vec(I3)
+    # D = permutedims(POSES, (2,1,3))
+    # D = reshape(D, 3N,3)
+    D = reshape(POSES, 3,3N)'
+    F = [kron(forces[i,:]',I3) for i in 1:N]
+    F = reduce(vcat, F)
+    FF = pinv(F)*D
+    DD = pinv(D)*F
+    K = FF*DD
+    e = eigen(K)
+    sort(e.values, by=abs,rev=true)
+    trace && (Rg = [])
+    for iter = 1:5
+        r = K*r
+        r = vec(toOrthoNormal(reshape(r,3,3)))
+        # trace && push!(Rg, (Rf, g))
+    end
+    # trace && (return Rf,g,m,Rg)
+    # Rf,g,m
+    toOrthoNormal(reshape(r,3,3)), e
+end
+
+
 ##
-σ = 10
-traces = map(1:200) do mc
-    N         = 1000
+σ = 0
+N         = 1000
+Rf        = Robotlib.toOrthoNormal(randn(3,3))
+gf        = [0,0,1]
+POSES     = cat([Robotlib.toOrthoNormal(randn(3,3)) for i = 1:N]..., dims=3)
+forces    = hcat([Rf'*(POSES[1:3,1:3,i]'*gf) for i = 1:N]...)' |> copy
+forces .+= σ*randn()
+R , e = calibForceIterative4(POSES,forces, trace=true)
+##
+traces = map(1:30) do mc
+    N         = 100
     Rf        = Robotlib.toOrthoNormal(randn(3,3))
     gf        = 100randn(3)
     POSES     = cat([Robotlib.toOrthoNormal(randn(3,3)) for i = 1:N]..., dims=3)
     forces    = hcat([Rf'*(POSES[1:3,1:3,i]'*gf) for i = 1:N]...)' |> copy
     forces .+= σ*randn()
-
-    ##
-
-    @time R,g,m, Rg = calibForceIterative(POSES,forces,randn(3), trace=true)
+    R,g,m, Rg = calibForceIterative3(POSES,forces, trace=true)
     Rf,gf,Rg
 end
 
@@ -106,16 +158,35 @@ end
 histogram([getindex.(errors, 1) getindex.(errors, 2)], layout=2)
 ##
 errortraces = map(traces) do (Rf, gf, Rg)
-
     Rerr = [Rangle(R,Rf, true) for (R,g) in Rg]
     gerr = [norm(g-gf)/norm(gf) for (R,g) in Rg] #< 1e-10 + √3*3σ/sqrt(N)
-    gaerr = [acos(g⋅gf/norm(gf)/norm(g))*180/pi for (R,g) in Rg]
+    gaerr = [acos(min(1,g⋅gf/norm(gf)/norm(g)))*180/pi for (R,g) in Rg]
     Rerr,gerr,gaerr
 end
 
 default(size=(800,600), grid=true, linealpha=0.3, linecolor=:black)
-scales = (yscale=:log10, xscale=:log10, legend=false)
-plot(getindex.(errortraces, 1); layout=(3,1), subplot=1, scales..., title="\$R\$ angle [deg]")
+scales = (yscale=:identity, xscale=:identity, legend=false)
+ylims = (ylims=(0,30),)
+plot(getindex.(errortraces, 1); layout=(1,3), subplot=1, scales..., title="\$R\$ angle [deg]")
+hline!([180], subplot=1, l=(:black,:dash))
 plot!(getindex.(errortraces, 2); subplot=2, scales..., title="\$g\$ relative error")
 plot!(getindex.(errortraces, 3); subplot=3, scales..., title="\$g\$ angle [deg]")
 # hline!([√3*3σ/sqrt(N)], l=(:black,:dash, 3), sp=2)
+
+##
+using Test
+A = 10randn(100,3)
+B = 10randn(100,3)
+
+@test 1/opnorm(A) < opnorm(pinv(A))
+# @show sort(abs.(eigvals(A*pinv(A)*B*pinv(B))), rev=true)
+
+##
+D = [toOrthoNormal(randn(3,3)) for _ in 1:100]
+B = [D' for D in D]
+D = reduce(vcat,D)
+B = reduce(vcat,B)
+opnorm(D)
+opnorm(B*pinv(D))
+sort(eigvals(B*pinv(D)), by=abs, rev=true)
+svdvals(B*pinv(D))
