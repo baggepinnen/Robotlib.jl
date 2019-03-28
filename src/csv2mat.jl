@@ -26,7 +26,7 @@ function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true
     n = names(df)
     stripchars = [' ', '_', ':']
     for (i,symbol) in enumerate(n)
-        n[i] = strip(string(symbol),stripchars)
+        n[i] = Symbol(strip(string(symbol),stripchars))
         writeNames && println(n[i])
     end
     names!(df,n) # Update the column names

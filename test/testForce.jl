@@ -7,7 +7,7 @@ POSES     = cat([Robotlib.toOrthoNormal(randn(3,3)) for i = 1:N]..., dims=3)
 forceoffs = zeros(3)
 forces    = hcat([Rf'*(POSES[1:3,1:3,i]'*[0, 0, mf*-9.82] - forceoffs) for i = 1:N]...)' |> copy
 
-R,m = Robotlib.Calibration.calibForce(POSES,forces; offset=false)
+R,m = Robotlib.Calibration.calibForce(POSES,forces; offset=false, verbose=false)
 
 @test R ≈ Rf
 @test m ≈ mf
@@ -18,7 +18,7 @@ R = Robotlib.Calibration.calibForce2(POSES,forces,mf)
 forceoffs = randn(3)
 forces    = hcat([Rf'*(POSES[1:3,1:3,i]'*[0, 0, mf*-9.82] - forceoffs) for i = 1:N]...)'
 
-R,m,offs = Robotlib.Calibration.calibForce(POSES,forces; offset=true)
+R,m,offs = Robotlib.Calibration.calibForce(POSES,forces; offset=true, verbose=false)
 
 @test R ≈ Rf
 @test m ≈ mf

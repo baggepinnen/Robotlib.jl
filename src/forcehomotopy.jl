@@ -1,4 +1,5 @@
-using Robotlib, TotalLeastSquares, HomotopyContinuation, DynamicPolynomials
+using Robotlib, TotalLeastSquares
+# using HomotopyContinuation, DynamicPolynomials
 using Test, Random
 RTR(R) = R'R
 
@@ -63,15 +64,34 @@ function calibForceIterative(POSES,F,g; trace=false)
     N = size(POSES,3)
     I = Robotlib.I3
     A  = Array{eltype(F)}(undef, 3N, 3)
-    B  = Array{eltype(F)}(undef, 3N)
+    B = F'[:]
     local m
     trace && (Rg = [])
     for iter = 1:6
         Rf, m = Robotlib.Calibration.calibForce(POSES,F,g; offset=false, verbose=true)
         for i = 1:N
             A[3(i-1)+1:3i,:] = Rf'POSES[:,:,i]'
-            B[3(i-1)+1:3i]   = F[i,:]
         end
+        g = A\B
+        trace && push!(Rg, (Rf, g))
+    end
+    trace && (return Rf,g,m,Rg)
+    Rf,g,m
+end
+
+function calibForceIterative2(POSES,F,g; trace=false)
+    N = size(POSES,3)
+    I = Robotlib.I3
+    A  = Array{eltype(F)}(undef, 3N, 3)
+    for i = 1:N
+        A[3(i-1)+1:3i,:] = POSES[:,:,i]'
+    end
+    A = factorize(A)
+    local m
+    trace && (Rg = [])
+    for iter = 1:6
+        Rf, m = Robotlib.Calibration.calibForce(POSES,F,g; offset=false, verbose=false)
+        B = (Rf*F')[:]
         g = A\B
         trace && push!(Rg, (Rf, g))
     end
@@ -147,7 +167,7 @@ traces = map(1:30) do mc
     R,g,m, Rg = calibForceIterative3(POSES,forces, trace=true)
     Rf,gf,Rg
 end
-
+##
 errors = map(traces) do (Rf, gf, Rg)
     R,g = Rg[end]
     Rerr = Rangle(R,Rf, true)
