@@ -8,6 +8,9 @@ vecangle(g,gf) = acos(min(1,g⋅gf/norm(gf)/norm(g)))*180/pi
 rcond(K) = /(svdvals(K)[[1,3]]...)
 toR(r) = toOrthoNormal(reshape(real(r),3,3))
 tor(r) = toR(r)[:]
+function toR2(r)
+    det(reshape(real(r),3,3)) > 0 ? toR(r) : toR(-r)
+end
 
 function rqi(K,r,n=1)
     for i = 1:n
@@ -87,7 +90,7 @@ function calibForceIterative(POSES,F,g; trace=false)
     B = F'[:]
     local m
     trace && (Rg = [])
-    for iter = 1:6
+    for iter = 1:7
         Rf, m = Robotlib.Calibration.calibForce(POSES,F,g; offset=false, verbose=true)
         for i = 1:N
             A[3(i-1)+1:3i,:] = Rf'POSES[:,:,i]'
@@ -109,7 +112,7 @@ function calibForceIterative2(POSES,F,g; trace=false)
     A = factorize(A)
     local m
     trace && (Rg = [])
-    for iter = 1:6
+    for iter = 1:7
         Rf, m = Robotlib.Calibration.calibForce(POSES,F,g; offset=false, verbose=false)
         B = (Rf*F')[:]
         g = A\B
@@ -128,7 +131,7 @@ function calibForceIterative3(POSES,F; trace=false)
     B  = Array{eltype(F)}(undef, 3N)
     local m, g
     trace && (Rg = [])
-    for iter = 1:6
+    for iter = 1:7
         for i = 1:N
             A[3(i-1)+1:3i,:] = Rf'POSES[:,:,i]'
             B[3(i-1)+1:3i]   = F[i,:]
@@ -176,11 +179,26 @@ function calibForceEigen(POSES,forces)
     R̂,ĝ
 end
 
+function calibForceNullspace(POSES,forces)
+    N = size(POSES,3)
+
+    F2 = [POSES[:,:,k]'*POSES[:,:,i]*kron(forces[i,:]', Eye(3)) - kron(forces[k,:]', Eye(3)) for i = 1:N-1 for k=i+1:N]
+    F = reduce(vcat,F2)
+
+    USV = svd(F)
+    r = USV.V[:,end]
+    R̂ = toR2(r)
+    D = reshape(POSES, 3,3N)'
+    F3 = kron(forces, Eye(3))
+    ĝ = D\F3*vec(R̂)
+    R̂,ĝ
+end
+
 
 
 ##
-σ = 1
-traces = map(1:30) do mc
+σ = 100
+traces = map(1:100) do mc
     N         = 100
     Rf        = Robotlib.toOrthoNormal(randn(3,3))
     gf        = 100randn(3)
@@ -188,9 +206,11 @@ traces = map(1:30) do mc
     forces    = hcat([Rf'*(POSES[1:3,1:3,i]'*gf) for i = 1:N]...)' |> copy
     forces .+= σ*randn(size(forces))
     R,g,m, Rg = calibForceIterative3(POSES,forces, trace=true)
-    R,g = calibForceEigen(POSES,forces)
-    Rf,gf,Rg, R,g
+    Re,ge = calibForceEigen(POSES,forces)
+    Rn,gn = calibForceNullspace(POSES,forces)
+    Rf,gf,Rg, Re,ge,Rn,gn
 end
+
 ##
 errors = map(traces) do (Rf, gf, Rg)
     R,g = Rg[end]
@@ -208,7 +228,7 @@ errortraces = map(traces) do (Rf, gf, Rg)
     Rerr,gerr,gaerr
 end
 
-default(size=(800,600), grid=true, linealpha=0.3, linecolor=:black)
+# default(size=(800,600), grid=true, linealpha=0.3, linecolor=:black)
 scales = (yscale=:identity, xscale=:identity, legend=false)
 ylims = (ylims=(0,30),)
 plot(getindex.(errortraces, 1); layout=(1,3), subplot=1, scales..., title="\$R\$ angle [deg]")
@@ -217,15 +237,19 @@ plot!(getindex.(errortraces, 2); subplot=2, scales..., title="\$g\$ relative err
 plot!(getindex.(errortraces, 3); subplot=3, scales..., title="\$g\$ angle [deg]")
 
 ##
-opts = (fillalpha=0.3,)
-histogram([e[1][end] for e in errortraces]; layout=(3,1), subplot=1, title="Rangle", opts...)
-histogram!([Rangle(t[1],t[4])*180/pi for t in traces]; subplot=1, opts...)
+# using StatsPlots
+opts = (fillalpha=0.99,xscale=:identity)
+density([e[1][end] for e in errortraces]; layout=(3,1), subplot=1, title="Rangle", opts...)
+density!([Rangle(t[1],t[4])*180/pi for t in traces]; subplot=1, opts...)
+density!([Rangle(t[1],t[6])*180/pi for t in traces]; subplot=1, opts...)
 
-histogram!([e[2][end] for e in errortraces]; subplot=2, title="g relative", opts...)
-histogram!([norm(t[2]-t[5])/norm(t[2]) for t in traces]; subplot=2, opts...)
+density!([e[2][end] for e in errortraces]; subplot=2, title="g relative", opts...)
+density!([norm(t[2]-t[5])/norm(t[2]) for t in traces]; subplot=2, opts...)
+density!([norm(t[2]-t[7])/norm(t[2]) for t in traces]; subplot=2, opts...)
 
-histogram!([e[3][end] for e in errortraces]; subplot=3, title="g angle", opts...)
-histogram!([vecangle(t[2],t[5]) for t in traces]; subplot=3, opts...)
+density!([e[3][end] for e in errortraces]; subplot=3, title="g angle", opts...)
+density!([vecangle(t[2],t[5]) for t in traces]; subplot=3, opts...)
+density!([vecangle(t[2],t[7]) for t in traces]; subplot=3, opts...)
 
 # hline!([√3*3σ/sqrt(N)], l=(:black,:dash, 3), sp=2)
 
