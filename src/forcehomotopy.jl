@@ -239,19 +239,24 @@ plot!(getindex.(errortraces, 3); subplot=3, scales..., title="\$g\$ angle [deg]"
 ##
 # using StatsPlots
 opts = (fillalpha=0.99,xscale=:identity)
-density([e[1][end] for e in errortraces]; layout=(3,1), subplot=1, title="Rangle", opts...)
-density!([Rangle(t[1],t[4])*180/pi for t in traces]; subplot=1, opts...)
-density!([Rangle(t[1],t[6])*180/pi for t in traces]; subplot=1, opts...)
+density([e[1][end] for e in errortraces]; layout=(3,1), subplot=1, title="R angle [deg]", opts..., lab="Iterative")
+density!([Rangle(t[1],t[4])*180/pi for t in traces]; subplot=1, opts..., lab="Eigen")
+density!([Rangle(t[1],t[6])*180/pi for t in traces]; subplot=1, opts..., lab="Nullspace")
 
-density!([e[2][end] for e in errortraces]; subplot=2, title="g relative", opts...)
-density!([norm(t[2]-t[5])/norm(t[2]) for t in traces]; subplot=2, opts...)
-density!([norm(t[2]-t[7])/norm(t[2]) for t in traces]; subplot=2, opts...)
+density!([e[2][end] for e in errortraces]; subplot=2, title="g relative error", opts..., lab="Iterative")
+density!([norm(t[2]-t[5])/norm(t[2]) for t in traces]; subplot=2, opts..., lab="Eigen")
+density!([norm(t[2]-t[7])/norm(t[2]) for t in traces]; subplot=2, opts..., lab="Nullspace")
 
-density!([e[3][end] for e in errortraces]; subplot=3, title="g angle", opts...)
-density!([vecangle(t[2],t[5]) for t in traces]; subplot=3, opts...)
-density!([vecangle(t[2],t[7]) for t in traces]; subplot=3, opts...)
+density!([e[3][end] for e in errortraces]; subplot=3, title="g angle [deg]", opts..., lab="Iterative")
+density!([vecangle(t[2],t[5]) for t in traces]; subplot=3, opts..., lab="Eigen")
+density!([vecangle(t[2],t[7]) for t in traces]; subplot=3, opts..., lab="Nullspace")
 
 # hline!([√3*3σ/sqrt(N)], l=(:black,:dash, 3), sp=2)
+##
+opts = (fillalpha=0.99,xscale=:identity)
+density([e[1][end] for e in errortraces]; title="R angle [deg]", opts..., lab="Iterative", ylabel="Estimated density")
+density!([Rangle(t[1],t[4])*180/pi for t in traces]; opts..., lab="Eigen")
+density!([Rangle(t[1],t[6])*180/pi for t in traces]; opts..., lab="Nullspace")
 
 ##
 using Test
