@@ -46,7 +46,7 @@ function jacobianPOE(q::AbstractVecOrMat{P}, xi) where P
     #Page 117 in Murray 94
     n_joints  = size(q,1)
     Jss       = zeros(P,6,n_joints)
-    adint     = Matrix{Float64}(i, 6, 6)
+    adint     = Matrix{Float64}(I, 6, 6)
     T         = I4
     for i = 1:n_joints
         Jss[:,i] = adint*xi[:,i]
