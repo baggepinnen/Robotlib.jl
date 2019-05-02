@@ -3,7 +3,7 @@ using Robotlib, TotalLeastSquares, FillArrays
 using Test, Random
 RTR(R) = R'R
 vecangle(g,gf) = acos(min(1,g⋅gf/norm(gf)/norm(g)))*180/pi
-
+relerr(g,gh) = norm(g-gh)/norm(g)
 
 rcond(K) = /(svdvals(K)[[1,3]]...)
 toR(r) = toOrthoNormal(reshape(real(r),3,3))
