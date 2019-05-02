@@ -4,24 +4,20 @@ os:
   - linux
   - osx
 julia:
-  - 0.7
   - 1.0
+  - 1.1
   - nightly
 matrix:
   allow_failures:
     - julia: nightly
-    - os: osx
+  fast_finish: true
 notifications:
   email: false
 env:
   - PYTHON=""
 
-# uncomment the following lines to override the default test script
-#script:
-  # - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  # - julia -e 'Pkg.clone(pwd()); Pkg.build("Robotlib"); Pkg.test("Robotlib"; coverage=true)'
 after_success:
   # push coverage results to Coveralls
-  - julia -e 'cd(Pkg.dir("Robotlib")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  - julia -e 'import Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
   # push coverage results to Codecov
-  - julia -e 'cd(Pkg.dir("Robotlib")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia -e 'import Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
