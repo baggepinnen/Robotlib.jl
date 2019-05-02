@@ -26,16 +26,6 @@ function eigenR(K)
     det(R) < 0 && (R .*= -1)
     toOrthoNormal(R)
 end
-# using SumOfSquares, PolyJuMP, Ipopt
-# m = SOSModel(with_optimizer(Ipopt.Optimizer))
-
-# N         = 1000
-# Rf        = Robotlib.toOrthoNormal(randn(3,3))
-# mf        = 1
-# gf        = [0,0,1] + 0.3randn(3)
-# POSES     = cat([Robotlib.toOrthoNormal(randn(3,3)) for i = 1:N]..., dims=3)
-# forces    = hcat([Rf'*(POSES[1:3,1:3,i]'*gf) for i = 1:N]...)' |> copy
-#
 #
 # function calibForceHomotopy(POSES,F,m0=1)
 #     N = size(POSES,3)
@@ -82,46 +72,7 @@ end
 
 
 
-
-function calibForceIterative(POSES,F,g; trace=false)
-    N = size(POSES,3)
-    I = Robotlib.I3
-    A  = Array{eltype(F)}(undef, 3N, 3)
-    B = F'[:]
-    local m
-    trace && (Rg = [])
-    for iter = 1:7
-        Rf, m = Robotlib.Calibration.calibForce(POSES,F,g; offset=false, verbose=true)
-        for i = 1:N
-            A[3(i-1)+1:3i,:] = Rf'POSES[:,:,i]'
-        end
-        g = A\B
-        trace && push!(Rg, (Rf, g))
-    end
-    trace && (return Rf,g,m,Rg)
-    Rf,g,m
-end
-
-function calibForceIterative2(POSES,F,g; trace=false)
-    N = size(POSES,3)
-    I = Robotlib.I3
-    A  = Array{eltype(F)}(undef, 3N, 3)
-    for i = 1:N
-        A[3(i-1)+1:3i,:] = POSES[:,:,i]'
-    end
-    A = factorize(A)
-    local m
-    trace && (Rg = [])
-    for iter = 1:7
-        Rf, m = Robotlib.Calibration.calibForce(POSES,F,g; offset=false, verbose=false)
-        B = (Rf*F')[:]
-        g = A\B
-        trace && push!(Rg, (Rf, g))
-    end
-    trace && (return Rf,g,m,Rg)
-    Rf,g,m
-end
-
+using FillArrays
 
 function calibForceIterative3(POSES,F; trace=false)
     N = size(POSES,3)
@@ -143,28 +94,29 @@ function calibForceIterative3(POSES,F; trace=false)
     trace && (return Rf,g,m,Rg)
     Rf,g,m
 end
-using FillArrays
 
-function calibForceIterative4(POSES,forces; trace=false)
-    N = size(POSES,3)
+function calibForceIterative(POSES,forces; trace=false)
+    local Rf, g
+    N  = size(POSES,3)
     I3 = Matrix{Float64}(I, 3, 3)
-    r = vec(I3)
-    # D = permutedims(POSES, (2,1,3))
-    # D = reshape(D, 3N,3)
-    D = reshape(POSES, 3,3N)'
-    F = kron(forces, I3)
-    FF = pinv(F)*D
-    DD = pinv(D)*F
-    K = FF*DD
-    e = eigen(K)
-    sort(e.values, by=abs,rev=true)
+    D  = reshape(POSES, 3,3N)'
+    F  = kron(forces, I3)
+    FF = F\D
+    DD = D\F
+    K  = FF*DD
+    Rf = Matrix(Eye(3))
+    # Rf = eigenR(K)
+    r = vec(Rf)
     trace && (Rg = [])
-    for iter = 1:5
-        r = K*r
-        r = vec(toOrthoNormal(reshape(r,3,3)))
-        # trace && push!(Rg, (Rf, g))
+    for iter = 1:20
+        g = DD*r
+        r = FF*g
+        Rf = toR2(r)
+        r = vec(Rf)
+        iter == 1 && (α = 0.1)
+        trace && push!(Rg, (Rf, g))
     end
-    # trace && (return Rf,g,m,Rg)
+    trace && (return Rf,g,0,Rg)
     # Rf,g,m
     toOrthoNormal(reshape(r,3,3)), e
 end
@@ -198,6 +150,7 @@ end
 
 ##
 σ = 100
+Random.seed!(1)
 traces = map(1:100) do mc
     N         = 100
     Rf        = Robotlib.toOrthoNormal(randn(3,3))
@@ -205,21 +158,12 @@ traces = map(1:100) do mc
     POSES     = cat([Robotlib.toOrthoNormal(randn(3,3)) for i = 1:N]..., dims=3)
     forces    = hcat([Rf'*(POSES[1:3,1:3,i]'*gf) for i = 1:N]...)' |> copy
     forces .+= σ*randn(size(forces))
-    R,g,m, Rg = calibForceIterative3(POSES,forces, trace=true)
+    R,g,m, Rg = calibForceIterative(POSES,forces, trace=true)
     Re,ge = calibForceEigen(POSES,forces)
     Rn,gn = calibForceNullspace(POSES,forces)
     Rf,gf,Rg, Re,ge,Rn,gn
 end
 
-##
-errors = map(traces) do (Rf, gf, Rg)
-    R,g = Rg[end]
-    Rerr = Rangle(R,Rf, true)
-    gerr = norm(g-gf) #< 1e-10 + √3*3σ/sqrt(N)
-    Rerr,gerr
-end
-
-histogram([getindex.(errors, 1) getindex.(errors, 2)], layout=2)
 ##
 errortraces = map(traces) do (Rf, gf, Rg)
     Rerr = [Rangle(R,Rf, true) for (R,g) in Rg]
@@ -228,8 +172,8 @@ errortraces = map(traces) do (Rf, gf, Rg)
     Rerr,gerr,gaerr
 end
 
-# default(size=(800,600), grid=true, linealpha=0.3, linecolor=:black)
-scales = (yscale=:identity, xscale=:identity, legend=false)
+# default(, grid=true, linealpha=0.3)
+scales = (yscale=:log10, xscale=:identity, legend=false, linecolor=:black, size=(1200,600))
 ylims = (ylims=(0,30),)
 plot(getindex.(errortraces, 1); layout=(1,3), subplot=1, scales..., title="\$R\$ angle [deg]")
 hline!([180], subplot=1, l=(:black,:dash))
