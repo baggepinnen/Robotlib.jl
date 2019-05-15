@@ -22,7 +22,7 @@ skew4(s)::AbstractMatrix{eltype(s)} = [skew(s[4:6]) s[1:3]; 0 0 0 0]
 
 function expω(w,q=1)
     nw = norm(w)
-    if nw < 1e-12
+    if nw < 1e-12 # TODO: Use TaylorSeries.jl to approximate this for small nw, I verified TaylorSeries.jl to work well for this
         I + q*skew(w)
     else
         I + sin(nw*q)/nw*skew(w) + (1-cos(nw*q))/nw^2*skew(w)^2
