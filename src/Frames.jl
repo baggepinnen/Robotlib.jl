@@ -60,8 +60,8 @@ using ..Robotlib
 
 export Frame, Point, Plane, Points, Line, GeometricObject, add_frame_name!
 export readcloud, readTmatrix, readplane, fitline, fitplane, framefromfeatures, project
-export plot3Dsmart, display, show, print
-export inv, *,+,-,/,\,transpose,ctranspose, dot
+export plot3Dsmart
+export dot
 
 import Base: print, zeros, length, size, getindex, setindex!, convert, promote_rule, push!, show, display, +, *, .*, /, ./, -, \, inv
 import LinearAlgebra: ×, transpose, ctranspose, dot, ⋅, det

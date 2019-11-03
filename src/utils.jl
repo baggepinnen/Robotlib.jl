@@ -459,9 +459,6 @@ function traj2quat(T)
     return Q
 end
 
-@deprecate smartDiff centraldiff
-@deprecate centralDiff centraldiff
-
 function centraldiff(v)
     c = size(v,2)
     a1 = [zeros(1,c);diff(v)]

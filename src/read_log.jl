@@ -59,7 +59,7 @@ function getData(pattern, data, ds=1; removeNaN = false)
         end
     end
     sort!(names,lt=lt)
-    retmat = Matrix{Float64}(ceil(Int,length(data[names[1]])/ds),length(names))
+    retmat = Matrix{Float64}(undef, ceil(Int,length(data[names[1]])/ds),length(names))
     for (j,key) in enumerate(names)
         for (i,k)= enumerate(1:ds:length(data[key]))
             retmat[i,j] = data[key][k]
