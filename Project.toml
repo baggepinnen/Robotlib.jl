@@ -19,3 +19,10 @@ TotalLeastSquares = "028f657a-7ace-5159-a694-8cfd97933b0c"
 
 [compat]
 julia = "1.0"
+DataFrames = "<0.20"
+MAT = "<0.7"
+Quaternions = "<0.5"
+RecipesBase = "<0.8"
+StaticArrays = "<0.13"
+StatsBase = "<0.33"
+TotalLeastSquares = "1.0"
