@@ -5,7 +5,7 @@ SymPy.Sym(name, size::Tuple;kwargs...) = Sym[symbols("$name$i$j";kwargs...) for 
 skewcoords(R) = [R[3,2];R[1,3];R[2,1]]
 twistcoords(xi) = [xi[1:3, 4]; skewcoords(xi[1:3, 1:3])]
 skew(s) = [0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
-trinv(T) = [T[1:3,1:3].' -T[1:3,1:3].'*T[1:3,4];0 0 0 1]
+trinv(T) = [T[1:3,1:3]' -T[1:3,1:3]'*T[1:3,4];0 0 0 1]
 
 ## Calib NAXP ==============================================================================
 # N' * H*Pf = norm(N)^2
