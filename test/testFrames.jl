@@ -8,7 +8,7 @@ f = Frame(R,t)
 f = Frame([R t;0 0 0 1])
 F = f
 
-path = joinpath(dirname(@__FILE__),"..","src","applications","frames/")
+path = joinpath(dirname(@__FILE__),"..","applications","frames/")
 add_frame_name!("SEAM","Weld seam frame")
 add_frame_name!("TAB","Table frame")
 

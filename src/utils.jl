@@ -163,7 +163,7 @@ function Ai(q,xi)
     n = size(q,1)
     A = zeros(6,6(n+1))
     qext = [q;1]
-    pa = Matrix{Float64}(i, 6, 6)
+    pa = Matrix{Float64}(I, 6, 6)
     for i = 1:n+1
         ω = xi[4:6,i]
         Ω = [skew(xi[4:6,i]) skew(xi[1:3,i]);

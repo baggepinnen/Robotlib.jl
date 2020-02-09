@@ -138,68 +138,68 @@ function calibLPOEdual(xin,Tn0in,q;maxiter=10, λ=1.0)
 
 end
 
-"""
-    xin, et, er = calibPOE(Xin,Ta,q; maxiter=50, λ = 10000.0)
-
-Performs knematic calibration using the POE formulation of kinematics.
-- `xin` Twists
-- `et` Translational errors as function of iteration of algorithm
-- `er` Rotational errors as function of iteration of algorithm
-- `λ` Regularization parameter
-
-See `runtests.jl` for simulated usage. Some functions to generate simulation data for calibration purposes are provided in $(@__FILE__)
-"""
-function calibPOE(Xin,Ta,q; maxiter=50, λ = 10000.0)
-
-    xin     = copy(Xin)
-    n       = size(xin,2)-2
-    N       = size(q,1)
-    y       = zeros(6N)
-    A       = zeros(6N,6*(n+1))
-    xini    = similar(xin)
-    et      = zeros(maxiter+1)
-    er      = zeros(maxiter+1)
-    et[1],er[1]   = evalErrorPOE(xin,Ta,q)
-    println("Error: ",et[1], " λ: ", λ)
-    @assert size(Ta,3) == N
-
-    for iter = 1:maxiter # do a few iterations of the calibration
-
-        for i = 1:N
-            Tfull = fkinePOE(xin,q[i,:]')
-            # populate the matrices of the linear estimation problem
-            y[(i-1)*6+1:6i] = twistcoords(logT(Ta[:,:,i]*trinv(Tfull)))
-            A[(i-1)*6+1:6*i,:] = Ai(q[i,:]',xin)
-
-        end
-
-        x = (A'A + λ*I)\A'y
-        # Update the candidate nominal parameters
-        for j = 1:n+1
-            ξ = x[(j-1)*6+1:6j]
-            xini[:,j] = xin[:,j] + ξ
-            #xini[:,j] = conformize(xini[:,j])
-        end
-
-        et[iter+1],er[iter+1] = evalErrorPOE(xini, Ta,q)
-        println("Error: ",round(et[iter+1], digits=5), " λ: ", λ, " Norm dx: ", round(norm(x), digits=5))
-
-        if norm(x) < 1e-10
-            return xin, et, er
-        end
-        if et[iter+1] > et[iter]
-            et[iter+1] = et[iter]
-            λ *= 10
-        else
-            λ/=10
-            xin = deepcopy(xini)
-        end
-
-    end
-
-    return xin, et, er
-
-end
+# """
+#     xin, et, er = calibPOE(Xin,Ta,q; maxiter=50, λ = 10000.0)
+#
+# Performs knematic calibration using the POE formulation of kinematics.
+# - `xin` Twists
+# - `et` Translational errors as function of iteration of algorithm
+# - `er` Rotational errors as function of iteration of algorithm
+# - `λ` Regularization parameter
+#
+# See `runtests.jl` for simulated usage. Some functions to generate simulation data for calibration purposes are provided in $(@__FILE__)
+# """
+# function calibPOE(Xin,Ta,q; maxiter=50, λ = 100.0)
+#
+#     xin     = copy(Xin)
+#     n       = size(xin,2)-2
+#     N       = size(q,1)
+#     y       = zeros(6N)
+#     A       = zeros(6N,6*(n+1))
+#     xini    = similar(xin)
+#     et      = zeros(maxiter+1)
+#     er      = zeros(maxiter+1)
+#     et[1],er[1]   = evalErrorPOE(xin,Ta,q)
+#     println("Error: ",et[1], " λ: ", λ)
+#     @assert size(Ta,3) == N
+#
+#     for iter = 1:maxiter # do a few iterations of the calibration
+#
+#         for i = 1:N
+#             Tfull = fkinePOE(xin,q[i,:]')
+#             # populate the matrices of the linear estimation problem
+#             y[(i-1)*6+1:6i] = twistcoords(logT(Ta[:,:,i]*trinv(Tfull)))
+#             A[(i-1)*6+1:6*i,:] = Ai(q[i,:],xin)
+#
+#         end
+#         x = [A;λ*I]\[y;zeros(size(A,2))]
+#         @show norm(x)
+#         # Update the candidate nominal parameters
+#         for j = 1:n+1
+#             ξ = x[(j-1)*6+1:6j]
+#             xini[:,j] = xin[:,j] + ξ
+#             # xini[:,j] = conformize(xini[:,j])
+#         end
+#
+#         et[iter+1],er[iter+1] = evalErrorPOE(xini, Ta,q)
+#         println("Error: ",round(et[iter+1], digits=5), " λ: ", λ, " Norm dx: ", round(norm(x), digits=5))
+#
+#         if norm(x) < 1e-10
+#             return xin, et, er
+#         end
+#         if et[iter+1] > et[iter]
+#             et[iter+1] = et[iter]
+#             λ *= 10
+#         else
+#             λ/=10
+#             xin .= xini
+#         end
+#
+#     end
+#
+#     return xin, et, er
+#
+# end
 
 function calibPOE_offsets_from_points(Xin,Q;maxiter=50, λ = 10000.0)
     xin     = copy(Xin)
@@ -284,18 +284,18 @@ function evalErrorDual(xin,Tn0,q)
     return et/N, er/N
 end
 
-function evalErrorPOE(xin,Ta,q)
-    xini = copy(xin)
-    N = size(Ta,3)
-    et = 0.0
-    er = 0.0
-    for i = 1:N
-        Tfull = fkinePOE(xin,q[i,:])
-        et += norm(Ta[1:3,4,i]-Tfull[1:3,4])
-        er += norm(skewcoords(logR(Ta[1:3,1:3,i]*Tfull[1:3,1:3]')))
-    end
-    return et/N, er/N
-end
+# function evalErrorPOE(xin,Ta,q)
+#     xini = copy(xin)
+#     N = size(Ta,3)
+#     et = 0.0
+#     er = 0.0
+#     for i = 1:N
+#         Tfull = fkinePOE(xin,q[i,:])
+#         et += norm(Ta[1:3,4,i]-Tfull[1:3,4])
+#         er += norm(skewcoords(logR(Ta[1:3,1:3,i]*Tfull[1:3,1:3]')))
+#     end
+#     return et/N, er/N
+# end
 
 function evalErrorPOE_offsets_from_points(xi,Q,dq)
     Ndatasets = size(Q,1)
@@ -368,28 +368,28 @@ function simulateCalibration1(N)
     return q, xin, T0, xinmod, Ta
 end
 
-"""
-q, xin, T0, xinmod, Ta = simulateCalibration_POE(N)
-Create simulated data for use with `calibPOE`
-"""
-function simulateCalibration_POE(N)
-    Random.seed!(1)
-    n       = 6
-    q       = 2π*rand(N,n)
-    dh      = DH7600()
-    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, I4);
-    xin     = DH2twistsPOE(dh)
-    xinmod   = deepcopy(xin)
-    for i = 1:n+1
-        xinmod[:,i]  += [0.001randn(3); 0.01π/180*randn(3)]
-        #conformize(xinmod[:,i])
-    end
-    Ta  = zeros(4,4,N)
-    for i = 1:N
-        Ta[:,:,i] = fkinePOE(xin,q[i,:])
-    end
-    return q, xin, T0, xinmod, Ta
-end
+# """
+# q, xin, T0, xinmod, Ta = simulateCalibration_POE(N)
+# Create simulated data for use with `calibPOE`
+# """
+# function simulateCalibration_POE(N)
+#     Random.seed!(1)
+#     n       = 6
+#     q       = 2π*rand(N,n)
+#     dh      = DH7600()
+#     AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, I4);
+#     xin     = DH2twistsPOE(dh)
+#     xinmod   = deepcopy(xin)
+#     for i = 1:n+1
+#         xinmod[:,i]  += [0.001randn(3); 0.01π/180*randn(3)]
+#         #conformize(xinmod[:,i])
+#     end
+#     Ta  = zeros(4,4,N)
+#     for i = 1:N
+#         Ta[:,:,i] = fkinePOE(xin,q[i,:])
+#     end
+#     return q, xin, T0, xinmod, Ta
+# end
 
 """
 q, xin, Tn0, Tn0mod, Ta = simulateCalibration_LPOE(N)
