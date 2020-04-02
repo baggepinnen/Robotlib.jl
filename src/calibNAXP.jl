@@ -29,6 +29,7 @@ function calibNAXP(points_S, lines_S, POSES, T_TF_S, planes::AbstractVector{Int}
     RMScalibs = zeros(iters)
     ALLcalibs = zeros(iters, N_planes)
     norms     = trueT_TF_S == nothing ? nothing : zeros(iters)
+    local points, lines, N_RB
     for c = 1:iters
         # Convert points to RB cordinate system
         points, lines = transform_data(POSES, points_S, lines_S, T_TF_S)
@@ -63,8 +64,16 @@ function calibNAXP(points_S, lines_S, POSES, T_TF_S, planes::AbstractVector{Int}
         #  any(abs(RMSi) > 1e-1) && warn("Points does not seem to lie on a plane")
     end
     if doplot
-        plotPlanes(unique(N_RB,dims=2))
-        plotLines(points,lines)
+        try
+            plotPlanes(unique(N_RB,dims=2))
+            plotLines(points,lines)
+        catch ex
+            if ex isa UndefVarError
+                @error "Plotting failed. Plotting is only available if you have manually run `using Plots`"
+            else
+                rethrow(ex)
+            end
+        end
     end
     T_TF_S, RMScalibs,ALLcalibs, norms
 end
@@ -148,33 +157,6 @@ function findplanes(planes, points, rep=true)
         N_RB[:,planeind] .= N_RBi # Repeat plane normal for all planes with same ind
     end
     N_RB
-end
-
-function plotLines(points,lines)
-    P = size(points,2)
-    for i = 1:P
-        p = points[1:3,i]
-        l = lines[1:3,i]
-        plot3smart([p'+0.05*l'; p'-0.05*l'],c=:red)
-    end
-end
-
-function plotPlanes(normals)
-    P = size(normals,1)
-    for i = 1:P
-        n = normals[i,:]'
-        xdir = n+[1, 0, 0]
-        ydir = normalize(cross(n,xdir))
-        xdir = normalize(cross(ydir,n))
-
-        p[:,1] = n + xdir + ydir
-        p[:,2] = n + xdir - ydir
-        p[:,3] = n - xdir - ydir
-        p[:,4] = n - xdir + ydir
-
-        fill3(p[1,:],p[2,:],p[3,:])
-    end
-    plot!(alpha=0.5, zlims=(-0.3, 1))
 end
 
 function pointDiff(T_TF_S, T_RB_TF, points_S)

@@ -48,6 +48,41 @@ include("calibForce.jl")
 include("calibNAXP.jl")
 export calibLPOE, calibLPOEdual, calibForce, calibPOE_offsets_from_points, calibNAXP
 
+using Requires
+function __init__()
+    @require Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80" begin
+        function plotLines(points,lines)
+            P = size(points,2)
+            for i = 1:P
+                p = points[1:3,i]
+                l = lines[1:3,i]
+                plot3smart!([p'+0.05*l'; p'-0.05*l'],c=:red, lab="")
+            end
+            display(Plots.current())
+        end
+
+        function plotPlanes(normals)
+            P = size(normals,1)
+            p = zeros(P,4)
+            Plots.plot()
+            for i = 1:P
+                n      = normals[i,:]
+                xdir   = n+[1, 0, 0]
+                ydir   = normalize(cross(n,xdir))
+                xdir   = normalize(cross(ydir,n))
+                p[:,1] = n + xdir + ydir
+                p[:,2] = n + xdir - ydir
+                p[:,3] = n - xdir - ydir
+                p[:,4] = n - xdir + ydir
+
+                Plots.surface!(p[1,:],p[2,:],p[3,:])
+            end
+            Plots.plot!(alpha=0.5, zlims=(-0.3, 1))
+        end
+    end
+end
+
+
 end
 
 
@@ -64,4 +99,7 @@ dir(x...) = joinpath(dirname(pathof(Robotlib)),x...)
 precompile(get_kinematic_functions, (String,))
 precompile(fkineLPOE, (Array{Float64,3},Array{Float64,2},Array{Float64,1}))
 precompile(jacobianPOE, (Array{Float64,1},Array{Float64,2}))
+
+
+
 end
