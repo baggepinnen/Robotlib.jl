@@ -3,11 +3,12 @@
 # In matlab, the function csv2mat can be used to convert the textfile to a .mat-file which is very fast to read
 using MAT
 
-"""`findData(pattern::AbstractString, data)`"""
-function findData(pattern::AbstractString, data)
+"""`findData(pattern, data)`"""
+function findData(pattern, data)
     inds = falses(length(keys(data)))
+    pattern isa Regex || (pattern = Regex(pattern))
     for (i,key) in enumerate(keys(data))
-        if match(Regex(pattern), key) != nothing
+        if match(pattern, key) != nothing
             inds[i] = true
         end
     end

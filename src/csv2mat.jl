@@ -1,50 +1,15 @@
 #module Csv2mat
 using MAT
-using DataFrames
+using DelimitedFiles
 #export csv2mat
-a = 13
-
 
 
 """
 convert a csv table file to a .mat file for import to Matlab
 csv2mat(filename, destination="log.mat"; startline=0, writeNames = true, subsample = 1, separator = ',')
 """
-function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true, subsample = 1, separator = ',')
-
-    # Read the csv file into a dataframe
-    println("Reading file $filename of size $(filesize(filename)/1_000_000) MB")
-    df = readtable(filename, separator = separator, header=true, skipstart=startline)
-    println("Preprocessing")
-    (rows, cols) = size(df)
-    # replace NA values with 0
-    for  j = 1:cols, i = 1:rows
-        ismissing(df[i,j]) && (df[i,j] = 0)
-    end
-
-    # Remove strange characters from variable names
-    n = names(df)
-    stripchars = [' ', '_', ':']
-    for (i,symbol) in enumerate(n)
-        n[i] = Symbol(strip(string(symbol),stripchars))
-        writeNames && println(n[i])
-    end
-    names!(df,n) # Update the column names
-
-
-    # Write the results to a .mat-file
-    written = text = 0
-    println("Creating save dict")
-    d = Dict{String, Vector{<:Real}}()
-    for i in 1:cols
-        if !isa(df[1,i],Number)
-            text += 1
-            continue
-        end
-        written += 1
-        a = replace(convert(Array,df[1:subsample:end,i]), missing=>0)
-        d[string(n[i])] = a
-    end
+function csv2mat(filename, destination="log.mat"; kwargs...)
+    d = csv2dict(filename, args...; kwargs...)
     println("Write the results to $destination")
     @time matwrite(destination, d)
     printstyled("Wrote $((round(Int,ceil(size(df,1)/subsample)),written)) entries to log.mat\n", color=:green)
@@ -99,4 +64,45 @@ function csv2mat(filename, destination="log.mat"; startline=0, writeNames = true
     #     end
     # end
 
+end
+
+
+
+
+function csv2dict(filename, destination="log.mat"; startline=0, writeNames = true, subsample = 1, separator = ',')
+
+    # Read the csv file into a matrix
+    println("Reading file $filename of size $(filesize(filename)/1_000_000) MB")
+    df,n = readdlm(filename, separator, header=true, skipstart=startline)
+    println("Preprocessing")
+    (rows, cols) = size(df)
+    # replace NA values with 0
+    for  j = 1:cols, i = 1:rows
+        ismissing(df[i,j]) && (df[i,j] = 0)
+    end
+
+    # Remove strange characters from variable names
+    replacechars = [' ', ':', '.', '[', ']']
+    stripchars = ['_']
+    for (i,symbol) in enumerate(n)
+        n[i] = (replace(string(symbol),replacechars => "_"))
+        n[i] = (strip(n[i],stripchars))
+        writeNames && println(n[i])
+    end
+
+
+    # Write the results to a .mat-file
+    written = text = 0
+    println("Creating save dict")
+    d = Dict{String, Vector{<:Real}}()
+    for i in 1:cols
+        if !isa(df[1,i],Number)
+            text += 1
+            continue
+        end
+        written += 1
+        a = replace(convert(Array,df[1:subsample:end,i]), missing=>0)
+        d[string(n[i])] = a
+    end
+    return d
 end

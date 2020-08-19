@@ -90,7 +90,7 @@ export skewcoords, twistcoords, skew, skew4, expω, expξ, expξ2, expξ!, logT,
 export fkinePOE, fkineLPOE, ikinePOE, dh2Tn, jacobianPOE, jacobianPOEikine, jacobian, get_kinematic_functions
 export trajplot, trajplot3, plot3smart
 export DH, DH2400, DHYuMi, DH7600, DHtest, abb2logical!, logical2abb!, abb2logical, logical2abb
-export csv2mat, orcalog2mat, getData, readmat
+export csv2dict, csv2mat, orcalog2mat, getData, readmat
 export frictionRBFN, getCenters
 
 dir(x...) = joinpath(dirname(pathof(Robotlib)),x...)
