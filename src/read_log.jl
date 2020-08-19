@@ -5,17 +5,18 @@ using MAT
 
 """`findData(pattern::AbstractString, data)`"""
 function findData(pattern::AbstractString, data)
-    indexes = falses(length(keys(data)))
+    inds = falses(length(keys(data)))
     for (i,key) in enumerate(keys(data))
         if match(Regex(pattern), key) != nothing
-            indexes[i] = true
+            inds[i] = true
         end
     end
-    return indexes
+    return inds
 end
 
 """
-`data = orcalog2mat(pathopen, pathsave)`
+    `data = orcalog2mat(pathopen, pathsave)`
+
 `pathopen` is the full path to the file
 `pathsave` is the full path to the saved file, should typically end with .mat
 the returned `data` object is a `Dict{ByteString,Any}`
@@ -38,17 +39,18 @@ function readmat(pathopen)
 end
 
 """
-`array = getData(pattern, data, ds=1; removeNaN = false)`
+    `array = getData(pattern, data, ds=1; removeNaN = false)`
+
 pattern is a string representation of a regex used to match the data
 e.g. \"posRawAbs\"
 """
 function getData(pattern, data, ds=1; removeNaN = false)
-    indexes = findData(pattern, data)
-    if sum(indexes) < 1
+    inds = findData(pattern, data)
+    if sum(inds) < 1
         @warn("No data found using the string $pattern")
         return
     end
-    names = collect(keys(data))[indexes]
+    names = collect(keys(data))[inds]
     function lt(x,y) # String comparison function, this soring places 2 in front of 10
         if length(x) < length(y)
             return true
