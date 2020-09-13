@@ -62,7 +62,10 @@ end
         DH2400()
         DH7600()
         DHYuMi()
-        DHtest()
+        dh = DHtest()
+        DH2twistsPOE(dh)
+        DH2twistsLPOE(dh)
+
     end
 
     @testset "Plotting" begin
@@ -73,14 +76,20 @@ end
     end
 
 
-@testset "Utils" begin
-    @info "Testing Utils"
-    R = toOrthoNormal(randn(3,3))
-    @test Rangle(R,R) < 1e-7
-    R2 = rpy2R(1*pi/180,0,0)*R
-    @test Rangle(R,R2,true) <= 1.0000001
+    @testset "Utils" begin
+        @info "Testing Utils"
+        R = toOrthoNormal(randn(3,3))
+        @test Rangle(R,R) < 1e-7
+        R2 = rpy2R(1*pi/180,0,0)*R
+        @test Rangle(R,R2,true) <= 1.0000001
 
-end
+        q = Quaternion(R)
+        @test Robotlib.Quaternions.rotationmatrix(q) ≈ R
+
+        r,p,y = R2rpy(R, conv="xyz")
+        @test rpy2R(r,p,y, "xyz") ≈ R
+
+    end
 
 
 

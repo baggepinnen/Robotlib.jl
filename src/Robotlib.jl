@@ -38,6 +38,11 @@ module Calibration
 using TotalLeastSquares
 using ..Robotlib
 using ..Robotlib: T2R,Rt2T, T2R, T2t, skewcoords, twistcoords, I3, I4
+
+using Quaternions
+import Quaternions: Quaternion, rotationmatrix
+export rotationmatrix
+
 using LinearAlgebra, Statistics, SparseArrays
 import Robotlib.xii
 import Robotlib.Ai

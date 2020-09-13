@@ -401,8 +401,7 @@ function R2rpy(m::AbstractMatrix; conv="xyz", deg = false)
     return rpy
 end
 
-using Quaternions
-import Quaternions.Quaternion
+
 function Quaternion(t::AbstractMatrix{P}) where P
     qs = sqrt(t[1,1]+t[2,2]+t[3,3]+1)/2.0
     kx = t[3,2] - t[2,3]   # Oz - Ay
