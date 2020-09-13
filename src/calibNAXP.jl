@@ -172,76 +172,79 @@ function pointDiff(T_TF_S, T_RB_TF, points_S)
     d = minimum(S)
 end
 
-function bootstrap(fun::Function, estimate, N, k=100)
-    k < 1 && return (fun(1:N), nothing)
-    results = map(1:k) do _
-        sample  = rand(1:N, N)
-        result  = fun(sample)
-    end
-    fun(1:N), estimate(results)
-end
 
+## The code below is used to verify the statements made in the appendix to chapter 13 in the PhD thesis cited in the README.
 
-function columnwise_cov(data)
-    numcols = size(data[1], 2)
-    map(1:numcols) do c
-        columndata = hcat([d[:,c] for d in data]...)'
-        cov(columndata)
-    end
-end
-
-"""
-This function is the same as `calibNAXP` except it estimates the covariance of the estimated normals using bootstrapping, and solves the optimization problem using the weighted total least-squares algorithm instead of standard least-square. It does not really provide any additional benefints over the standard algorithm, but is considerable slower.
-"""
-function calibNAXP_bootstrap(points_S, lines_S, POSES, T_TF_S, planes::AbstractVector{Int},  iters::Integer = 50; trueT_TF_S=nothing, nbootstrap=500)
-    N_poses   = size(POSES,3)
-    N_planes  = maximum(planes)
-    RMScalibs = zeros(iters)
-    ALLcalibs = zeros(iters, N_planes)
-    norms     = trueT_TF_S == nothing ? nothing : zeros(iters)
-    for c = 1:iters
-        # Convert points to RB cordinate system
-        points, lines = transform_data(POSES, points_S, lines_S, T_TF_S)
-        N_RB, Σn = Robotlib.Calibration.bootstrap(columnwise_cov, N_poses, nbootstrap) do sample
-            findplanes(planes[sample], points[:,sample], false)
-        end
-        N_RB = N_RB[:,planes]
-        Σn = Σn[planes]
-        rowQ = map(1:N_poses) do i
-            Q,T,p,n = Σn[i], POSES[:,:,i], points_S[:,i], N_RB[:,i]
-            R = T[1:3,1:3]
-            t = T[1:3,4]
-            Qaa = R'Q*R
-            σ = [p[1], p[2], 1]*[p[1], p[2], 1]'
-            QAA = kron(ones(3,3), Qaa) .* kron(σ, ones(3,3))
-            Qyy = t'Q*t # TODO: + cov of norm(n)^2 Q
-            Qay = kron(ones(3), R'Q*(n-t)) .* kron([p[1], p[2], 1], ones(3))
-
-            [QAA Qay; [Qay' Qyy]]
-        end
-        Qaa,Qay,Qyy = rowcovariance(rowQ)
-        # Estimation
-        A,y = get_matrices(N_RB, POSES, points_S, lines_S)
-        w   = wtls(A,y,kron([1 0.5;0.5 1],Qaa),kron([1 0.5;0.5 1],Qay),kron([1 0.5;0.5 1],Qyy), iters=15)
-        # w   = tls(A,y)
-        R,t = w2Rt(w)
-
-         # Re-estimation of translation
-        w₂     = R[1:3,1:2][:]
-        y₂     = y - A[:,1:6]*w₂
-        t₂     = c <= 5 ? A[:,7:9]\y₂ : tls(A[:,7:9],y₂)
-        T_TF_S = Rt2T(R,t₂)
-
-        # Calculate iteration errors
-        RMSi = map(1:N_planes) do j
-            ind     = planes .== j
-            ind     = findall(ind)
-            sqrt(pointDiff(T_TF_S,POSES[:,:,ind],points_S[1:3,ind])[1])
-        end
-        RMScalibs[c]   = mean(RMSi)
-        ALLcalibs[c,:] = RMSi
-        trueT_TF_S == nothing || (norms[c] = norm(T_TF_S-trueT_TF_S))
-        #  any(abs(RMSi) > 1e-1) && warn("Points does not seem to lie on a plane")
-    end
-    T_TF_S, RMScalibs,ALLcalibs, norms
-end
+# function bootstrap(fun::Function, estimate, N, k=100)
+#     k < 1 && return (fun(1:N), nothing)
+#     results = map(1:k) do _
+#         sample  = rand(1:N, N)
+#         result  = fun(sample)
+#     end
+#     fun(1:N), estimate(results)
+# end
+#
+#
+# function columnwise_cov(data)
+#     numcols = size(data[1], 2)
+#     map(1:numcols) do c
+#         columndata = hcat([d[:,c] for d in data]...)'
+#         cov(columndata)
+#     end
+# end
+#
+# """
+# This function is the same as `calibNAXP` except it estimates the covariance of the estimated normals using bootstrapping, and solves the optimization problem using the weighted total least-squares algorithm instead of standard least-square. It does not really provide any additional benefints over the standard algorithm, but is considerable slower.
+# """
+# function calibNAXP_bootstrap(points_S, lines_S, POSES, T_TF_S, planes::AbstractVector{Int},  iters::Integer = 50; trueT_TF_S=nothing, nbootstrap=500)
+#     N_poses   = size(POSES,3)
+#     N_planes  = maximum(planes)
+#     RMScalibs = zeros(iters)
+#     ALLcalibs = zeros(iters, N_planes)
+#     norms     = trueT_TF_S == nothing ? nothing : zeros(iters)
+#     for c = 1:iters
+#         # Convert points to RB cordinate system
+#         points, lines = transform_data(POSES, points_S, lines_S, T_TF_S)
+#         N_RB, Σn = Robotlib.Calibration.bootstrap(columnwise_cov, N_poses, nbootstrap) do sample
+#             findplanes(planes[sample], points[:,sample], false)
+#         end
+#         N_RB = N_RB[:,planes]
+#         Σn = Σn[planes]
+#         rowQ = map(1:N_poses) do i
+#             Q,T,p,n = Σn[i], POSES[:,:,i], points_S[:,i], N_RB[:,i]
+#             R = T[1:3,1:3]
+#             t = T[1:3,4]
+#             Qaa = R'Q*R
+#             σ = [p[1], p[2], 1]*[p[1], p[2], 1]'
+#             QAA = kron(ones(3,3), Qaa) .* kron(σ, ones(3,3))
+#             Qyy = t'Q*t # TODO: + cov of norm(n)^2 Q
+#             Qay = kron(ones(3), R'Q*(n-t)) .* kron([p[1], p[2], 1], ones(3))
+#
+#             [QAA Qay; [Qay' Qyy]]
+#         end
+#         Qaa,Qay,Qyy = rowcovariance(rowQ)
+#         # Estimation
+#         A,y = get_matrices(N_RB, POSES, points_S, lines_S)
+#         w   = wtls(A,y,kron([1 0.5;0.5 1],Qaa),kron([1 0.5;0.5 1],Qay),kron([1 0.5;0.5 1],Qyy), iters=15)
+#         # w   = tls(A,y)
+#         R,t = w2Rt(w)
+#
+#          # Re-estimation of translation
+#         w₂     = R[1:3,1:2][:]
+#         y₂     = y - A[:,1:6]*w₂
+#         t₂     = c <= 5 ? A[:,7:9]\y₂ : tls(A[:,7:9],y₂)
+#         T_TF_S = Rt2T(R,t₂)
+#
+#         # Calculate iteration errors
+#         RMSi = map(1:N_planes) do j
+#             ind     = planes .== j
+#             ind     = findall(ind)
+#             sqrt(pointDiff(T_TF_S,POSES[:,:,ind],points_S[1:3,ind])[1])
+#         end
+#         RMScalibs[c]   = mean(RMSi)
+#         ALLcalibs[c,:] = RMSi
+#         trueT_TF_S == nothing || (norms[c] = norm(T_TF_S-trueT_TF_S))
+#         #  any(abs(RMSi) > 1e-1) && warn("Points does not seem to lie on a plane")
+#     end
+#     T_TF_S, RMScalibs,ALLcalibs, norms
+# end
