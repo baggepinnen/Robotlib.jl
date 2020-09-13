@@ -65,16 +65,16 @@ println("Error: ", round(rms(err), digits=4))
 
 
 ## Exported functions
+See
 ```julia
-julia> foreach(String.(names(Robotlib))) do s
-       print(s, ", ")
-       end
-DH, DH2400, DH2twistsLPOE, DH2twistsPOE, DH7600, DHYuMi, DHtest, Quaternion, R2rpy, Rangle, Robotlib, abb2logical, abb2logical!, centralDiff, centraldiff, conformize, csv2dict, dh2Tn, expξ, expξ!, expξ2, expω, fkineLPOE, fkinePOE, frictionRBFN, getData, get_kinematic_functions, ikinePOE, isrot, isse3, jacobian, jacobianPOE, jacobianPOEikine, logR, logT, logical2abb, logical2abb!, orcalog2mat, plot3smart, plot3smart!, readmat, rpy2R, skew, skew4, skewcoords, smartDiff, toOrthoNormal, toOrthoNormal!, traj2quat, trajplot, trajplot!, trajplot3, trajplot3!, trinv, twistcoords, xyθ
+names(Robotlib)
+names(Robotlib.Calibration)
+names(Robotlib.Frames)
 ```
 
-The module includes a submodule, Frames, which is aimed at replacing the Nikon K600 software. It supports creation of frames, simple projections, fitting of planes, lines etc. and has a number of plotting options. It must be separately imported with `using Robotlib.Frames`
+The submodule `Robotlib.Frames` supports creation of frames, simple projections, fitting of planes, lines etc. and has a number of plotting options. It must be separately imported with `using Robotlib.Frames`.
 
-The module includes a submodule, Calibration, which includes a number of calibration routines. It must be separately imported with `using Robotlib.Calibration`
+The submodule, `Robotlib.Calibration` contains a number of calibration routines for kinematic and force/torque sensor calibration. It must be separately imported with `using Robotlib.Calibration`.
 
 ## Kinematics
 The library has functions for calculation of forward kinematics, inverse kinematics and jacobians. Several versions of all kinematics functions are provided; calculations can be made using either the DH-convention or the (local) product of exponentials formulation. To support a new robot, create an object of the type `DH`, or provide a matrix with POE-style link twists, for use with the kinematic functions.

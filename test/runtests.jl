@@ -216,8 +216,6 @@ end
     end
 
 
-    println("===== Testing frames =====")
-    # @warn("Testing of Frames is inactivated since MAT.jl didn't build. Re-enable when this is resolved https://github.com/JuliaIO/MAT.jl/issues/90")
     @testset "Frames" begin
         @info "Testing Frames"
         include("testFrames.jl")
