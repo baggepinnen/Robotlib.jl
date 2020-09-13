@@ -1,12 +1,17 @@
 """
-`calibForce(POSES, F, m0=0.3; offset=true)`
-If result is bad, check if you send data in correct form;
-`POSES` ∈ ℜ(4,4,N) is always the position of the tool frame from the robot FK,
-4x4 transformation matrices
+    calibForce(POSES, F, m0=0.3; offset=true)
+
+`POSES` ∈ ℜ(4,4,N) are the positions of the tool frame from the robot forward kinematics, 4x4 transformation matrices
 `F` ∈ ℜ(N,3) vector of forces (accepts ℜ(Nx6) matrix with torques also)
-usage `Rf*force[i,1:3] + forceoffs = POSES[1:3,1:3,i]'*[0, 0, mf*-9.82]`. This implementation assumes that the gravity vector is [0,0,-g], or in words, that the gravity is acting along the negative z axis.
+# Usage
+```
+Rf*force[i,1:3] + forceoffs = POSES[1:3,1:3,i]'*[0, 0, mf*-9.82]
+```
+This implementation assumes that the gravity vector is [0,0,-g], or in words, that the gravity is acting along the negative z axis.
 
 [Bagge Carlson, F.](https://www.control.lth.se/staff/fredrik-bagge-carlson/), ["Machine Learning and System Identification for Estimation in Physical Systems"](https://lup.lub.lu.se/search/publication/ffb8dc85-ce12-4f75-8f2b-0881e492f6c0) (PhD Thesis 2018).
+
+See also `calibForceIterative` and `calibForceEigen`.
 """
 function calibForce(POSES,F,m0::Real=0.3; kwargs...)
     g0 = [0,0,-m0*9.82]
@@ -59,6 +64,73 @@ function calibForce(POSES,F,g::AbstractVector; offset=true, verbose=true)
     end
 end
 
+
+
+
+
+"""
+    Rf, g, m = calibForceEigen(POSES, F, g)
+
+`POSES` ∈ ℜ(4,4,N) or ℜ(3,3,N) are the orientations of the tool frame from the robot forward kinematics, 4×4 transformation matrices or 3×3 rotation matrices.
+`F` ∈ ℜ(N,3) vector of forces (accepts ℜ(N×6) matrix with torques also)
+´g´ is an initial guess for the gravity vector.
+# Usage
+```
+Rf*force[i,1:3] = POSES[1:3,1:3,i]'*g
+```
+See also `calibForceEigen`.
+"""
+function calibForceIterative(POSES, F, g; trace = false)
+    N = size(POSES, 3)
+    I = Robotlib.I3
+    A = Array{eltype(F)}(undef, 3N, 3)
+    B = F'[:]
+    local m, Rf
+    trace && (Rg = [])
+    for iter = 1:6
+        Rf, m = calibForce(
+            POSES,
+            F,
+            g;
+            offset = false,
+            verbose = false,
+        )
+        for i = 1:N
+            A[3(i-1)+1:3i, :] = Rf'POSES[:, :, i]'
+        end
+        g = A \ B
+        trace && push!(Rg, (Rf, g))
+    end
+    trace && (return Rf, g, m, Rg)
+    Rf, g, m
+end
+
+function eigenR(K)
+    v = real(eigen(K).vectors[:, end])
+    R = reshape(v, 3, 3)
+    det(R) < 0 && (R .*= -1)
+    toOrthoNormal(R)
+end
+
+"""
+    calibForceEigen(POSES, F)
+
+`POSES` ∈ ℜ(4,4,N) or ℜ(3,3,N) are the orientations of the tool frame from the robot forward kinematics, 4×4 transformation matrices or 3×3 rotation matrices.
+`F` ∈ ℜ(N,3) vector of forces (accepts ℜ(N×6) matrix with torques also)
+# Usage
+```
+Rf*force[i,1:3] + forceoffs = POSES[1:3,1:3,i]'*[0, 0, mf*-9.82]
+```
+"""
+function calibForceEigen(POSES, forces)
+    N = size(POSES, 3)
+    D = reshape(POSES[1:3,1:3,:], 3, 3N)'
+    F = kron(forces, I(3))
+    K = F \ D * (D \ F)
+    R̂ = eigenR(K)
+    ĝ = D \ F * vec(R̂)
+    R̂, ĝ
+end
 
 import Robotlib: skew
 

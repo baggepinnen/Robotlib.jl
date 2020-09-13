@@ -3,8 +3,6 @@ using Statistics, LinearAlgebra, Random
 Random.seed!(1)
 using Robotlib, StaticArrays, Test
 import Robotlib: Rt2T, T2R, T2t, I4
-using Robotlib.Calibration
-import Robotlib.Calibration: pointDiff, calibNAXP
 # include(joinpath(dirname(@__FILE__),"..","src","calibNAXP.jl"))
 
 const TM = SMatrix{4,4,Float64,16}
@@ -131,7 +129,7 @@ function run_calib(verbose = false)
             push!(points_Sv, points_St)
             push!(lines_Sv, lines_St)
             push!(T_RB_TFv, T_RB_TFt)
-            SSE[j] = pointDiff(T_TF_S, T_RB_TFt, points_St)[1]
+            SSE[j] = Robotlib.pointDiff(T_TF_S, T_RB_TFt, points_St)[1]
         end
         planes = repeat((1:N_planes)', N_poses)[:]
         points_S = cat(points_Sv..., dims = 2)
@@ -161,7 +159,7 @@ function run_calib(verbose = false)
 
         for j = 1:N_planes
             ind = findall(planes .== j)
-            SSE[j] = sqrt(pointDiff(T_TF_S0, T_RB_TF[:, :, ind], points_S[1:3, ind])[1])
+            SSE[j] = sqrt(Robotlib.pointDiff(T_TF_S0, T_RB_TF[:, :, ind], points_S[1:3, ind])[1])
         end
 
         SSEStart[mc] = mean(SSE)
@@ -214,7 +212,7 @@ end
 
 # @testset "CalibNAXP" begin
 
-@test isapprox(pointDiff(I4, cat(fill(I4, 5)..., dims = 3), zeros(3, 5))[], 0, atol = 1e-10)
+@test isapprox(Robotlib.pointDiff(I4, cat(fill(I4, 5)..., dims = 3), zeros(3, 5))[], 0, atol = 1e-10)
 
 SSEStart, normStart, distStart, rotStart, distEnd, rotEnd, SSEMC, normMC, distEnd2, rotEnd2, SSEMC2, normMC2 = run_calib()
 

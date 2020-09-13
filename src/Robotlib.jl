@@ -24,6 +24,7 @@ You must also consider the base transform of YuMi
 """
 module Robotlib
 using LinearAlgebra, Statistics, StaticArrays, SparseArrays
+using TotalLeastSquares
 using Quaternions
 import Quaternions: Quaternion, rotationmatrix
 export rotationmatrix
@@ -37,20 +38,13 @@ include("robotplot.jl")
 include("read_log.jl")
 include("posDepFric.jl")
 
-module Calibration
-using TotalLeastSquares
-using ..Robotlib
-using ..Robotlib: T2R, Rt2T, T2R, T2t, skewcoords, twistcoords, I3, I4
 
-import Quaternions: Quaternion, rotationmatrix
-using LinearAlgebra, Statistics, SparseArrays
-import Robotlib.xii
-import Robotlib.Ai
+
 include("calibLPOE.jl")
 include("calibForce.jl")
 include("calibNAXP.jl")
 export calibLPOE,
-    calibLPOEdual, calibForce, calibPOE_offsets_from_points, calibNAXP
+    calibLPOEdual, calibForce, calibForceIterative, calibForceEigen, calibNAXP
 
 using Requires
 function __init__()
@@ -91,7 +85,7 @@ function __init__()
 end
 
 
-end
+
 
 
 export skewcoords,

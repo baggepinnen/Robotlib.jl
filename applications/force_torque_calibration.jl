@@ -1,4 +1,5 @@
 using Robotlib, TotalLeastSquares, FillArrays
+using Plots
 # using HomotopyContinuation, DynamicPolynomials
 using Test, Random
 RTR(R) = R'R
@@ -10,12 +11,6 @@ toR(r) = toOrthoNormal(reshape(real(r), 3, 3))
 tor(r) = toR(r)[:]
 
 
-function eigenR(K)
-    v = real(eigen(K).vectors[:, 1])
-    R = reshape(v, 3, 3)
-    det(R) < 0 && (R .*= -1)
-    toOrthoNormal(R)
-end
 
 function calibForceIterative(POSES, F, g; trace = false)
     N = size(POSES, 3)
@@ -25,7 +20,7 @@ function calibForceIterative(POSES, F, g; trace = false)
     local m
     trace && (Rg = [])
     for iter = 1:6
-        Rf, m = Robotlib.Calibration.calibForce(
+        Rf, m = calibForce(
             POSES,
             F,
             g;
@@ -53,7 +48,7 @@ function calibForceIterative2(POSES, F, g; trace = false)
     local m
     trace && (Rg = [])
     for iter = 1:6
-        Rf, m = Robotlib.Calibration.calibForce(
+        Rf, m = calibForce(
             POSES,
             F,
             g;
@@ -83,7 +78,7 @@ function calibForceIterative3(POSES, F; trace = false)
             B[3(i-1)+1:3i] = F[i, :]
         end
         g = A \ B
-        Rf, m = Robotlib.Calibration.calibForce(
+        Rf, m = calibForce(
             POSES,
             F,
             g;
@@ -120,15 +115,7 @@ function calibForceIterative4(POSES, forces; trace = false)
     toOrthoNormal(reshape(r, 3, 3)), e
 end
 
-function calibForceEigen(POSES, forces)
-    N = size(POSES, 3)
-    D = reshape(POSES, 3, 3N)'
-    F = kron(forces, Eye(3))
-    K = F \ D * (D \ F)
-    R̂ = eigenR(K)
-    ĝ = D \ F * vec(R̂)
-    R̂, ĝ
-end
+
 
 
 
@@ -144,12 +131,12 @@ traces = map(1:30) do mc
         hcat([Rf' * (POSES[1:3, 1:3, i]' * gf) for i = 1:N]...)' |> copy
     forces .+= σ * randn(size(forces))
     R, g, m, Rg = calibForceIterative3(POSES, forces, trace = true)
-    R, g = calibForceEigen(POSES, forces)
+    # R, g = calibForceEigen(POSES, forces)
     Rf, gf, Rg, R, g
 end
 ##
-errors = map(traces) do (Rf, gf, Rg)
-    R, g = Rg[end]
+errors = map(traces) do (Rf, gf, Rg, R, g)
+    # R, g = Rg[end]
     Rerr = Rangle(R, Rf, true)
     gerr = norm(g - gf) #< 1e-10 + √3*3σ/sqrt(N)
     Rerr, gerr

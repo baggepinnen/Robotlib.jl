@@ -23,7 +23,6 @@ If you use the kinematic functions privided by `get_kinematic_functions`, the ba
 ### Case study, calibrate force sensor
 ```julia
 using Robotlib
-using Robotlib.Calibration
 using DSP # For filtfilt
 
 # Define robot to use, in this case YuMi
@@ -56,7 +55,7 @@ T  = cat([fkine(q[i,:]) for i = 1:N]..., dims=3)
 trajplot(T) # Plots a trajectory of R4x4 transformation matrices
 
 # Perform the force sensor calibration and plot the errors
-Rf,m,offset     = Robotlib.Calibration.calibForce(T,f,0.2205,offset=true)
+Rf,m,offset     = calibForce(T,f,0.2205,offset=true) # See also calibForceIterative, calibForceEigen
 err = hcat([Rf*f[i,1:3] + offset - T[1:3,1:3,i]'*[0, 0, m*-9.82] for i = 1:N]...)'
 plot(f[:,1:3],lab="Force")
 plot!(err,l=:dash,lab="Error")
@@ -68,13 +67,11 @@ println("Error: ", round(rms(err), digits=4))
 See
 ```julia
 names(Robotlib)
-names(Robotlib.Calibration)
 names(Robotlib.Frames)
 ```
 
 The submodule `Robotlib.Frames` supports creation of frames, simple projections, fitting of planes, lines etc. and has a number of plotting options. It must be separately imported with `using Robotlib.Frames`.
 
-The submodule, `Robotlib.Calibration` contains a number of calibration routines for kinematic and force/torque sensor calibration. It must be separately imported with `using Robotlib.Calibration`.
 
 ## Kinematics
 The library has functions for calculation of forward kinematics, inverse kinematics and jacobians. Several versions of all kinematics functions are provided; calculations can be made using either the DH-convention or the (local) product of exponentials formulation. To support a new robot, create an object of the type `DH`, or provide a matrix with POE-style link twists, for use with the kinematic functions.

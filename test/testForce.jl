@@ -11,7 +11,7 @@ using Robotlib, Test, Random
             for i = 1:N
         ]...)' |> copy
 
-    R, m = Robotlib.Calibration.calibForce(
+    R, m = calibForce(
         POSES,
         forces;
         offset = false,
@@ -21,8 +21,17 @@ using Robotlib, Test, Random
     @test R ≈ Rf
     @test m ≈ mf
 
-    R = Robotlib.Calibration.calibForce2(POSES, forces, mf)
+    R = Robotlib.calibForce2(POSES, forces, mf)
     @test R ≈ Rf
+
+    R,g,m = Robotlib.calibForceIterative(POSES, forces, randn(3))
+    @test R ≈ Rf
+    @test m ≈ mf
+    @test g ≈ [0,0,-9.82*mf]
+
+    R,g = Robotlib.calibForceEigen(POSES, forces)
+    @test R ≈ Rf
+    @test g ≈ [0,0,-9.82*mf]
 
     forceoffs = randn(3)
     forces =
@@ -31,7 +40,7 @@ using Robotlib, Test, Random
             for i = 1:N
         ]...)'
 
-    R, m, offs = Robotlib.Calibration.calibForce(
+    R, m, offs = calibForce(
         POSES,
         forces;
         offset = true,
@@ -81,9 +90,9 @@ end
 #     forces    = hcat([Rf'*(POSES[1:3,1:3,i]'*[0, 0, mf*-9.82] - forceoffs) for i = 1:N]...)'
 #     forces  .+= σ*randn(size(forces))
 #
-#     R1,m = Robotlib.Calibration.calibForce(POSES,forces,1.1mf; offset=false)
+#     R1,m = calibForce(POSES,forces,1.1mf; offset=false)
 #
-#     R2 = Robotlib.Calibration.calibForce2(POSES,forces,1.1mf)
+#     R2 = calibForce2(POSES,forces,1.1mf)
 #     sum(abs2,R1-Rf), sum(abs2,R2-Rf)
 # end
 #
