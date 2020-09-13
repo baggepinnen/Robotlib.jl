@@ -31,9 +31,7 @@ include("utils.jl")
 include("kinematics.jl")
 include("Frames.jl") # Must come before robotplot
 include("robotplot.jl")
-# https://github.com/JuliaIO/MAT.jl/issues/90
-include("read_log.jl")# Re-enable when MAT.jl builds under Julia v1.0. Then add MAT to require
-include("csv2mat.jl") # Re-enable when MAT.jl builds under Julia v1.0. Then add MAT to require
+include("read_log.jl")
 include("posDepFric.jl")
 
 module Calibration

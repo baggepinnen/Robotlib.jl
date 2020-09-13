@@ -1,28 +1,46 @@
 using Robotlib, Test, Random
 @testset "Calib Force" begin
-N         = 100
-Rf        = Robotlib.toOrthoNormal(randn(3,3))
-mf        = 1
-POSES     = cat([Robotlib.toOrthoNormal(randn(3,3)) for i = 1:N]..., dims=3)
-forceoffs = zeros(3)
-forces    = hcat([Rf'*(POSES[1:3,1:3,i]'*[0, 0, mf*-9.82] - forceoffs) for i = 1:N]...)' |> copy
+    N = 100
+    Rf = Robotlib.toOrthoNormal(randn(3, 3))
+    mf = 1
+    POSES = cat([Robotlib.toOrthoNormal(randn(3, 3)) for i = 1:N]..., dims = 3)
+    forceoffs = zeros(3)
+    forces =
+        hcat([
+            Rf' * (POSES[1:3, 1:3, i]' * [0, 0, mf * -9.82] - forceoffs)
+            for i = 1:N
+        ]...)' |> copy
 
-R,m = Robotlib.Calibration.calibForce(POSES,forces; offset=false, verbose=false)
+    R, m = Robotlib.Calibration.calibForce(
+        POSES,
+        forces;
+        offset = false,
+        verbose = false,
+    )
 
-@test R ≈ Rf
-@test m ≈ mf
+    @test R ≈ Rf
+    @test m ≈ mf
 
-R = Robotlib.Calibration.calibForce2(POSES,forces,mf)
-@test R ≈ Rf
+    R = Robotlib.Calibration.calibForce2(POSES, forces, mf)
+    @test R ≈ Rf
 
-forceoffs = randn(3)
-forces    = hcat([Rf'*(POSES[1:3,1:3,i]'*[0, 0, mf*-9.82] - forceoffs) for i = 1:N]...)'
+    forceoffs = randn(3)
+    forces =
+        hcat([
+            Rf' * (POSES[1:3, 1:3, i]' * [0, 0, mf * -9.82] - forceoffs)
+            for i = 1:N
+        ]...)'
 
-R,m,offs = Robotlib.Calibration.calibForce(POSES,forces; offset=true, verbose=false)
+    R, m, offs = Robotlib.Calibration.calibForce(
+        POSES,
+        forces;
+        offset = true,
+        verbose = false,
+    )
 
-@test R ≈ Rf
-@test m ≈ mf
-@test offs ≈ forceoffs
+    @test R ≈ Rf
+    @test m ≈ mf
+    @test offs ≈ forceoffs
 
 
 end
@@ -33,15 +51,19 @@ function savefig2(filename)
     temppath, temp = mktemp()
     pattern = r",\s*axis background/.style={fill={rgb,1:red,\d.\d+;green,\d.\d+;blue,\d.\d+}}"
     hp = r"height = {[\d.]+mm}"
-    line = read(filename,String)
+    line = read(filename, String)
     # println(line)
     line = replace(line, pattern => "")
     line = replace(line, r"width = {[\d.]+mm}" => "")
-    line = replace(line, r"height = {[\d.]+mm}" => "height = \\figureheight, width = \\figurewidth")
+    line = replace(
+        line,
+        r"height = {[\d.]+mm}" =>
+            "height = \\figureheight, width = \\figurewidth",
+    )
     println(temp, line)
 
     close(temp)
-    mv(temppath, filename, remove_destination=true)
+    mv(temppath, filename, remove_destination = true)
 end
 
 

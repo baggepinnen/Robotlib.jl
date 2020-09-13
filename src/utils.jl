@@ -1,6 +1,24 @@
 Rt2T(R,t) = [R t; 0 0 0 1]
 T2R(T::AbstractMatrix) = T[1:3,1:3]
+T2R(T::SMatrix) = SA[   T[1,1] T[1,2] T[1,3]
+                        T[2,1] T[2,2] T[2,3]
+                        T[3,1] T[3,2] T[3,3]]
 T2t(T::AbstractMatrix) = T[1:3,4]
+T2t(T::SMatrix) = SVector(T[1,4],T[2,4],T[3,4])
+t2T(t::AbstractVector{T}) where T = SA[ 1 0 0 t[1]
+                                        0 1 0 t[2]
+                                        0 0 1 t[3]
+                                        0 0 0 1]
+
+function t2T(t1,t2,t3)
+    T = promote_type(typeof.((t1,t2,t3))...)
+    SA[ 1 0 0 t1
+        0 1 0 t2
+        0 0 1 t3
+        0 0 0 1]
+end
+
+
 skewcoords(R) = [R[3,2];R[1,3];R[2,1]]
 twistcoords(xi) = [xi[1:3, 4]; skewcoords(xi[1:3, 1:3])]
 @inline skew(s)::AbstractMatrix{eltype(s)} = [0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]

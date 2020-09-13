@@ -13,7 +13,7 @@ Install using
 ## Usage
 ```julia
 fkine, ikine, jacobian = get_kinematic_functions("yumi") # Replace yumi for your robot model, as long as it's supported
-data = orcalog2mat(pathopen, pathsave) # Read data from a csv-file and save as binary file
+data = csv2dict(path) # Read data from a csv-file and store in a dict
 q = getData("robot_0.*posRawAbs", data, 1, removeNaN = false) # Extract columns from data object using regex like syntax
 ```
 
@@ -28,25 +28,9 @@ using DSP # For filtfilt
 
 # Define robot to use, in this case YuMi
 dh = DHYuMi()
-fkine, ikine, jacobian = get_kinematic_functions("yumi")
+fkine, ikine, jacobian = get_kinematic_functions("robotname")
 
-# Define paths to log file and where to store converted binary file for faster reading
-pathopen = "/work/fredrikb/extRosetta/frida_gravity_2.txt"
-pathsave = "/tmp/fredrikb/log.mat"
-
-# Get data from the logfile
-data    = orcalog2mat(pathopen, pathsave) # This line is only needed during the first run
-data    = readmat(pathsave)
-ds      = 1 # Downsampling factor
-q       = getData("robot_1.*posRawAbs", data, ds) # Data vectors to retrieve are specified with regex style
-q̇       = getData("robot_1.*velFlt", data, ds)
-τ       = getData("robot_1.*trqRaw", data, ds)
-f       = getData("force", data, ds)
-
-# Convert joint data from ABB order to logical order
-abb2logical!(q)
-abb2logical!(q̇)
-abb2logical!(τ)
+q,q̇,τ = load_your_data()
 
 # Apply gear ratio transformation
 q = q*dh.GR'
@@ -85,7 +69,7 @@ println("Error: ", round(rms(err), digits=4))
 julia> foreach(String.(names(Robotlib))) do s
        print(s, ", ")
        end
-DH, DH2400, DH2twistsLPOE, DH2twistsPOE, DH7600, DHYuMi, DHtest, Quaternion, R2rpy, Rangle, Robotlib, abb2logical, abb2logical!, centralDiff, centraldiff, conformize, csv2mat, dh2Tn, expξ, expξ!, expξ2, expω, fkineLPOE, fkinePOE, frictionRBFN, getCenters, getData, get_kinematic_functions, ikinePOE, isrot, isse3, jacobian, jacobianPOE, jacobianPOEikine, logR, logT, logical2abb, logical2abb!, orcalog2mat, plot3smart, plot3smart!, readmat, rpy2R, skew, skew4, skewcoords, smartDiff, toOrthoNormal, toOrthoNormal!, traj2quat, trajplot, trajplot!, trajplot3, trajplot3!, trinv, twistcoords, xyθ
+DH, DH2400, DH2twistsLPOE, DH2twistsPOE, DH7600, DHYuMi, DHtest, Quaternion, R2rpy, Rangle, Robotlib, abb2logical, abb2logical!, centralDiff, centraldiff, conformize, csv2dict, dh2Tn, expξ, expξ!, expξ2, expω, fkineLPOE, fkinePOE, frictionRBFN, getData, get_kinematic_functions, ikinePOE, isrot, isse3, jacobian, jacobianPOE, jacobianPOEikine, logR, logT, logical2abb, logical2abb!, orcalog2mat, plot3smart, plot3smart!, readmat, rpy2R, skew, skew4, skewcoords, smartDiff, toOrthoNormal, toOrthoNormal!, traj2quat, trajplot, trajplot!, trajplot3, trajplot3!, trinv, twistcoords, xyθ
 ```
 
 The module includes a submodule, Frames, which is aimed at replacing the Nikon K600 software. It supports creation of frames, simple projections, fitting of planes, lines etc. and has a number of plotting options. It must be separately imported with `using Robotlib.Frames`

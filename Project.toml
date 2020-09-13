@@ -1,12 +1,12 @@
 name = "Robotlib"
 uuid = "a75dfa10-1339-53f3-8748-4d618c3d76af"
 authors = ["baggepinnen <baggepinnen@gmail.com>"]
-version = "0.4.1"
+version = "0.5.0"
 
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
 Quaternions = "94ee1d12-ae83-5a48-8b1c-48b8ff168ae0"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
@@ -19,7 +19,6 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TotalLeastSquares = "028f657a-7ace-5159-a694-8cfd97933b0c"
 
 [compat]
-MAT = "<0.7, 0.8"
 Quaternions = "<0.5"
 RecipesBase = "<0.8, 1"
 Requires = "1.0"
@@ -29,7 +28,8 @@ TotalLeastSquares = "1.0"
 julia = "1.0"
 
 [extras]
+MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 
 [targets]
-test = ["Plots"]
+test = ["MAT", "Plots"]
