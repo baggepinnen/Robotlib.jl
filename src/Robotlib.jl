@@ -1,26 +1,5 @@
 """
-This is a library of functions to help out in the Robotlab at LTH
-The module imports the following files\n
-include("utils.jl")\n
-include("DH.jl")\n
-include("kinematics.jl")\n
-include("robotplot.jl")\n
-include("Frames.jl")\n
-include("read_log.jl")\n
-include("csv2mat.jl")\n
-include("posDepFric.jl")\n
-
-The module includes a submodule, Frames, which is aimed at replacing the Nikon K600 software. It supports creation of frames, simple projections, fitting of planes, lines etc. and has a number of plotting options. It must be separately imported with `using Robotlib.Frames`
-
-The module includes a submodule, Calibration, which includes a number of calibration routines. It must be separately imported with `using Robotlib.Calibration`
-
-Usage:
-fkine, ikine, jacobian = get_kinematic_functions("yumi")
-data = orcalog2mat(pathopen, pathsave)
-q = getdata(\"robot_0.*posRawAbs\", data, 1, removeNaN = false)
-
-For YuMi, joint angles `q` must be converted to logical order using e.g. abb2logical!(q)
-You must also consider the base transform of YuMi
+See documentation at https://github.com/baggepinnen/Robotlib.jl
 """
 module Robotlib
 using LinearAlgebra, Statistics, StaticArrays, SparseArrays

@@ -10,32 +10,7 @@ rcond(K) = /(svdvals(K)[[1, 3]]...)
 toR(r) = orthonormal(reshape(real(r), 3, 3))
 tor(r) = toR(r)[:]
 
-
-
-function calib_force_iterative(POSES, F, g; trace = false)
-    N = size(POSES, 3)
-    I = Robotlib.I3
-    A = Array{eltype(F)}(undef, 3N, 3)
-    B = F'[:]
-    local m
-    trace && (Rg = [])
-    for iter = 1:6
-        Rf, m = calib_force(
-            POSES,
-            F,
-            g;
-            offset = false,
-            verbose = true,
-        )
-        for i = 1:N
-            A[3(i-1)+1:3i, :] = Rf'POSES[:, :, i]'
-        end
-        g = A \ B
-        trace && push!(Rg, (Rf, g))
-    end
-    trace && (return Rf, g, m, Rg)
-    Rf, g, m
-end
+# calib_force_iterative is located in the calib_force.jl file
 
 function calib_force_iterative2(POSES, F, g; trace = false)
     N = size(POSES, 3)
