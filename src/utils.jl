@@ -402,7 +402,7 @@ function R2rpy(m::AbstractMatrix; conv="xyz", deg = false)
 end
 
 
-function Quaternion(t::AbstractMatrix{P}) where P
+function Quaternions.Quaternion(t::AbstractMatrix{P}) where P
     qs = sqrt(t[1,1]+t[2,2]+t[3,3]+1)/2.0
     kx = t[3,2] - t[2,3]   # Oz - Ay
     ky = t[1,3] - t[3,1]   # Ax - Nz
@@ -439,8 +439,8 @@ function Quaternion(t::AbstractMatrix{P}) where P
         q = Quaternion(one(P), 0, 0, 0)
     else
         s  = sqrt(1 - qs^2) / nm
-        qv = s*[kx, ky, kz]
-        q  = Quaternion(qs,qv)
+        qv = s*SA[kx, ky, kz]
+        q  = Quaternion(qs,qv...)
     end
 end
 

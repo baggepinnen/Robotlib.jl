@@ -1,4 +1,4 @@
-using Robotlib, LinearAlgebra, Random, Statistics
+using Robotlib, LinearAlgebra, Random, Statistics, Plots
 using Test
 import Robotlib: ad, adi, I4
 
