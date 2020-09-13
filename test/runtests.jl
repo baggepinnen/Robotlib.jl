@@ -95,6 +95,48 @@ end
 
     @testset "Calibration and kinematics" begin
 
+
+
+        @testset "Inverse kinematics" begin
+            @info "Testing Inverse kinematics"
+
+            dh = DH7600();
+            q0 = ones(6)
+            xi = DH2twistsPOE(dh)
+            T0 = fkinePOE(xi,q0)
+            Tt = deepcopy(T0)
+            Tt[1:3,4] += 0.1*[1,1,1]
+            Tt[1:3,1:3] *= rpy2R(pi/180,0,0)
+
+            @time q,err = ikinePOE(xi,Tt,q0,verbose=true)
+            @test err[end] < sqrt(eps())
+
+            # pp = semilogy(err)
+            # display(pp)
+
+        end
+
+        @testset "Jacobian" begin
+            @info "Testing Jacobian"
+
+            dh = DH7600();
+            q = [1,1,0,0,0,0];
+            q = randn(6)
+            AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, I4);
+            Jn,J0,Tjac,Tijac,Tnjac = jacobian(q,dh, I4);
+
+            xiL = DH2twistsLPOE(Tn0)
+            xi = DH2twistsPOE(Tn0)
+            Jsb, Jbb = jacobianPOE(q,xi)
+
+            @test Jsb ≈ J0
+            @test_broken Jbb ≈ Jn
+
+            # display(round.(J0, digits=3))
+            # display(round.(Jsb, digits=3))
+        end
+
+
         N = 100
 
         # println("===== Testing calibPOE =====")
