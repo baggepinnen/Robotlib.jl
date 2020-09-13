@@ -85,7 +85,7 @@ function w2Rt(w)
     Rz  = cross(Rx,Ry) # These lines must be changed if laser plane is changed
     Rnn = [Rx Ry Rz]
     # @show Rnn
-    R   = toOrthoNormal(Rnn)
+    R   = orthonormal(Rnn)
     t   = H[1:3,3]
     R,t
 end

@@ -308,7 +308,7 @@ end
 #             N = size(q,1)
 #             Tfull = cat(3,[fkinePOE(xin,q[i,:]'+[δq;0]) for i = 1:N]...)
 #             Tm = squeeze(mean(Tfull,3),3)
-#             toOrthoNormal!(Tm)
+#             orthonormal!(Tm)
 #             for i = 1:N
 #                 # populate the matrices of the linear estimation problem
 #                 y[ii:ii+5] = twistcoords(logT(Tm*trinv(Tfull[:,:,i])))
@@ -371,7 +371,7 @@ end
 #         Jpos = sum(abs((xyz.-mxyz)./mxyz))/N
 #
 #         Rm = squeeze(mean(T[1:3,1:3,:],3),3)
-#         toOrthoNormal!(Rm)
+#         orthonormal!(Rm)
 #         Jori = 0.0
 #         @inbounds for i = 1:N
 #             Jori += Rangle(T[1:3,1:3,i],Rm)

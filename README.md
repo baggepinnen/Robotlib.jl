@@ -14,7 +14,7 @@ Install using
 ```julia
 fkine, ikine, jacobian = get_kinematic_functions("yumi") # Replace yumi for your robot model, as long as it's supported
 data = csv2dict(path) # Read data from a csv-file and store in a dict
-q = getData("robot_0.*posRawAbs", data, 1, removeNaN = false) # Extract columns from data object using regex like syntax
+q = getdata("robot_0.*posRawAbs", data, 1, removeNaN = false) # Extract columns from data object using regex like syntax
 ```
 
 For ABB YuMi, joint angles `q` must be converted to logical order using e.g. `abb2logical!(q)`
@@ -55,7 +55,7 @@ T  = cat([fkine(q[i,:]) for i = 1:N]..., dims=3)
 trajplot(T) # Plots a trajectory of R4x4 transformation matrices
 
 # Perform the force sensor calibration and plot the errors
-Rf,m,offset     = calibForce(T,f,0.2205,offset=true) # See also calibForceIterative, calibForceEigen
+Rf,m,offset     = calib_force(T,f,0.2205,offset=true) # See also calib_force_iterative, calib_force_eigen
 err = hcat([Rf*f[i,1:3] + offset - T[1:3,1:3,i]'*[0, 0, m*-9.82] for i = 1:N]...)'
 plot(f[:,1:3],lab="Force")
 plot!(err,l=:dash,lab="Error")

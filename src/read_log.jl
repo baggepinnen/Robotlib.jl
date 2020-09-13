@@ -1,5 +1,5 @@
 # This file comtains some useful functions to import logfiles for use in either julia or matlab.
-# In julia, the data object from orcalog2mat can be used together with the function getData
+# In julia, the data object from orcalog2mat can be used together with the function getdata
 # In matlab, the function csv2mat can be used to convert the textfile to a .mat-file which is very fast to read
 
 using DelimitedFiles
@@ -62,12 +62,12 @@ end
 
 
 """
-    `array = getData(pattern, data::Dict, ds=1; removeNaN = false)`
+    `array = getdata(pattern, data::Dict, ds=1; removeNaN = false)`
 
 pattern is a string representation of a regex used to match the data
 e.g. \"posRawAbs\"
 """
-function getData(pattern, data::AbstractDict, ds=1; removeNaN = false)
+function getdata(pattern, data::AbstractDict, ds=1; removeNaN = false)
     inds = findData(pattern, data)
     if sum(inds) < 1
         @warn("No data found using $pattern, available headers are")

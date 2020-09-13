@@ -78,7 +78,7 @@ end
 
     @testset "Utils" begin
         @info "Testing Utils"
-        R = toOrthoNormal(randn(3,3))
+        R = orthonormal(randn(3,3))
         @test Rangle(R,R) < 1e-7
         R2 = rpy2R(1*pi/180,0,0)*R
         @test Rangle(R,R2,true) <= 1.0000001

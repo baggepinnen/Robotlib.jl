@@ -7,12 +7,12 @@ vecangle(g, gf) = acos(min(1, g ⋅ gf / norm(gf) / norm(g))) * 180 / pi
 
 
 rcond(K) = /(svdvals(K)[[1, 3]]...)
-toR(r) = toOrthoNormal(reshape(real(r), 3, 3))
+toR(r) = orthonormal(reshape(real(r), 3, 3))
 tor(r) = toR(r)[:]
 
 
 
-function calibForceIterative(POSES, F, g; trace = false)
+function calib_force_iterative(POSES, F, g; trace = false)
     N = size(POSES, 3)
     I = Robotlib.I3
     A = Array{eltype(F)}(undef, 3N, 3)
@@ -20,7 +20,7 @@ function calibForceIterative(POSES, F, g; trace = false)
     local m
     trace && (Rg = [])
     for iter = 1:6
-        Rf, m = calibForce(
+        Rf, m = calib_force(
             POSES,
             F,
             g;
@@ -37,7 +37,7 @@ function calibForceIterative(POSES, F, g; trace = false)
     Rf, g, m
 end
 
-function calibForceIterative2(POSES, F, g; trace = false)
+function calib_force_iterative2(POSES, F, g; trace = false)
     N = size(POSES, 3)
     I = Robotlib.I3
     A = Array{eltype(F)}(undef, 3N, 3)
@@ -48,7 +48,7 @@ function calibForceIterative2(POSES, F, g; trace = false)
     local m
     trace && (Rg = [])
     for iter = 1:6
-        Rf, m = calibForce(
+        Rf, m = calib_force(
             POSES,
             F,
             g;
@@ -64,7 +64,7 @@ function calibForceIterative2(POSES, F, g; trace = false)
 end
 
 
-function calibForceIterative3(POSES, F; trace = false)
+function calib_force_iterative3(POSES, F; trace = false)
     N = size(POSES, 3)
     I = Robotlib.I3
     Rf = I
@@ -78,7 +78,7 @@ function calibForceIterative3(POSES, F; trace = false)
             B[3(i-1)+1:3i] = F[i, :]
         end
         g = A \ B
-        Rf, m = calibForce(
+        Rf, m = calib_force(
             POSES,
             F,
             g;
@@ -91,7 +91,7 @@ function calibForceIterative3(POSES, F; trace = false)
     Rf, g, m
 end
 
-function calibForceIterative4(POSES, forces; trace = false)
+function calib_force_iterative4(POSES, forces; trace = false)
     N = size(POSES, 3)
     I3 = Matrix{Float64}(I, 3, 3)
     r = vec(I3)
@@ -107,12 +107,12 @@ function calibForceIterative4(POSES, forces; trace = false)
     trace && (Rg = [])
     for iter = 1:5
         r = K * r
-        r = vec(toOrthoNormal(reshape(r, 3, 3)))
+        r = vec(orthonormal(reshape(r, 3, 3)))
         # trace && push!(Rg, (Rf, g))
     end
     # trace && (return Rf,g,m,Rg)
     # Rf,g,m
-    toOrthoNormal(reshape(r, 3, 3)), e
+    orthonormal(reshape(r, 3, 3)), e
 end
 
 
@@ -123,15 +123,15 @@ end
 σ = 1
 traces = map(1:30) do mc
     N = 100
-    Rf = Robotlib.toOrthoNormal(randn(3, 3))
+    Rf = Robotlib.orthonormal(randn(3, 3))
     gf = 100randn(3)
     POSES =
-        cat([Robotlib.toOrthoNormal(randn(3, 3)) for i = 1:N]..., dims = 3)
+        cat([Robotlib.orthonormal(randn(3, 3)) for i = 1:N]..., dims = 3)
     forces =
         hcat([Rf' * (POSES[1:3, 1:3, i]' * gf) for i = 1:N]...)' |> copy
     forces .+= σ * randn(size(forces))
-    R, g, m, Rg = calibForceIterative3(POSES, forces, trace = true)
-    # R, g = calibForceEigen(POSES, forces)
+    R, g, m, Rg = calib_force_iterative3(POSES, forces, trace = true)
+    # R, g = calib_force_eigen(POSES, forces)
     Rf, gf, Rg, R, g
 end
 ##
@@ -219,14 +219,14 @@ histogram!([vecangle(t[2], t[5]) for t in traces]; subplot = 3, opts...)
 # m = SOSModel(with_optimizer(Ipopt.Optimizer))
 
 # N         = 1000
-# Rf        = Robotlib.toOrthoNormal(randn(3,3))
+# Rf        = Robotlib.orthonormal(randn(3,3))
 # mf        = 1
 # gf        = [0,0,1] + 0.3randn(3)
-# POSES     = cat([Robotlib.toOrthoNormal(randn(3,3)) for i = 1:N]..., dims=3)
+# POSES     = cat([Robotlib.orthonormal(randn(3,3)) for i = 1:N]..., dims=3)
 # forces    = hcat([Rf'*(POSES[1:3,1:3,i]'*gf) for i = 1:N]...)' |> copy
 #
 #
-# function calibForceHomotopy(POSES,F,m0=1)
+# function calib_forceHomotopy(POSES,F,m0=1)
 #     N = size(POSES,3)
 #     @polyvar w[1:9]
 #     @polyvar g[1:3]
@@ -260,7 +260,7 @@ histogram!([vecangle(t[2], t[5]) for t in traces]; subplot = 3, opts...)
 #
 #
 #
-# result, J = calibForceHomotopy(POSES,forces)
+# result, J = calib_forceHomotopy(POSES,forces)
 # reals = realsolutions(result)
 # tomat(x) = reshape(x[1:9],3,3) |> copy
 #

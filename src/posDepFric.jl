@@ -15,7 +15,7 @@ function frictionRBFN(q, q̇, centers; sigma=zeros(2), normalized=true)
         end
         for i = 1:n_joints
             kernelInput     = [q[j,i] q̇[j,i]];
-            bpi             = basisParametersNd(kernelInput,centers[i],sigma, 2, normalized)
+            bpi             = basisparametersNd(kernelInput,centers[i],sigma, 2, normalized)
             bp[i,(i-1)*pnb+1:i*pnb] = bpi
         end
         A[(j-1)*n_joints+1:j*n_joints,:] = bp
@@ -29,7 +29,7 @@ function mnorm_pdf(p,c,S)
     exp(-dot(d.^2,S))
 end
 
-function basisParametersNd(p,centers, sigma, velocity::Int=0, normalize=true)
+function basisparametersNd(p,centers, sigma, velocity::Int=0, normalize=true)
     @assert size(p,2) == length(sigma)
     N       = size(p,2)
     N_basis = size(centers,2)
@@ -49,7 +49,7 @@ function basisParametersNd(p,centers, sigma, velocity::Int=0, normalize=true)
 end
 
 
-function getCenters(n_basis, bounds)
+function getcenters(n_basis, bounds)
     # TODO: split centers on velocity dim
     @warn("Not yet split in velocity dimension!")
     N = length(n_basis);
@@ -70,14 +70,14 @@ end
 
 
 
-function getCenters(n_basis::AbstractVector{Int64}, q::AbstractMatrix, q̇::AbstractMatrix)
+function getcenters(n_basis::AbstractVector{Int64}, q::AbstractMatrix, q̇::AbstractMatrix)
     n_joints = size(q,2)
     minq = minimum([q q̇],dims=1)
     maxq = maximum([q q̇],dims=1)
     centers = Array{Matrix{eltype(q)}}(undef,n_joints)
     for i = 1:n_joints
         bounds = [minq[[i i+n_joints]]' maxq[[i i+n_joints]]']
-        centers[i] = getCenters(n_basis, bounds)
+        centers[i] = getcenters(n_basis, bounds)
     end
     return centers
 end

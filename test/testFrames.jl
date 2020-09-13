@@ -1,7 +1,7 @@
 using Robotlib, Robotlib.Frames, MAT, Test, Plots
 
 
-R = toOrthoNormal(randn(3, 3))
+R = orthonormal(randn(3, 3))
 t = randn(3)
 f = Frame(R, t)
 f = Frame([R t; 0 0 0 1])

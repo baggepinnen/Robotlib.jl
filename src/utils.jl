@@ -260,7 +260,7 @@ DH2twistsLPOE(dh::DH) = DH2twistsLPOE(dh2Tn(dh))
 DH2twistsPOE(dh::DH) = DH2twistsPOE(dh2Tn(dh))
 
 """Takes a matrix R ∈ SO(3) or T ∈ SE(3) and makes the rotational part orthonormal"""
-function toOrthoNormal!(M)
+function orthonormal!(M)
     R = M[1:3,1:3]
     U,S,V = svd(R)
     a = sign(det(U*V'))
@@ -270,7 +270,7 @@ function toOrthoNormal!(M)
     M
 end
 
-function toOrthoNormal(Mi)
+function orthonormal(Mi)
     M = deepcopy(Mi)
     R = M[1:3,1:3]
     U,S,V = svd(R)

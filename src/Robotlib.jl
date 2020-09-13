@@ -17,7 +17,7 @@ The module includes a submodule, Calibration, which includes a number of calibra
 Usage:
 fkine, ikine, jacobian = get_kinematic_functions("yumi")
 data = orcalog2mat(pathopen, pathsave)
-q = getData(\"robot_0.*posRawAbs\", data, 1, removeNaN = false)
+q = getdata(\"robot_0.*posRawAbs\", data, 1, removeNaN = false)
 
 For YuMi, joint angles `q` must be converted to logical order using e.g. abb2logical!(q)
 You must also consider the base transform of YuMi
@@ -41,10 +41,10 @@ include("posDepFric.jl")
 
 
 include("calibLPOE.jl")
-include("calibForce.jl")
+include("calib_force.jl")
 include("calibNAXP.jl")
 export calibLPOE,
-    calibLPOEdual, calibForce, calibForceIterative, calibForceEigen, calibNAXP
+    calibLPOEdual, calib_force, calib_force_iterative, calib_force_eigen, calibNAXP
 
 using Requires
 function __init__()
@@ -106,12 +106,12 @@ export skewcoords,
     DH2twistsPOE,
     DH2twistsLPOE,
     dh2Tn,
-    toOrthoNormal,
-    toOrthoNormal!,
+    orthonormal,
+    orthonormal!,
     rpy2R,
     Quaternion,
     xyθ,
-    smartDiff,
+    smartdiff,
     R2rpy,
     traj2quat,
     centraldiff
@@ -133,8 +133,8 @@ export DH,
     logical2abb!,
     abb2logical,
     logical2abb
-export csv2dict, csv2mat, orcalog2mat, getData, readmat
-export frictionRBFN, getCenters
+export csv2dict, csv2mat, orcalog2mat, getdata
+export frictionRBFN, getcenters
 
 dir(x...) = joinpath(dirname(pathof(Robotlib)), x...)
 
