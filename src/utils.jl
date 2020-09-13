@@ -143,7 +143,7 @@ isse3(T) = isrot(T) && T[4,1:4] == [0 0 0 1]
 
 """`Rangle(R1,R2 = I3,deg = false)` calculates the angle between two rotation matrices"""
 function Rangle(R1::AbstractMatrix,R2 = I,deg = false)
-    @views cosθ = (tr(R1[1:3,1:3]' * R2[1:3,1:3])-1)/2
+    @views cosθ = (tr(T2R(R1)' * T2R(R2))-1)/2
     if cosθ > 1
         cosθ = 1
     elseif cosθ < -1
@@ -156,25 +156,6 @@ function Rangle(R1::AbstractMatrix,R2 = I,deg = false)
     return θ
 end
 
-function Rangle(R1::AbstractArray{T,3},R2i = I,deg = false) where T
-    N = size(R1,3)
-    θ = zeros(N)
-    R2 = R2i == I ? I3 : R2i
-    for i = 1:N
-        cosθ = (tr(R1[1:3,1:3,i]' * R2[1:3,1:3,(size(R2,3)==1 ? 1 : i)])-1)/2
-        if cosθ > 1
-            cosθ = 1
-        elseif cosθ < -1
-            cosθ = -1
-        end
-        θ[i] = acos(cosθ)
-        if deg
-            θ[i] *= 180/pi
-        end
-    end
-    return θ
-
-end
 
 """This is a helper method for calibPOE"""
 function Ai(q,xi)
@@ -329,7 +310,7 @@ rpy2R(r,conv="zyx") = rpy2R(r...,conv)
 
 function rotx(t, deg=false)
     if deg
-        t = t *pi/180
+        t *= pi/180
     end
     ct = cos(t)
     st = sin(t)
@@ -342,7 +323,7 @@ end
 
 function roty(t, deg=false)
     if deg
-        t = t *pi/180
+        t *= pi/180
     end
     ct = cos(t)
     st = sin(t)
@@ -355,7 +336,7 @@ end
 
 function rotz(t, deg=false)
     if deg
-        t = t *pi/180
+        t *= pi/180
     end
     ct = cos(t)
     st = sin(t)

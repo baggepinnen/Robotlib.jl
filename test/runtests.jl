@@ -2,6 +2,47 @@ using Robotlib, LinearAlgebra, Random, Statistics
 using Test
 import Robotlib: ad, adi, I4
 
+function simulateCalibration1(N)
+    n = 6
+    q = 2π * rand(N, n)
+
+    wn = zeros(3, n)
+    pn = zeros(3, n)
+    xin = zeros(6, n + 1)
+    wn[:, 1] = [0, 0, 1]
+    pn[:, 1] = [0, 0, 0]
+    wn[:, 2] = [0, 1, 0]
+    pn[:, 2] = [0, 0, 0.3]
+    wn[:, 3] = [0, 1, 0]
+    pn[:, 3] = [0, 0, 1]
+    wn[:, 4] = [1, 0, 0]
+    pn[:, 4] = [1, 0, 1]
+    wn[:, 5] = [0, 1, 0]
+    pn[:, 5] = [1, 0, 1]
+    wn[:, 6] = [1, 0, 0]
+    pn[:, 6] = [1, 0, 1]
+    T0 = [
+    0 -1 0 1.2
+    0 0 -1 0
+    1 0 0 1
+    0 0 0 1
+    ]
+    for i = 1:n
+        xin[:, i] = [-skew(pn[:, i]) * wn[:, i]; wn[:, i]]
+    end
+    xin[:, n+1] = twistcoords(logT(T0))
+    xinmod = deepcopy(xin)
+    for i = 1:n+1
+        xinmod[:, i] += [0.001randn(3); 0.01π / 180 * randn(3)]
+        #conformize(xinmod[:,i])
+    end
+    Ta = zeros(4, 4, N)
+    for i = 1:N
+        Ta[:, :, i] = fkinePOE(xin, q[i, :])
+    end
+    return q, xin, T0, xinmod, Ta
+end
+
 @testset "Robotlib tests" begin
     Random.seed!(1)
 
@@ -16,46 +57,30 @@ import Robotlib: ad, adi, I4
 
     end
 
-    function simulateCalibration1(N)
-        n = 6
-        q = 2π * rand(N, n)
-
-        wn = zeros(3, n)
-        pn = zeros(3, n)
-        xin = zeros(6, n + 1)
-        wn[:, 1] = [0, 0, 1]
-        pn[:, 1] = [0, 0, 0]
-        wn[:, 2] = [0, 1, 0]
-        pn[:, 2] = [0, 0, 0.3]
-        wn[:, 3] = [0, 1, 0]
-        pn[:, 3] = [0, 0, 1]
-        wn[:, 4] = [1, 0, 0]
-        pn[:, 4] = [1, 0, 1]
-        wn[:, 5] = [0, 1, 0]
-        pn[:, 5] = [1, 0, 1]
-        wn[:, 6] = [1, 0, 0]
-        pn[:, 6] = [1, 0, 1]
-        T0 = [
-            0 -1 0 1.2
-            0 0 -1 0
-            1 0 0 1
-            0 0 0 1
-        ]
-        for i = 1:n
-            xin[:, i] = [-skew(pn[:, i]) * wn[:, i]; wn[:, i]]
-        end
-        xin[:, n+1] = twistcoords(logT(T0))
-        xinmod = deepcopy(xin)
-        for i = 1:n+1
-            xinmod[:, i] += [0.001randn(3); 0.01π / 180 * randn(3)]
-            #conformize(xinmod[:,i])
-        end
-        Ta = zeros(4, 4, N)
-        for i = 1:N
-            Ta[:, :, i] = fkinePOE(xin, q[i, :])
-        end
-        return q, xin, T0, xinmod, Ta
+    @testset "DH" begin
+        @info "Testing DH"
+        DH2400()
+        DH7600()
+        DHYuMi()
+        DHtest()
     end
+
+    @testset "Plotting" begin
+        @info "Testing Plotting"
+        q, xin, T0, xinmod, Ta = simulateCalibration1(10)
+        trajplot(Ta)
+        trajplot3(Ta)
+    end
+
+
+@testset "Utils" begin
+    @info "Testing Utils"
+    R = toOrthoNormal(randn(3,3))
+    @test Rangle(R,R) < 1e-7
+    R2 = rpy2R(1*pi/180,0,0)*R
+    @test Rangle(R,R2,true) <= 1.0000001
+
+end
 
 
 

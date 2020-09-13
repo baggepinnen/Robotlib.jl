@@ -25,7 +25,7 @@ Requires = "1.0"
 StaticArrays = "<0.13"
 StatsBase = "<0.33, 0.33"
 TotalLeastSquares = "1.0"
-julia = "1.0"
+julia = "1.5"
 
 [extras]
 MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
