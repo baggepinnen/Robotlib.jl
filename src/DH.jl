@@ -1,10 +1,10 @@
-mutable struct DH
-    dhpar::Matrix{Float64}
-    offset::Vector{Float64}
-    GR::Matrix{Float64}
+mutable struct DH{T}
+    dhpar::Matrix{T}
+    offset::Vector{T}
+    GR::Matrix{T}
 end
 
-DH(dhpar,offset) = DH(dhpar,offset,Matrix{Float64}(I, length(offset),length(offset)))
+DH(dhpar::AbstractMatrix{T},offset) where T = DH(dhpar,offset,Matrix{T}(I, length(offset),length(offset)))
 
 function DH2400()
     DH_alpha0 = -π/2
@@ -156,22 +156,22 @@ end
 
 
 function abb2logical!(q::AbstractMatrix)
-    q[:,:] = q[:,[1, 2, 7, 3, 4, 5, 6]]
+    q .= q[:,SA[1, 2, 7, 3, 4, 5, 6]]
 end
 
 function logical2abb!(q::AbstractMatrix)
-    q[:,:] = q[:,[1, 2, 4, 5, 6, 7, 3]]
+    q .= q[:,SA[1, 2, 4, 5, 6, 7, 3]]
 end
 
 function abb2logical!(q::AbstractVector)
-    q[:,:] = q[[1, 2, 7, 3, 4, 5, 6]]
+    q .= q[SA[1, 2, 7, 3, 4, 5, 6]]
 end
 
 function logical2abb!(q::AbstractVector)
-    q[:,:] = q[[1, 2, 4, 5, 6, 7, 3]]
+    q .= q[SA[1, 2, 4, 5, 6, 7, 3]]
 end
 
-abb2logical(q::AbstractMatrix) = q[:,[1, 2, 7, 3, 4, 5, 6]]
-logical2abb(q::AbstractMatrix) = q[:,[1, 2, 4, 5, 6, 7, 3]]
-abb2logical(q::AbstractVector) = q[[1, 2, 7, 3, 4, 5, 6]]
-logical2abb(q::AbstractVector) = q[[1, 2, 4, 5, 6, 7, 3]]
+abb2logical(q::AbstractMatrix) = q[:,SA[1, 2, 7, 3, 4, 5, 6]]
+logical2abb(q::AbstractMatrix) = q[:,SA[1, 2, 4, 5, 6, 7, 3]]
+abb2logical(q::AbstractVector) = q[SA[1, 2, 7, 3, 4, 5, 6]]
+logical2abb(q::AbstractVector) = q[SA[1, 2, 4, 5, 6, 7, 3]]

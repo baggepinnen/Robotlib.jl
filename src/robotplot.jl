@@ -19,9 +19,9 @@ end
 trajplot3
 @recipe function trajplot3(t::TrajPlot3, plotFrame = 0)
     T = t.args[1]
-    xguide := "x"
-    yguide := "y"
-    zguide := "z"
+    xguide --> "x"
+    yguide --> "y"
+    zguide --> "z"
     @series begin
         seriestype := :scatter3d
         (T[1,4,:],T[2,4,:],T[3,4,:])
@@ -33,13 +33,4 @@ trajplot3
             end
         end
     end
-end
-
-@userplot Plot3Smart
-"""`plot3smart(x,args...)` Makes a 3d plot of a matrix"""
-plot3smart
-@recipe function f(t::Plot3Smart)
-    data = t.args[1]
-    seriestype := :path3d
-    (data[:,1],data[:,2],data[:,3])
 end

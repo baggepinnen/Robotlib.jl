@@ -1,6 +1,24 @@
 Rt2T(R,t) = [R t; 0 0 0 1]
 T2R(T::AbstractMatrix) = T[1:3,1:3]
+T2R(T::SMatrix) = SA[   T[1,1] T[1,2] T[1,3]
+                        T[2,1] T[2,2] T[2,3]
+                        T[3,1] T[3,2] T[3,3]]
 T2t(T::AbstractMatrix) = T[1:3,4]
+T2t(T::SMatrix) = SVector(T[1,4],T[2,4],T[3,4])
+t2T(t::AbstractVector{T}) where T = SA[ 1 0 0 t[1]
+                                        0 1 0 t[2]
+                                        0 0 1 t[3]
+                                        0 0 0 1]
+
+function t2T(t1,t2,t3)
+    T = promote_type(typeof.((t1,t2,t3))...)
+    SA[ 1 0 0 t1
+        0 1 0 t2
+        0 0 1 t3
+        0 0 0 1]
+end
+
+
 skewcoords(R) = [R[3,2];R[1,3];R[2,1]]
 twistcoords(xi) = [xi[1:3, 4]; skewcoords(xi[1:3, 1:3])]
 @inline skew(s)::AbstractMatrix{eltype(s)} = [0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
@@ -22,7 +40,7 @@ skew4(s)::AbstractMatrix{eltype(s)} = [skew(s[4:6]) s[1:3]; 0 0 0 0]
 
 function expω(w,q=1)
     nw = norm(w)
-    if nw < 1e-12
+    if nw < 1e-12 # TODO: Use TaylorSeries.jl to approximate this for small nw, I verified TaylorSeries.jl to work well for this
         I + q*skew(w)
     else
         I + sin(nw*q)/nw*skew(w) + (1-cos(nw*q))/nw^2*skew(w)^2
@@ -125,7 +143,7 @@ isse3(T) = isrot(T) && T[4,1:4] == [0 0 0 1]
 
 """`Rangle(R1,R2 = I3,deg = false)` calculates the angle between two rotation matrices"""
 function Rangle(R1::AbstractMatrix,R2 = I,deg = false)
-    @views cosθ = (tr(R1[1:3,1:3]' * R2[1:3,1:3])-1)/2
+    @views cosθ = (tr(T2R(R1)' * T2R(R2))-1)/2
     if cosθ > 1
         cosθ = 1
     elseif cosθ < -1
@@ -138,32 +156,13 @@ function Rangle(R1::AbstractMatrix,R2 = I,deg = false)
     return θ
 end
 
-function Rangle(R1::AbstractArray{T,3},R2i = I,deg = false) where T
-    N = size(R1,3)
-    θ = zeros(N)
-    R2 = R2i == I ? I3 : R2i
-    for i = 1:N
-        cosθ = (tr(R1[1:3,1:3,i]' * R2[1:3,1:3,(size(R2,3)==1 ? 1 : i)])-1)/2
-        if cosθ > 1
-            cosθ = 1
-        elseif cosθ < -1
-            cosθ = -1
-        end
-        θ[i] = acos(cosθ)
-        if deg
-            θ[i] *= 180/pi
-        end
-    end
-    return θ
-
-end
 
 """This is a helper method for calibPOE"""
 function Ai(q,xi)
     n = size(q,1)
     A = zeros(6,6(n+1))
     qext = [q;1]
-    pa = Matrix{Float64}(i, 6, 6)
+    pa = Matrix{Float64}(I, 6, 6)
     for i = 1:n+1
         ω = xi[4:6,i]
         Ω = [skew(xi[4:6,i]) skew(xi[1:3,i]);
@@ -261,7 +260,7 @@ DH2twistsLPOE(dh::DH) = DH2twistsLPOE(dh2Tn(dh))
 DH2twistsPOE(dh::DH) = DH2twistsPOE(dh2Tn(dh))
 
 """Takes a matrix R ∈ SO(3) or T ∈ SE(3) and makes the rotational part orthonormal"""
-function toOrthoNormal!(M)
+function orthonormal!(M)
     R = M[1:3,1:3]
     U,S,V = svd(R)
     a = sign(det(U*V'))
@@ -271,7 +270,7 @@ function toOrthoNormal!(M)
     M
 end
 
-function toOrthoNormal(Mi)
+function orthonormal(Mi)
     M = deepcopy(Mi)
     R = M[1:3,1:3]
     U,S,V = svd(R)
@@ -311,7 +310,7 @@ rpy2R(r,conv="zyx") = rpy2R(r...,conv)
 
 function rotx(t, deg=false)
     if deg
-        t = t *pi/180
+        t *= pi/180
     end
     ct = cos(t)
     st = sin(t)
@@ -324,7 +323,7 @@ end
 
 function roty(t, deg=false)
     if deg
-        t = t *pi/180
+        t *= pi/180
     end
     ct = cos(t)
     st = sin(t)
@@ -337,7 +336,7 @@ end
 
 function rotz(t, deg=false)
     if deg
-        t = t *pi/180
+        t *= pi/180
     end
     ct = cos(t)
     st = sin(t)
@@ -402,9 +401,8 @@ function R2rpy(m::AbstractMatrix; conv="xyz", deg = false)
     return rpy
 end
 
-using Quaternions
-import Quaternions.Quaternion
-function Quaternion(t::AbstractMatrix{P}) where P
+
+function Quaternions.Quaternion(t::AbstractMatrix{P}) where P
     qs = sqrt(t[1,1]+t[2,2]+t[3,3]+1)/2.0
     kx = t[3,2] - t[2,3]   # Oz - Ay
     ky = t[1,3] - t[3,1]   # Ax - Nz
@@ -441,8 +439,8 @@ function Quaternion(t::AbstractMatrix{P}) where P
         q = Quaternion(one(P), 0, 0, 0)
     else
         s  = sqrt(1 - qs^2) / nm
-        qv = s*[kx, ky, kz]
-        q  = Quaternion(qs,qv)
+        qv = s*SA[kx, ky, kz]
+        q  = Quaternion(qs,qv...)
     end
 end
 
@@ -458,9 +456,6 @@ function traj2quat(T)
     end
     return Q
 end
-
-@deprecate smartDiff centraldiff
-@deprecate centralDiff centraldiff
 
 function centraldiff(v)
     c = size(v,2)

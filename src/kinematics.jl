@@ -46,7 +46,7 @@ function jacobianPOE(q::AbstractVecOrMat{P}, xi) where P
     #Page 117 in Murray 94
     n_joints  = size(q,1)
     Jss       = zeros(P,6,n_joints)
-    adint     = Matrix{Float64}(i, 6, 6)
+    adint     = Matrix{P}(I, 6, 6)
     T         = I4
     for i = 1:n_joints
         Jss[:,i] = adint*xi[:,i]
@@ -92,7 +92,7 @@ end
     n_joints  = size(q,1)
     Jbb       = zeros(6,n_joints)
     adint     = adi(T)
-    Ti        = I4
+    Ti        = Matrix(I4)
     @inbounds for i = n_joints:-1:1
         expξ2!(Ti,xi[:,i],q[i])
         adint   = adint*adi(Ti)
@@ -130,7 +130,7 @@ function dh2Tn(DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=I4) where P
 end
 
 """`fkinePOE(xi0,q)` Forward kinematics using POE"""
-function fkinePOE(xi0,q)
+@views function fkinePOE(xi0,q)
     Tfull = expξ(xi0[:,end-1],1)*expξ(xi0[:,end],1) # We first handle the tool transform, which does not include a joint variable
     for j = size(xi0,2)-2:-1:1
         ξ   = xi0[:,j]
@@ -140,8 +140,8 @@ function fkinePOE(xi0,q)
 end
 
 """`fkineLPOE(Tn0,xi,q)` Forward kinematics using LPOE"""
-function fkineLPOE(Tn0::AbstractArray{Ty},xi::AbstractMatrix{Ty},q::AbstractVector{Ty})::Matrix{Ty} where Ty
-    T = Matrix(I4)
+@views function fkineLPOE(Tn0::AbstractArray{Ty},xi::AbstractMatrix{Ty},q::AbstractVector{Ty})::Matrix{Ty} where Ty
+    T = Matrix{Ty}(I4)
     n = size(xi,2)-1
     for j = 1:n
         T = T*Tn0[:,:,j]*expξ(xi[:,j],q[j]) # turn all joints
@@ -157,7 +157,7 @@ Iterative inverse kinematics
 """
 function ikinePOE(xi,T,q0; maxiter=100, λ = 1e0, tol = 1e-12, verbose = false, adaptive = true)
     q = copy(q0)
-    err = Array{eltype(q0)}(maxiter)
+    err = Array{eltype(q0)}(undef, maxiter)
     Tend = expξ2(xi[:,end-1],1)*expξ2(xi[:,end],1)
     J,V,Tc = jacobianPOEikine(q,xi,Tend)
     err[1] = norm(twistcoords(logT(T*trinv(Tc))))
@@ -201,7 +201,7 @@ TODO: implement YuMi_left, Yumi_right Tbase*ikinePOE
 """
 function get_kinematic_functions(robot)
     robot = lowercase(robot)
-    if contains(robot,"yumi") || contains(robot,"frida")
+    if contains(robot, "yumi") || contains(robot, "frida")
         dh = DHYuMi()
     elseif robot == "7600" || robot == "irb7600"
         dh = DH7600()
@@ -209,57 +209,61 @@ function get_kinematic_functions(robot)
     Tn0 = dh2Tn(dh)
     xi = DH2twistsPOE(dh)
     xiL = DH2twistsLPOE(dh)
-    Z = zeros(3,3)
+    Z = zeros(3, 3)
     if robot == "yumileft"
         baseAnglesLeft = Quaternion(0.82888, -0.31402, 0.40801, -0.2188)
-        TbaseLeft = [rotationmatrix(baseAnglesLeft) [0.0476, 0.07, 0.4115]; 0 0 0 1]
-        fkinef = q -> TbaseLeft*fkineLPOE(Tn0,xiL,q)
-        jacobianf = q -> [TbaseLeft[1:3,1:3] Z;Z TbaseLeft[1:3,1:3]]*jacobianPOE(q,xi)[1]
-        ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
+        TbaseLeft =
+            [rotationmatrix(baseAnglesLeft) [0.0476, 0.07, 0.4115]; 0 0 0 1]
+        fkinef = q -> TbaseLeft * fkineLPOE(Tn0, xiL, q)
+        jacobianf =
+            q ->
+                [TbaseLeft[1:3, 1:3] Z; Z TbaseLeft[1:3, 1:3]] *
+                jacobianPOE(q, xi)[1]
+        ikinef =
+            (T, q0, maxiter = 100, λ = 1e0, tol = 1e-12, verbose = false) ->
+                ikinePOE(
+                    xi,
+                    trinv(Tbase) * T,
+                    q0,
+                    maxiter = maxiter,
+                    λ = λ,
+                    tol = tol,
+                    verbose = verbose,
+                )
     elseif robot == "yumiright"
         baseAnglesRight = Quaternion(0.82888, 0.31402, 0.40801, 0.2188)
-        TbaseRight = [rotationmatrix(baseAnglesRight) [0.0476, -0.07, 0.4115]; 0 0 0 1]
-        fkinef = q -> TbaseRight*fkineLPOE(Tn0,xiL,q)
-        jacobianf = q -> [TbaseRight[1:3,1:3] Z;Z TbaseRight[1:3,1:3]]*jacobianPOE(q,xi)[1]
-        ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,trinv(Tbase)*T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
+        TbaseRight =
+            [rotationmatrix(baseAnglesRight) [0.0476, -0.07, 0.4115]; 0 0 0 1]
+        fkinef = q -> TbaseRight * fkineLPOE(Tn0, xiL, q)
+        jacobianf =
+            q ->
+                [TbaseRight[1:3, 1:3] Z; Z TbaseRight[1:3, 1:3]] *
+                jacobianPOE(q, xi)[1]
+        ikinef =
+            (T, q0, maxiter = 100, λ = 1e0, tol = 1e-12, verbose = false) ->
+                ikinePOE(
+                    xi,
+                    trinv(Tbase) * T,
+                    q0,
+                    maxiter = maxiter,
+                    λ = λ,
+                    tol = tol,
+                    verbose = verbose,
+                )
     else
-        fkinef = q -> fkineLPOE(Tn0,xiL,q)
-        jacobianf = q -> jacobianPOE(q,xi)[1]
-        ikinef = (T,q0, maxiter=100, λ = 1e0, tol = 1e-12, verbose = false) -> ikinePOE(xi,T,q0,maxiter=maxiter, λ = λ, tol = tol, verbose = verbose)
+        fkinef = q -> fkineLPOE(Tn0, xiL, q)
+        jacobianf = q -> jacobianPOE(q, xi)[1]
+        ikinef =
+            (T, q0, maxiter = 100, λ = 1e0, tol = 1e-12, verbose = false) ->
+                ikinePOE(
+                    xi,
+                    T,
+                    q0,
+                    maxiter = maxiter,
+                    λ = λ,
+                    tol = tol,
+                    verbose = verbose,
+                )
     end
     return fkinef, ikinef, jacobianf
-end
-
-
-function testikine()
-    dh = DH7600();
-    q0 = randn(6)
-    xi = DH2twistsPOE(dh)
-    T0 = fkinePOE(xi,q0)
-    Tt = deepcopy(T0)
-    Tt[1:3,4] += 0.1*[1,1,1]
-    Tt[1:3,1:3] *= expω(1*π/180*randn(3))
-    Profile.clear()
-    gc()
-    @time q,err = ikinePOE(xi,Tt,q0,verbose=true)
-
-    # pp = semilogy(err)
-    # display(pp)
-end
-
-
-function testJacobian()
-    include("../POEutils.jl")
-    dh = DH7600();
-    q = [1,1,0,0,0,0];
-    q = randn(6)
-    AAA,BBB,T0,Ti0,Tn0 = jacobian(zeros(6),dh, I4);
-    Jn,J0,Tjac,Tijac,Tnjac = jacobian(q,dh, I4);
-
-    xiL = DH2twistsLPOE(Tn0)
-    xi = DH2twistsPOE(Tn0)
-    Jsb, Jbb = jacobianPOE(q,xi)
-
-    display(round(J0, digits=3))
-    display(round(Jsb, digits=3))
 end
