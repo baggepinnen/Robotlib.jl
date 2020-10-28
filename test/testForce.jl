@@ -54,27 +54,6 @@ using Robotlib, Test, Random
 
 end
 
-function savefig2(filename)
-
-    savefig(filename)
-    temppath, temp = mktemp()
-    pattern = r",\s*axis background/.style={fill={rgb,1:red,\d.\d+;green,\d.\d+;blue,\d.\d+}}"
-    hp = r"height = {[\d.]+mm}"
-    line = read(filename, String)
-    # println(line)
-    line = replace(line, pattern => "")
-    line = replace(line, r"width = {[\d.]+mm}" => "")
-    line = replace(
-        line,
-        r"height = {[\d.]+mm}" =>
-            "height = \\figureheight, width = \\figurewidth",
-    )
-    println(temp, line)
-
-    close(temp)
-    mv(temppath, filename, remove_destination = true)
-end
-
 
 
 # using Plots, DSP, Robotlib, Random, LaTeXStrings
