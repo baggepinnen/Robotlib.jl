@@ -63,8 +63,8 @@ export readcloud, readTmatrix, readplane, fitline, fitplane, framefromfeatures, 
 export plot3Dsmart
 export dot
 
-import Base: print, zeros, length, size, getindex, setindex!, convert, promote_rule, push!, show, display, +, *, .*, /, ./, -, \, inv
-import LinearAlgebra: ×, transpose, ctranspose, dot, ⋅, det
+import Base: print, zeros, length, size, getindex, setindex!, convert, promote_rule, push!, show, display, +, *, /,  -, \, inv
+import LinearAlgebra: ×, transpose, adjoint, dot, ⋅, det
 # using LaTeXStrings
 import Robotlib: T2R, T2t, I3, I4
 
@@ -313,7 +313,7 @@ end
 
 
 transpose(p::Point) = p.p'
-ctranspose(p::Point) = p.p'
+adjoint(p::Point) = p.p'
 convert(::Type{Vector}, p::Point) = p.p
 convert(::Type{Array{T1,n}}, f::Frame{T2}) where {T1,T2,n} = [Matrix{T1}(f.R) Vector{T1}(f.t); 0 0 0 1]
 convert(::Type{Matrix}, f::Frame{T2}) where {T2} = convert(Matrix{T2},f)
