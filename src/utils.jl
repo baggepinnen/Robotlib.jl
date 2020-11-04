@@ -22,9 +22,9 @@ function t2T(t1,t2,t3)
 end
 
 
-skewcoords(R) = [R[3,2];R[1,3];R[2,1]]
-twistcoords(xi) = [xi[1:3, 4]; skewcoords(xi[1:3, 1:3])]
-@inline skew(s)::AbstractMatrix{eltype(s)} = [0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
+skewcoords(R) = SA[R[3,2];R[1,3];R[2,1]]
+twistcoords(xi) = [T2t(xi); skewcoords(T2R(xi))]
+@inline skew(s) = SA[0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
 @inline function skew!(R::T,s)::T where T
     R[1,1] = 0
     R[2,1] = s[3]
