@@ -25,6 +25,7 @@ end
 skewcoords(R) = SA[R[3,2];R[1,3];R[2,1]]
 twistcoords(xi) = [T2t(xi); skewcoords(T2R(xi))]
 @inline skew(s) = SA[0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
+@inline skew(s1,s2,s3) = SA[0 -s3 s2;s3 0 -s1; -s2 s1 0]
 @inline function skew!(R::T,s)::T where T
     R[1,1] = 0
     R[2,1] = s[3]
@@ -37,7 +38,10 @@ twistcoords(xi) = [T2t(xi); skewcoords(T2R(xi))]
     R[3,3] = 0
     return R
 end
-skew4(s)::AbstractMatrix{eltype(s)} = [skew(s[4:6]) s[1:3]; 0 0 0 0]
+function skew4(s)
+    h = skew(s[4],s[5],s[6])
+    SMatrix{4,4,eltype(s), 16}(h[1],h[2],h[3],0,h[4],h[5],h[6],0,h[7],h[8],h[9],0,0,0,0,0)
+end
 
 # expω(w,q=1) = I + sin(norm(w)*q)/norm(w)*skew(w) + (1-cos(norm(w)*q))/norm(w)^2*skew(w)^2 # verified to work
 
@@ -52,8 +56,9 @@ end
 
 
 function expξ2(xi,q=1.0) # works well for jacobian-ikine
-    v = xi[1:3]
-    w = xi[4:6]
+    T = eltype(xi)
+    v = SVector(xi[1],xi[2],xi[3])
+    w = SVector(xi[4],xi[5],xi[6])
     nw = norm(w)
     what = skew(w)
     if nw < 1e-12
@@ -63,12 +68,12 @@ function expξ2(xi,q=1.0) # works well for jacobian-ikine
         eR = I + sin(nw*q)/nw*what + (1-cos(nw*q))/nw^2*what^2
         A = q*I + ((1 - cos(nw*q))/(nw^2))*what + ((nw*q - sin(nw*q))/(nw^3))*what*what
     end
-    [eR A*v; 0 0 0 1]
+    [eR A*v; SMatrix{1,4,T,4}(0, 0, 0, 1)]
 end
 
 """Optimized routine to modify T in place"""
 function expξ2!(T,xi,q=1.0)
-    w = skew(xi[4:6])
+    w = skew(xi[4],xi[5],xi[6])
     w2 = w^2
     nw = norm(xi[4:6])
     nw2 = nw^2
@@ -317,7 +322,7 @@ function rotx(t, deg=false)
     end
     ct = cos(t)
     st = sin(t)
-    R = [
+    R = SA[
     1   0    0
     0   ct  -st
     0   st   ct
@@ -330,7 +335,7 @@ function roty(t, deg=false)
     end
     ct = cos(t)
     st = sin(t)
-    R = [
+    R = SA[
     ct  0   st
     0   1   0
     -st  0   ct
@@ -343,7 +348,7 @@ function rotz(t, deg=false)
     end
     ct = cos(t)
     st = sin(t)
-    R = [
+    R = SA[
     ct  -st  0
     st   ct  0
     0    0   1
@@ -357,9 +362,9 @@ returns a vector ∈ R3 or a matrix ∈ R3×N depending on the dimension of the 
 """
 function R2rpy(m::AbstractArray{T,3}; conv="xyz", deg = false) where T
     N = size(m,3)
-    rpy = Array(Float64,3,N)
+    rpy = similar(m,3,N)
     for i = 1:N
-        rpy[:,i] = R2rpy(m[:,:,i], conv=conv, deg=deg)
+        @views rpy[:,i] = R2rpy(m[:,:,i], conv=conv, deg=deg)
     end
     return rpy
 end
@@ -449,7 +454,7 @@ end
 
 function traj2quat(T)
     N = size(T,3)
-    Q = Array(Float64,4,N)
+    Q = similar(T,4,N)
     for i = 1:N
         q = Quaternion(T[:,:,i])
         Q[1,i] = q.s
@@ -465,4 +470,14 @@ function centraldiff(v)
     a1 = [zeros(1,c);diff(v)]
     a2 = [diff(v);zeros(1,c)]
     a = (a1+a2)/2
+end
+
+function cat3(T::Vector{<:AbstractMatrix})
+    @assert size(T[1]) == (4,4)
+    N = length(T)
+    traj = similar(T[1], size(T[1])..., N)
+    for i = 1:N
+        traj[:,:,i] = T[i]
+    end
+    traj
 end
