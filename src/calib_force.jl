@@ -1,5 +1,6 @@
 """
-    calib_force(POSES, F, m0=0.3; offset=true)
+    Rf, m = calib_force(POSES, F, m0::Real = 0.3; offset=true)
+    Rf, m = calib_force(POSES, F, g::Vector; offset=true)
 
 `POSES` ∈ ℜ(4,4,N) are the positions of the tool frame from the robot forward kinematics, 4x4 transformation matrices
 `F` ∈ ℜ(N,3) vector of forces (accepts ℜ(Nx6) matrix with torques also)
@@ -7,7 +8,9 @@
 ```
 Rf*force[i,1:3] + forceoffs = POSES[1:3,1:3,i]'*[0, 0, mf*-9.82]
 ```
-This implementation assumes that the gravity vector is [0,0,-g], or in words, that the gravity is acting along the negative z axis.
+If `m0` is supplied, it's assumed that the gravity vector is [0,0,-g], or in words, that the gravity is acting along the negative z axis. A custom gravity vector `g` can also be supplied.
+
+This function can also be used to calibrate an accelerometer.
 
 [Bagge Carlson, F.](https://www.control.lth.se/staff/fredrik-bagge-carlson/), ["Machine Learning and System Identification for Estimation in Physical Systems"](https://lup.lub.lu.se/search/publication/ffb8dc85-ce12-4f75-8f2b-0881e492f6c0) (PhD Thesis 2018).
 
@@ -53,7 +56,7 @@ function calib_force(POSES,F,g::AbstractVector; offset=true, verbose=true)
         B2[3(i-1)+1:3i]   = b
     end
     w         = A2\B2
-    m         = w[1]/9.82
+    m         = w[1]/norm(g)
     offset && (forceoffs = w[2:4])
 
     m < 0 && @error("Estimated mass is negative, left handed coordinate system for sensor?")
@@ -137,9 +140,9 @@ import Robotlib: skew
 """
     This function uses Cayley transform to solve for R. It requires a known mass so it is recommended to use `calib_force` instead.
 """
-function calib_force2(POSES,F,m)
+function calib_force2(POSES,F,m,g  = -9.82)
     N  = size(POSES,3)
-    g  = -9.82
+    
     mg = m*g
 
     I  = Robotlib.I3
