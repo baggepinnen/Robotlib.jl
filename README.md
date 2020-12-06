@@ -20,7 +20,7 @@ q = getdata("robot_0.*posRawAbs", data, 1, removeNaN = false) # Extract columns 
 For ABB YuMi, joint angles `q` must be converted to logical order using e.g. `abb2logical!(q)`
 If you use the kinematic functions privided by `get_kinematic_functions`, the base transform is handled automatically. If you use the standard kinematic functions provided in Robotlib, you must also consider the base transform.
 
-### Case study, calibrate force sensor
+### Case study, calibrate force sensor (or accelerometer)
 ```julia
 using Robotlib
 using DSP # For filtfilt
