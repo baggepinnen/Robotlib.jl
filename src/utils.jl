@@ -39,8 +39,10 @@ twistcoords(xi) = [T2t(xi); skewcoords(T2R(xi))]
     return R
 end
 function skew4(s)
-    h = skew(s[4],s[5],s[6])
-    SMatrix{4,4,eltype(s), 16}(h[1],h[2],h[3],0,h[4],h[5],h[6],0,h[7],h[8],h[9],0,0,0,0,0)
+    SA[0 -s[6] s[5] s[1]
+      s[6] 0 -s[4] s[2]
+      -s[5] s[4] 0 s[3]
+      0 0 0 0]
 end
 
 # expω(w,q=1) = I + sin(norm(w)*q)/norm(w)*skew(w) + (1-cos(norm(w)*q))/norm(w)^2*skew(w)^2 # verified to work

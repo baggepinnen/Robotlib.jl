@@ -56,7 +56,7 @@ function calib_force(POSES,F,g::AbstractVector; offset=true, verbose=true)
         B2[3(i-1)+1:3i]   = b
     end
     w         = A2\B2
-    m         = w[1]/norm(g)
+    m         = w[1]/9.82
     offset && (forceoffs = w[2:4])
 
     m < 0 && @error("Estimated mass is negative, left handed coordinate system for sensor?")

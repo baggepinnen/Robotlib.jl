@@ -104,7 +104,7 @@ end
             q0 = ones(6)
             xi = DH2twistsPOE(dh)
             T0 = fkinePOE(xi,q0)
-            Tt = deepcopy(T0)
+            Tt = Matrix(T0)
             Tt[1:3,4] += 0.1*[1,1,1]
             Tt[1:3,1:3] *= rpy2R(pi/180,0,0)
 
