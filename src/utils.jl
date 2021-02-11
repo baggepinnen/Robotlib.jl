@@ -59,8 +59,8 @@ end
 
 function expξ2(xi,q=1.0) # works well for jacobian-ikine
     T = eltype(xi)
-    v = SVector(xi[1],xi[2],xi[3])
-    w = SVector(xi[4],xi[5],xi[6])
+    v = SA[xi[1],xi[2],xi[3]]
+    w = SA[xi[4],xi[5],xi[6]]
     nw = norm(w)
     what = skew(w)
     if nw < 1e-12
@@ -70,7 +70,7 @@ function expξ2(xi,q=1.0) # works well for jacobian-ikine
         eR = I + sin(nw*q)/nw*what + (1-cos(nw*q))/nw^2*what^2
         A = q*I + ((1 - cos(nw*q))/(nw^2))*what + ((nw*q - sin(nw*q))/(nw^3))*what*what
     end
-    [eR A*v; SMatrix{1,4,T,4}(0, 0, 0, 1)]
+    [[eR A*v]; SMatrix{1,4,T,4}(0, 0, 0, 1)]
 end
 
 """Optimized routine to modify T in place"""
