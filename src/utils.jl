@@ -100,8 +100,8 @@ Calculates the matrix logarithm of a transformation matrix ∈ SE(3)
 Does not seem to be very reliable for very small rotations, use logm instead, which is a bit slower.
 """
 function logT(T) # Verified to work in the vicinity of I, but not for very small errors
-    R = T[1:3,1:3]
-    t = T[1:3,4]
+    R = T2R(T)
+    t = T2t(T)
     ω = logR(R)
     nω = norm(skewcoords(ω))
     if nω < 1e-3
@@ -110,7 +110,7 @@ function logT(T) # Verified to work in the vicinity of I, but not for very small
         fact = (2sin(nω)-nω*(1+cos(nω)))/(2*nω^2*sin(nω))
     end
     Ai = I-0.5ω+fact*ω^2
-    return [ω Ai*t;0 0 0 0]
+    return [[ω Ai*t]; SA[0 0 0 0]]
 end
 
 """Calculates the matrix logarithm of a rotation matrix ∈ SO(3)"""
