@@ -128,27 +128,30 @@ end
 """Calculates the adjoint of a transformation matrix"""
 function ad(T)
     # Computes the adjoint of transformation matrix T
-    R = T[1:3,1:3]
-    t = skew(T[1:3,4])
-    Z = zeros(3,3)
-    A = [R t*R; Z R]
+    R = T2R(T)
+    t = skew(T2t(T))
+    Z = 0*R
+    A = [[R t*R]; [Z R]]
     return A
 end
 
 """Calculates the adjoint of the inverse of a tranformation matrix T, which is also the inverse of the adjoint of T"""
 function adi(T)
     # Computes the adjoint of transformation matrix inv(T)
-    R = T[1:3,1:3]'
-    t = skew(-R*T[1:3,4])
-    Z = zeros(3,3)
-    A = [R t*R; Z R]
+    R = T2R(T)'
+    t = skew(-R*T2t(T))
+    Z = 0*R
+    A = [[R t*R]; [Z R]]
     return A
 end
 
 """Inverts a transformation matrix ∈ SE(3)"""
-trinv(T) = [T[1:3,1:3]' -T[1:3,1:3]'*T[1:3,4];0 0 0 1]
+function trinv(T)
+    R = T2R(T)
+    [[R' -R'*T2t(T)]; SA[0 0 0 1]]
+end
 
-isrot(R) = det(R[1:3,1:3]) ≈ 1 && norm(R[1:3,1:3]'R[1:3,1:3]-I) < 1e-10
+isrot(R) = det(T2R(R)) ≈ 1 && norm(T2R(R)'T2R(R)-I) < 1e-10
 isse3(T) = isrot(T) && T[4,1:4] == [0 0 0 1]
 
 """`Rangle(R1,R2 = I3,deg = false)` calculates the angle between two rotation matrices"""
@@ -189,9 +192,10 @@ end
 
 """This is the other helper method for calibPOE"""
 function xii(q,xi)
+    T = promote_type(eltype(q), eltype(xi))
     n = size(q,1)
-    A = zeros(6,n)
-    pa = Matrix{Float64}(i, 6, 6)
+    A = zeros(T, 6, n)
+    pa = Matrix{T}(I, 6, 6)
     for i = 1:n
         A[:,i] = pa*xi[:,i]
         pa = pa*ad(expξ(xi[:,i],q[i])) # Correct order?
@@ -203,7 +207,7 @@ end
 
 
 function prodad(xi,q,n)
-    pa = Matrix{Float64}(i, 6, 6)
+    pa = Matrix{Float64}(I, 6, 6)
     for i = 1:n
         pa = pa*ad(expξ(skew4(xi[:,i]),q[i]))
     end
