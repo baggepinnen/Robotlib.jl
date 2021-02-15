@@ -89,6 +89,23 @@ end
         r,p,y = R2rpy(R, conv="xyz")
         @test rpy2R(r,p,y, "xyz") ≈ R
 
+        r1 = [-1.0 0.0 0.0
+              0.0 0.0 1.0
+              0.0 1.0 0.0]
+        log_r1 = logR(r1)
+        log_r1_true = [0.0 -π/sqrt(2) π/sqrt(2)
+                       π/sqrt(2) 0.0 0.0
+                       -π/sqrt(2) 0.0 0.0]
+        @test isapprox(log_r1, log_r1_true)
+
+        r2 = [-1.0 0.0 0.0
+              0.0 -1.0 0.0
+              0.0 0.0 1.0]
+        log_r2 = logR(r2)
+        log_r2_true = [0.0 -π 0.0
+                       π 0.0 0.0
+                       0.0 0.0 0.0]
+        @test isapprox(log_r2, log_r2_true)
     end
 
 
