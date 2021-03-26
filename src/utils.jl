@@ -13,6 +13,12 @@ t2T(t::AbstractVector{T}) where T = SA[ 1 0 0 t[1]
                                         0 0 1 t[3]
                                         0 0 0 1]
 
+
+R2T(R) = SA[R[1,1] R[1,2] R[1,3] 0
+            R[2,1] R[2,2] R[2,3] 0
+            R[3,1] R[3,2] R[3,3] 0
+            0      0      0      1]
+            
 function t2T(t1,t2,t3)
     T = promote_type(typeof.((t1,t2,t3))...)
     SA[ 1 0 0 t1
@@ -117,12 +123,60 @@ end
 function logR(R)
     @assert isrot(R)
     phi = acos((min(tr(R),3)-1)/2)
+    if abs(phi-π) < 1e-5
+        return logR_special(R)
+    end
     if abs(phi) < 1e-10
         ω = (R-R')/2
     else
         ω = phi/(2sin(phi))*(R-R')
     end
     return ω
+end
+
+"""Special variant of logR that handles the case when the rotation is π rad"""
+function logR_special(R)
+    qs = sqrt(abs(tr(R) + 1))/2
+    kx = R[3, 2] - R[2, 3]
+    ky = R[1, 3] - R[3, 1]
+    kz = R[2, 1] - R[1, 2]
+
+    if R[1, 1] >= R[2, 2] && R[1, 1] >= R[3, 3]
+        kx1 = R[1, 1] - R[2, 2] - R[3, 3] + 1
+        ky1 = R[2, 1] + R[1, 2]
+        kz1 = R[3, 1] + R[1, 3]
+        add = kx >= 0
+    elseif R[2, 2] >= R[3, 3]
+        kx1 = R[2, 1] + R[1, 2]
+        ky1 = R[2, 2] - R[1, 1] - R[3, 3] + 1
+        kz1 = R[3, 2] + R[2, 3]
+        add = (ky >= 0)
+    else
+        kx1 = R[3, 1] + R[1, 3]
+        ky1 = R[3, 2] + R[2, 3]
+        kz1 = R[3, 3] - R[1, 1] - R[2, 2] + 1
+        add = (kz >= 0)
+    end
+
+    if add
+        kx += kx1
+        ky += ky1
+        kz += kz1
+    else
+        kx -= kx1
+        ky -= ky1
+        kz -= kz1
+    end
+
+    v_tmp = SA[kx, ky, kz]
+    v = @SVector zeros(eltype(R), 3)
+    divider = norm(v_tmp)
+    if divider > 1e-8
+        v = v_tmp ./ divider
+    end
+    theta = 2*acos(qs)
+    ret = skew(v*theta)
+    return ret
 end
 
 """Calculates the adjoint of a transformation matrix"""
