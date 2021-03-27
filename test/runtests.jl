@@ -233,6 +233,12 @@ end
     end
 
 
+    @testset "calibAXYB" begin
+        @info "Testing calibAXYB"
+        include("test_calibAXYB.jl")
+    end
+
+
     @testset "Frames" begin
         @info "Testing Frames"
         include("testFrames.jl")

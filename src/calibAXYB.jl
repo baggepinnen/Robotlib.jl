@@ -5,12 +5,12 @@ function leds_to_tf(L::AbstractMatrix, usemean = false)
     
     if usemean
         m = mean(L, dims = 2)[:] 
-        v1 = normalize(L[:, 1] - m)
-        v2 = normalize(L[:, 2] - m)
+        v1 = normalize(L[:,1] - m)
+        v2 = normalize(L[:,2] - m)
     else
         m = L[:,1]
-        v1  = normalize(L[:,2]-L[:,1])
-        v2  = normalize(L[:,3]-L[:,1])
+        v1  = normalize(L[:,2]-m)
+        v2  = normalize(L[:,3]-m)
     end
     v3 = normalize(cross(v1, v2))
     v2 = normalize(cross(v3, v1))
@@ -21,10 +21,11 @@ end
 
 function leds_to_tf(L::AbstractVector{<:AbstractMatrix})
     length(L) == 3 || throw(ArgumentError("Expected three matrices"))
-    N = size(L[1], 1)
+    NL, N = size(L[1])
+    NL > N && @warn "More LEDs than number of data points, are you sure you should not transpose the L matrices?"
     T = Matrix{Float64}[]
     for i = 1:N
-        D = [L[1][i, :] L[3][i, :] L[3][i, :]]
+        D = [L[1][:, i] L[2][:, i] L[3][:, i]]
         all(isfinite, D) || continue
         push!(T, leds_to_tf(D))
     end
@@ -108,3 +109,24 @@ function calibAXYB(POSES, MEASURED; ortho = true, estimator = \)
     T_RB_T, T_TF_TCP, normDist
 end
 
+random_SE3(σt=1) = Rt2T(orthonormal(randn(3,3)), σt*randn(3))
+
+"""
+    T_RB_T, T_TF_S, POSES, MEASURED, LEDs = simulateCalibration_AXYB(N; σt=0.1, σT=1)
+σt denots the std of the translation of the sensor frame. σT is the std for the translation of the camera to the robot
+"""
+function simulateCalibration_AXYB(N=100; σt=0.1, σT=1)
+    POSES = [random_SE3(0.5*σT) for _ = 1:N]
+    T_RB_T = random_SE3(σT)
+    T_TF_S = random_SE3(σt)
+    MEASURED = [trinv(T_RB_T)*P*T_TF_S for P in POSES]
+    LEDs = map(1:3) do l
+        L = map(1:N) do i
+            t = T2t(MEASURED[i])
+            R = T2R(MEASURED[i])
+            t .+ (l == 1 ? 0 : σt*R[:,l-1]) # origin + one of the basis vectors
+        end
+        reduce(hcat, L)
+    end
+    T_RB_T, T_TF_S, POSES, MEASURED, LEDs
+end

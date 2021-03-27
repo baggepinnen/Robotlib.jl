@@ -22,8 +22,10 @@ include("posDepFric.jl")
 include("calibLPOE.jl")
 include("calib_force.jl")
 include("calibNAXP.jl")
+include("calibAXYB.jl")
+
 export calibLPOE,
-    calibLPOEdual, calib_force, calib_force_iterative, calib_force_eigen, calibNAXP
+    calibLPOEdual, calib_force, calib_force_iterative, calib_force_eigen, calibNAXP, calibAXYB, leds_to_tf
 
 using Requires
 function __init__()
