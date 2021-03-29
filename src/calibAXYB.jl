@@ -112,10 +112,10 @@ end
 random_SE3(σt=1) = Rt2T(orthonormal(randn(3,3)), σt*randn(3))
 
 """
-    T_RB_T, T_TF_S, POSES, MEASURED, LEDs = simulateCalibration_AXYB(N; σt=0.1, σT=1)
-σt denots the std of the translation of the sensor frame. σT is the std for the translation of the camera to the robot
+    T_RB_T, T_TF_S, POSES, MEASURED, LEDs = simulateCalibration_AXYB(N; σt=0.1, σT=1, σy=0)
+σt denots the std of the translation of the sensor frame. σT is the std for the translation of the camera to the robot. σy is measurement noise
 """
-function simulateCalibration_AXYB(N=100; σt=0.1, σT=1)
+function simulateCalibration_AXYB(N=100; σt=0.1, σT=1, σy=0)
     POSES = [random_SE3(0.5*σT) for _ = 1:N]
     T_RB_T = random_SE3(σT)
     T_TF_S = random_SE3(σt)
@@ -126,7 +126,7 @@ function simulateCalibration_AXYB(N=100; σt=0.1, σT=1)
             R = T2R(MEASURED[i])
             t .+ (l == 1 ? 0 : σt*R[:,l-1]) # origin + one of the basis vectors
         end
-        reduce(hcat, L)
+        reduce(hcat, L) .+ σy .* randn.()
     end
     T_RB_T, T_TF_S, POSES, MEASURED, LEDs
 end
