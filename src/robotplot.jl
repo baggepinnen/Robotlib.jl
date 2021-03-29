@@ -22,14 +22,29 @@ trajplot3
     xguide --> "x"
     yguide --> "y"
     zguide --> "z"
-    @series begin
-        seriestype := :scatter3d
-        (T[1,4,:],T[2,4,:],T[3,4,:])
-    end
-    if plotFrame > 0
-        for i = 1:size(T,3)
-            @series begin
-                plot!(T[:,:,i],plotFrame)
+    if ndims(T) == 3
+        @series begin
+            seriestype := :scatter3d
+            (T[1,4,:],T[2,4,:],T[3,4,:])
+        end
+        if plotFrame > 0
+            for i = 1:size(T,3)
+                @series begin
+                    plot!(T[:,:,i],plotFrame)
+                end
+            end
+        end
+    else
+        @series begin
+            seriestype := :scatter3d
+            TT = reduce(hcat, Robotlib.T2t.(T))
+            TT[1,:],TT[2,:],TT[3,:]
+        end
+        if plotFrame > 0
+            for i = 1:size(T,3)
+                @series begin
+                    plot!(T[i],plotFrame)
+                end
             end
         end
     end
