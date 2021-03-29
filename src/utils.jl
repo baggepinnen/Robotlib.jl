@@ -13,6 +13,12 @@ t2T(t::AbstractVector{T}) where T = SA[ 1 0 0 t[1]
                                         0 0 1 t[3]
                                         0 0 0 1]
 
+
+R2T(R) = SA[R[1,1] R[1,2] R[1,3] 0
+            R[2,1] R[2,2] R[2,3] 0
+            R[3,1] R[3,2] R[3,3] 0
+            0      0      0      1]
+            
 function t2T(t1,t2,t3)
     T = promote_type(typeof.((t1,t2,t3))...)
     SA[ 1 0 0 t1
