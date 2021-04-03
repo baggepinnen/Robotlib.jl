@@ -35,7 +35,7 @@ end
 
 
 """
-    T_RB_T, T_TF_TCP, normDist = calibAXYB(POSES, MEASURED; ortho=true, estimator = \\)
+    T_RB_T, T_TF_TCP, normDist = calibAXYB(POSES, MEASURED; ortho=true, estimator = \\, refine = true)
 
 This functions solves the problem AX = YB
 
@@ -45,8 +45,9 @@ This functions solves the problem AX = YB
     with a laser scanner mounted on the TF, it is the position of the SCANNER
     in the measured object frame, not the object in the scanner frame!
 - `ortho` is a flag indicating if found matrices are to be orthogonalized
+- `refine`: run a second, local optimization routine to improve the accuracy (recommended)
 """
-function calibAXYB(POSES, MEASURED; ortho = true, estimator = \)
+function calibAXYB(POSES, MEASURED; ortho = true, estimator = \, refine = true)
     length(POSES) == length(MEASURED) ||
         throw(ArgumentError("POSES and MEASURED must have the same length"))
     T = promote_type(eltype(POSES[1]), eltype(MEASURED[1]))
@@ -105,6 +106,31 @@ function calibAXYB(POSES, MEASURED; ortho = true, estimator = \)
         sum(normDist)
     end
     cost(T_RB_T, T_TF_TCP)
+    if refine
+        p0 = zeros(12)
+        adapter = function(p)
+            T_RB_Ti = T_RB_T*Rt2T(rpy2R(p[4:6]), p[1:3])
+            T_TF_TCPi = T_TF_TCP*Rt2T(rpy2R(p[10:12]), p[7:9])
+            T_RB_Ti, T_TF_TCPi
+        end
+        cost(p) = cost(adapter(p)...)
+        res = Optim.optimize(
+            cost,
+            p0,
+            BFGS(),
+            Optim.Options(
+                store_trace       = true,
+                show_trace        = true,
+                show_every        = 2,
+                iterations        = 100,
+                allow_f_increases = false,
+                time_limit        = 100,
+                g_tol             = 1e-12,
+            ),
+        )
+        T_RB_T, T_TF_TCP = adapter(res.minimizer)
+        cost(T_RB_T, T_TF_TCP)
+    end
 
     T_RB_T, T_TF_TCP, normDist
 end
@@ -113,6 +139,7 @@ random_SE3(σt=1) = Rt2T(orthonormal(randn(3,3)), σt*randn(3))
 
 """
     T_RB_T, T_TF_S, POSES, MEASURED, LEDs = simulateCalibration_AXYB(N; σt=0.1, σT=1, σy=0)
+
 σt denots the std of the translation of the sensor frame. σT is the std for the translation of the camera to the robot. σy is measurement noise
 """
 function simulateCalibration_AXYB(N=100; σt=0.1, σT=1, σy=0)
