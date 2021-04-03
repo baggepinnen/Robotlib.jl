@@ -8,10 +8,10 @@ T2R(T::AbstractMatrix) = SA[   T[1,1] T[1,2] T[1,3]
                         T[3,1] T[3,2] T[3,3]]
 # T2t(T::AbstractMatrix) = T[1:3,4]
 T2t(T::AbstractMatrix) = SVector(T[1,4],T[2,4],T[3,4])
-t2T(t::AbstractVector{T}) where T = SA[ 1 0 0 t[1]
-                                        0 1 0 t[2]
-                                        0 0 1 t[3]
-                                        0 0 0 1]
+t2T(t::AbstractVector) = SA[1 0 0 t[1]
+                            0 1 0 t[2]
+                            0 0 1 t[3]
+                            0 0 0 1]
 
 
 R2T(R) = SA[R[1,1] R[1,2] R[1,3] 0
@@ -20,16 +20,34 @@ R2T(R) = SA[R[1,1] R[1,2] R[1,3] 0
             0      0      0      1]
             
 function t2T(t1,t2,t3)
-    T = promote_type(typeof.((t1,t2,t3))...)
     SA[ 1 0 0 t1
         0 1 0 t2
         0 0 1 t3
         0 0 0 1]
 end
 
+"""
+Returns the skew coordinates of a rotation matrix ∈ SO(3) or it's corresponding element in so(3). The inverse of this function when the input is ∈ SO(3) is `logR`.
+"""
+function skewcoords(R)
+    if R[1,1] == 0 # ∈ so(3)
+        SA[R[3,2];R[1,3];R[2,1]]
+    else # ∈ SO(3)
+        skewcoords(logR(R))
+    end
+end
 
-skewcoords(R) = SA[R[3,2];R[1,3];R[2,1]]
-twistcoords(xi) = [T2t(xi); skewcoords(T2R(xi))]
+"""
+Returns the twist coordinates of a transformation matrix ∈ SE(3) or it's corresponding element in se(3). The inverse of this function when the input is ∈ SE(3) is `logT`.
+"""
+function twistcoords(xi)
+    if xi[4,4] == 1 # we sent in a transformation matrix ∈ SE(3)
+        twistcoords(logT(xi))
+    else # we sent in a matrix ∈ se(3)
+        [T2t(xi); skewcoords(xi)]
+    end
+end
+
 @inline skew(s) = SA[0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
 @inline skew(s1,s2,s3) = SA[0 -s3 s2;s3 0 -s1; -s2 s1 0]
 @inline function skew!(R::T,s)::T where T
@@ -46,9 +64,9 @@ twistcoords(xi) = [T2t(xi); skewcoords(T2R(xi))]
 end
 function skew4(s)
     SA[0 -s[6] s[5] s[1]
-      s[6] 0 -s[4] s[2]
-      -s[5] s[4] 0 s[3]
-      0 0 0 0]
+        s[6] 0 -s[4] s[2]
+        -s[5] s[4] 0 s[3]
+        0 0 0 0]
 end
 
 # expω(w,q=1) = I + sin(norm(w)*q)/norm(w)*skew(w) + (1-cos(norm(w)*q))/norm(w)^2*skew(w)^2 # verified to work
@@ -181,7 +199,6 @@ end
 
 """Calculates the adjoint of a transformation matrix"""
 function ad(T)
-    # Computes the adjoint of transformation matrix T
     R = T2R(T)
     t = skew(T2t(T))
     Z = 0*R
@@ -191,11 +208,27 @@ end
 
 """Calculates the adjoint of the inverse of a tranformation matrix T, which is also the inverse of the adjoint of T"""
 function adi(T)
-    # Computes the adjoint of transformation matrix inv(T)
     R = T2R(T)'
     t = skew(-R*T2t(T))
     Z = 0*R
     A = [[R t*R]; [Z R]]
+    return A
+end
+
+"""
+The adjoint of only the translational part, (assuming R=I).
+"""
+function adt(T)
+    t = skew(T2t(T))
+    Z = 0*I3
+    A = [[I3 t]; [Z I3]]
+    return A
+end
+
+function adit(T)
+    t = -skew(T2t(T))
+    Z = 0*I3
+    A = [[I3 t]; [Z I3]]
     return A
 end
 
@@ -290,7 +323,7 @@ function xyθ(x1,x2)
     #     θ = -θ
     # end
     # return θ
-    R2rpy(x1[1:3,1:3]'x2[1:3,1:3],conv="zyx")[3]
+    R2rpy(T2R(x1)'T2R(x2),conv="zyx")[3]
 end
 
 """Takes the DH-parameters or a set of nominal transformation matrices and outputs the joint twists in base frame"""
@@ -298,7 +331,7 @@ function DH2twistsPOE(Tn)
     #This is a bit tricky, the last two twists corresponds to [tool T(0)], use with fkinePOE
     n = size(Tn,3)-1
     xi = zeros(6,n+2)
-    P = skew4([0,0,0,0,0,1])
+    P = skew4(SA[0,0,0,0,0,1])
     T = I4
     M = I4
     for i = 1:n+1
@@ -316,7 +349,7 @@ end
 function DH2twistsLPOE(Tn)
     n = size(Tn,3)
     xi = zeros(6,n)
-    P = skew4([0,0,0,0,0,1])
+    P = skew4(SA[0,0,0,0,0,1])
     for i = 1:n
         Xi = trinv(Tn[:,:,i])*P*(Tn[:,:,i])
         xi[:,i] = twistcoords(Xi)
@@ -329,7 +362,7 @@ DH2twistsPOE(dh::DH) = DH2twistsPOE(dh2Tn(dh))
 
 """Takes a matrix R ∈ SO(3) or T ∈ SE(3) and makes the rotational part orthonormal"""
 function orthonormal!(M)
-    R = M[1:3,1:3]
+    R = T2R(M)#[1:3,1:3]
     U,S,V = svd(R)
     a = sign(det(U*V'))
     S = diagm(0=>[1,1,a])
@@ -340,7 +373,7 @@ end
 
 function orthonormal(Mi)
     M = deepcopy(Mi)
-    R = M[1:3,1:3]
+    R = T2R(M)#[1:3,1:3]
     U,S,V = svd(R)
     a = sign(det(U*V'))
     S = diagm(0=>[1,1,a])

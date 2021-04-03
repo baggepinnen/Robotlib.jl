@@ -1,9 +1,9 @@
 import Robotlib: ad, adi
 using Random
 """
-    Tn0, xi, et, er = calibLPOE(xin,Tn0in,Ta,q; maxiter=10, λ=1.0)
+    Tn0, xi, et, er = calibLPOE(xin, Tn0in, Ta, q; maxiter=10, λ=1.0)
 
-Performs knematic calibration using the local POE formulation of kinematics.
+Performs kinematic calibration using the local POE formulation of kinematics.
 - `Tn0` Nominal forward kinematics
 - `xi` Twists
 - `et` Translational errors as function of iteration of algorithm
@@ -69,7 +69,8 @@ end
 
 
 """
-`calibLPOEdual(xi,Tn0,q;maxiter=10, λ=1.0)`
+    calibLPOEdual(xi,Tn0,q;maxiter=10, λ=1.0)
+    
 Performs dual arm calibration given joint twists xi and nominal transformations Tn0
 Returns calibrated nominal transformations.
 This function does not converge to the correct kinematic parameters since the problem is underspecified. It only converges to kinematic parameters that make the two arms agree.
