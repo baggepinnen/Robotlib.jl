@@ -215,12 +215,12 @@ end
             global ei, ec
             T1 = fkineLPOE(Tn0mod[:, :, :, 1], xin[:, :, 1], q[i, :, 1])
             T2 = fkineLPOE(Tn0mod[:, :, :, 2], xin[:, :, 2], q[i, :, 2])
-            ei += norm(twistcoords(log(Ta[:, :, i] * trinv(T1))))
-            ei += norm(twistcoords(log(Ta[:, :, i] * trinv(T2))))
+            ei += norm(twistcoords(logT(Ta[:, :, i] * trinv(T1))))
+            ei += norm(twistcoords(logT(Ta[:, :, i] * trinv(T2))))
             T1 = fkineLPOE(Tn0c[:, :, :, 1], xin[:, :, 1], q[i, :, 1])
             T2 = fkineLPOE(Tn0c[:, :, :, 2], xin[:, :, 2], q[i, :, 2])
-            ec += norm(twistcoords(log(Ta[:, :, i] * trinv(T1))))
-            ec += norm(twistcoords(log(Ta[:, :, i] * trinv(T2))))
+            ec += norm(twistcoords(logT(Ta[:, :, i] * trinv(T1))))
+            ec += norm(twistcoords(logT(Ta[:, :, i] * trinv(T2))))
         end
         println(
             "Initial error: ",
