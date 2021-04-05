@@ -30,7 +30,7 @@ end
 Returns the skew coordinates of a rotation matrix ∈ SO(3) or it's corresponding element in so(3). The inverse of this function when the input is ∈ SO(3) is `logR`.
 """
 function skewcoords(R)
-    if R[1,1] == 0 # ∈ so(3)
+    if R[1,1] == R[2,2] == R[3,3] == 0 # ∈ so(3)
         SA[R[3,2];R[1,3];R[2,1]]
     else # ∈ SO(3)
         skewcoords(logR(R))
