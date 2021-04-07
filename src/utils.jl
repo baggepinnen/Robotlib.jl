@@ -30,7 +30,7 @@ end
 Returns the skew coordinates of a rotation matrix ∈ SO(3) or it's corresponding element in so(3). The inverse of this function when the input is ∈ SO(3) is `logR`.
 """
 function skewcoords(R)
-    if R[1,1] == R[2,2] == R[3,3] == 0 # ∈ so(3)
+    if isskew(R) # ∈ so(3)
         SA[R[3,2];R[1,3];R[2,1]]
     else # ∈ SO(3)
         skewcoords(logR(R))
@@ -48,6 +48,13 @@ function twistcoords(xi)
     end
 end
 
+
+@inline function isskew(R)
+    (R[1,1] == R[2,2] == R[3,3] == 0) &&
+        R[2,1] == -R[1,2] &&
+        R[3,1] == -R[1,3] &&
+        R[3,2] == -R[2,3] 
+end
 @inline skew(s) = SA[0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
 @inline skew(s1,s2,s3) = SA[0 -s3 s2;s3 0 -s1; -s2 s1 0]
 @inline function skew!(R::T,s)::T where T
