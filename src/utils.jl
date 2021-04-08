@@ -48,12 +48,16 @@ function twistcoords(xi)
     end
 end
 
+"Make a matrix skew-symmetric by (R-R')/2"
+function skewify(R)
+    0.5 .* (R - R')
+end
 
-@inline function isskew(R)
-    (R[1,1] == R[2,2] == R[3,3] == 0) &&
+Base.@propagate_inbounds function isskew(R)
+    @boundscheck (R[1,1] == R[2,2] == R[3,3] == 0) &&
         R[2,1] == -R[1,2] &&
         R[3,1] == -R[1,3] &&
-        R[3,2] == -R[2,3] 
+        R[3,2] == -R[2,3]
 end
 @inline skew(s) = SA[0 -s[3] s[2];s[3] 0 -s[1]; -s[2] s[1] 0]
 @inline skew(s1,s2,s3) = SA[0 -s3 s2;s3 0 -s1; -s2 s1 0]
