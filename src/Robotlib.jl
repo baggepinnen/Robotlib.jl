@@ -6,6 +6,7 @@ using LinearAlgebra, Statistics, StaticArrays, SparseArrays
 using TotalLeastSquares
 using Quaternions
 import Quaternions: Quaternion, rotationmatrix
+using Optim
 export rotationmatrix
 const I4 = SMatrix{4,4,Float64,16}(Matrix{Float64}(I, 4, 4))
 const I3 = SMatrix{3,3,Float64,9}(Matrix{Float64}(I, 3, 3))
@@ -22,8 +23,10 @@ include("posDepFric.jl")
 include("calibLPOE.jl")
 include("calib_force.jl")
 include("calibNAXP.jl")
+include("calibAXYB.jl")
+
 export calibLPOE,
-    calibLPOEdual, calib_force, calib_force_iterative, calib_force_eigen, calibNAXP
+    calibLPOEdual, calib_force, calib_force_iterative, calib_force_eigen, calibNAXP, calibAXYB, leds_to_tf
 
 using Requires
 function __init__()

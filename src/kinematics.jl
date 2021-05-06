@@ -1,4 +1,6 @@
-"""`Jn, J0, T, Ti, Tn = jacobian(qin, DH::DH, tool=I4)`
+"""
+    Jn, J0, T, Ti, Tn = jacobian(qin, DH::DH, tool=I4)
+
 Calculates the jacobian in base (J0) and tool frame (Jn) as well as the forward kinematics (T),
 given the joint angles and the DH-parameters"""
 function jacobian(q::AbstractVecOrMat{P}, DH::DH, tool=I4) where P
@@ -33,14 +35,16 @@ function jacobian(q::AbstractVecOrMat{P}, DH::DH, tool=I4) where P
     T           = T*tool
 
     # jacob0 (base)
-    R = T[1:3,1:3]
-    J0 = [R zeros(3,3); zeros(3,3) R] * Jn
+    R = T2R(T)
+    J0 = [[R 0R]; [0R R]] * Jn
 
     return Jn, J0, T, Ti, trans
 end
 
 """
-`jacobianPOE(q, xi)` Returns The jacobian in 1) the base frame, 2) the tool frame. It can most likely be rewritten to be faster.
+    jacobianPOE(q, xi)
+
+Returns The jacobian in 1) the base frame, 2) the tool frame. It can most likely be rewritten to be faster.
 """
 function jacobianPOE(q::AbstractVecOrMat{P}, xi) where P
     #Page 117 in Murray 94
@@ -58,7 +62,8 @@ function jacobianPOE(q::AbstractVecOrMat{P}, xi) where P
 
     # Now we do a bit messing around to get the jacobian we are used to from extCtrl
     Jbb = adi(T)*Jss
-    Jsb = [T[1:3,1:3] zeros(3,3); zeros(3,3) T[1:3,1:3]] * Jbb
+    R = T2R(T[1:3,1:3])
+    Jsb = [[R 0R]; [0R R]] * Jbb
 
     return Jsb, Jbb, T
 end
@@ -79,13 +84,16 @@ function jacobianPOEb(q::AbstractVecOrMat{P}, xi) where P
 
     # Now we do a bit messing around to get the jacobian we are used to from extCtrl
     #Jbb = adi(T)*Jss
-    Jsb = [T[1:3,1:3] zeros(3,3); zeros(3,3) T[1:3,1:3]] * Jbb
+    R = T2R(T[1:3,1:3])
+    Jsb = [[R 0R]; [0R R]] * Jbb
 
     return Jsb, Jbb, T
 end
 
 """
-`jacobianPOE(q, xi, T)` Returns The jacobian in 1) the base frame, 2) the tool frame and returns the FK. It must be handed a precomputed end transform `Tend = expξ2(xi[:,end-1],1)*expξ2(xi[:,end],1)`
+    jacobianPOE(q, xi, T)
+
+Returns The jacobian in 1) the base frame, 2) the tool frame and returns the FK. It must be handed a precomputed end transform `Tend = expξ2(xi[:,end-1],1)*expξ2(xi[:,end],1)`
 """
 @fastmath function jacobianPOEikine(q, xi,T)
     #Page 117 in Murray 94
@@ -101,7 +109,8 @@ end
     end
 
     # Now we do a bit messing around to get the jacobian we are used to from extCtrl
-    Jsb = [T[1:3,1:3] zeros(3,3); zeros(3,3) T[1:3,1:3]] * Jbb
+    R = T2R(T[1:3,1:3])
+    Jsb = [[R 0R]; [0R R]] * Jbb
 
     return Jsb, Jbb, T
 end
@@ -109,7 +118,7 @@ end
 
 
 """Computes a set of local transformation matrices given the DH-parameters of a robot. Can be sent an optional joint-angle vector and a tool"""
-function dh2Tn!(Tn, DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=I4) where P
+function dh2Tn!(Tn, DH, q::AbstractVecOrMat{P}=zeros(size(DH.dhpar,1)), tool=I4) where P
     dhpar    = DH.dhpar
     n_joints = size(dhpar,1)
     q = q .+ DH.offset
@@ -123,13 +132,16 @@ function dh2Tn!(Tn, DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=I4) where P
     return Tn
 end
 
-function dh2Tn(DH, q::VecOrMat{P}=zeros(size(DH.dhpar,1)), tool=I4) where P
+function dh2Tn(DH, q::AbstractVecOrMat{P}=zeros(size(DH.dhpar,1)), tool=I4) where P
     n_joints = size(DH.dhpar,1)
     Tn       = zeros(P,4,4,n_joints+1)
     return dh2Tn!(Tn, DH, q, tool)
 end
 
-"""`fkinePOE(xi0,q)` Forward kinematics using POE"""
+"""
+    fkinePOE(xi0,q)
+    
+Forward kinematics using POE"""
 @views function fkinePOE(xi0,q)
     Tfull = expξ(xi0[:,end-1],1)*expξ(xi0[:,end],1) # We first handle the tool transform, which does not include a joint variable
     for j = size(xi0,2)-2:-1:1
