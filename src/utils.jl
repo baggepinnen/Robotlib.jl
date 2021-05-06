@@ -89,7 +89,8 @@ end
 function expω(w,q=1)
     nw = norm(w)
     if nw < 1e-12 # TODO: Use TaylorSeries.jl to approximate this for small nw, I verified TaylorSeries.jl to work well for this
-        I + q*skew(w)
+        tmp = (nw*q)^2
+        I + (1-tmp/6)*q*skew(w) + (0.5 - tmp/24)*(q*skew(w))^2
     else
         I + sin(nw*q)/nw*skew(w) + (1-cos(nw*q))/nw^2*skew(w)^2
     end
