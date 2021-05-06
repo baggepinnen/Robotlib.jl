@@ -106,6 +106,20 @@ end
                        π 0.0 0.0
                        0.0 0.0 0.0]
         @test isapprox(log_r2, log_r2_true)
+
+        w1 = [1e-13; 0; 0]
+        r1 = expω(w1)
+        w2 = skewcoords(r1)
+        @test isapprox(w1, w2)
+
+        w3 = [1e-14; -1e-15; 2e-15]
+        r2 = expω(w3)
+        w4 = skewcoords(r2)
+        @test isapprox(w3, w4)
+        q3 = 123.0
+        r3 = expω(w3, q3)
+        w5 = skewcoords(r3)
+        @test isapprox(w3*q3, w5)
     end
 
 
