@@ -113,13 +113,13 @@ end
         @test isapprox(w1, w2)
 
         w3 = [1e-14; -1e-15; 2e-15]
-        r2 = expω(w2)
+        r2 = expω(w3)
         w4 = skewcoords(r2)
-        @test isapprox(w1, w2)
+        @test isapprox(w3, w4)
         q3 = 123.0
-        r3 = expω(w2, q=q3)
-        w5 = skewcoords(r2)
-        @test isapprox(w1*q3, w2)
+        r3 = expω(w3, q3)
+        w5 = skewcoords(r3)
+        @test isapprox(w3*q3, w5)
     end
 
 
