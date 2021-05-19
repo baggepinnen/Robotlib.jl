@@ -91,8 +91,9 @@ end
 # expω(w,q=1) = I + sin(norm(w)*q)/norm(w)*skew(w) + (1-cos(norm(w)*q))/norm(w)^2*skew(w)^2 # verified to work
 
 function expω(w,q=1)
-    nw = norm(w)
-    if nw < 1e-12 # TODO: Use TaylorSeries.jl to approximate this for small nw, I verified TaylorSeries.jl to work well for this
+    # nw = norm(w) # norm of staticarray is too inaccurate, causing ForwardDiff to NaN https://github.com/JuliaArrays/StaticArrays.jl/issues/913
+    nw = LinearAlgebra.generic_norm2(w)
+    if nw < 1e-12
         tmp = (nw*q)^2
         I + (1-tmp/6)*q*skew(w) + (0.5 - tmp/24)*(q*skew(w))^2
     else
