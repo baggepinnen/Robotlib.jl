@@ -106,7 +106,7 @@ function expξ2(xi,q=1.0) # works well for jacobian-ikine
     T = eltype(xi)
     v = SA[xi[1],xi[2],xi[3]]
     w = SA[xi[4],xi[5],xi[6]]
-    nw = norm(w)
+    nw = LinearAlgebra.generic_norm2(w)
     what = skew(w)
     if nw < 1e-12
         eR = I + q*what
@@ -122,7 +122,7 @@ end
 function expξ2!(T,xi,q=1.0)
     w = skew(xi[4],xi[5],xi[6])
     w2 = w^2
-    nw = norm(xi[4:6])
+    nw = LinearAlgebra.generic_norm2(xi[4:6])
     nw2 = nw^2
     nwq = nw*q
     snwq = sin(nwq)
@@ -148,7 +148,7 @@ function logT(T) # Verified to work in the vicinity of I, but not for very small
     R = T2R(T)
     t = T2t(T)
     ω = logR(R)
-    nω = norm(skewcoords(ω))
+    nω = LinearAlgebra.generic_norm2(skewcoords(ω))
     if nω < 1e-3
         fact = 0.0833333
     else
@@ -209,7 +209,7 @@ function logR_special(R)
 
     v_tmp = SA[kx, ky, kz]
     v = @SVector zeros(eltype(R), 3)
-    divider = norm(v_tmp)
+    divider = LinearAlgebra.generic_norm2(v_tmp)
     if divider > 1e-8
         v = v_tmp ./ divider
     end
@@ -259,7 +259,7 @@ function trinv(T)
     [[R' -R'*T2t(T)]; SA[0 0 0 1]]
 end
 
-isrot(R) = det(T2R(R)) ≈ 1 && norm(T2R(R)'T2R(R)-I) < 1e-10
+isrot(R) = det(T2R(R)) ≈ 1 && LinearAlgebra.generic_norm2(T2R(R)'T2R(R)-I) < 1e-10
 isse3(T) = isrot(T) && T[4,1:4] == [0 0 0 1]
 
 """`Rangle(R1,R2 = I3,deg = false)` calculates the angle between two rotation matrices"""
@@ -284,6 +284,7 @@ function Ai(q,xi)
     A = zeros(6,6(n+1))
     qext = [q;1]
     pa = Matrix{Float64}(I, 6, 6)
+    norm = LinearAlgebra.generic_norm2
     for i = 1:n+1
         ω = xi[4:6,i]
         Ω = [skew(xi[4:6,i]) skew(xi[1:3,i]);
@@ -323,7 +324,7 @@ function prodad(xi,q,n)
 end
 
 function conformize(xi)
-    xi[4:6] ./= norm(xi[4:6])
+    xi[4:6] ./= LinearAlgebra.generic_norm2(xi[4:6])
     xi[1:3] = xi[1:3] - (xi[4:6]'*xi[1:3])[1]*xi[4:6]
     return xi
 end
@@ -556,7 +557,7 @@ function Quaternions.Quaternion(t::AbstractMatrix{P}) where P
         ky = ky - ky1
         kz = kz - kz1
     end
-    nm = norm([kx, ky, kz])
+    nm = LinearAlgebra.generic_norm2(SA[kx, ky, kz])
     if nm == 0
         q = Quaternion(one(P), 0, 0, 0)
     else
