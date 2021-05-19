@@ -52,9 +52,13 @@ function twistcoords(xi)
     end
 end
 
-"Make a matrix skew-symmetric by (R-R')/2"
+"Make a matrix skew-symmetric by using the upper triangle only"
 function skewify(R)
-    0.5 .* (R - R')
+    SA[
+        0 R[1,2] R[1,3]
+        -R[1,2] 0 R[2,3]
+        -R[1,3] -R[2,3] 0
+    ]
 end
 
 Base.@propagate_inbounds function isskew(R)

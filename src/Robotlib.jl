@@ -72,6 +72,7 @@ end
 
 export skewcoords,
     twistcoords,
+    skewify,
     skew,
     skew4,
     expω,
