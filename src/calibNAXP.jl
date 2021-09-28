@@ -5,6 +5,9 @@ import Robotlib: T2R, Rt2T
 This functions implements the algorithm from the paper
 "Six DOF eye-to-hand calibration from 2D measurements using planar constraints"
 which solves the problem `Prb = n'A(X*Ps)`
+Extensions to the algorithm were developed in the thesis "Machine Learning and System Identification for Estimation in Physical Systems" Chapter 13.2 and appendices.
+https://lup.lub.lu.se/search/publication/ffb8dc85-ce12-4f75-8f2b-0881e492f6c0
+
 If result is bad, check if you send data in correct form\n
 `POSES ∈ R(4,4,N)` is always the position of the tool frame from the robot FK\n
 `points_S ∈ R(3,N)` are measurements from a line laser scanner. Given
