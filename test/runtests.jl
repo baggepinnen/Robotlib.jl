@@ -1,3 +1,4 @@
+ENV["GKSwstype"] = 100 # gr segfault workaround
 using Robotlib, LinearAlgebra, Random, Statistics, Plots
 using Test
 import Robotlib: ad, adi, I4
