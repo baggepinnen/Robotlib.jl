@@ -1,7 +1,7 @@
 name = "Robotlib"
 uuid = "a75dfa10-1339-53f3-8748-4d618c3d76af"
 authors = ["baggepinnen <baggepinnen@gmail.com>"]
-version = "1.1.14"
+version = "1.1.15"
 
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
